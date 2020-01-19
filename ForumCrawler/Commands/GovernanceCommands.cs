@@ -341,7 +341,7 @@ namespace ForumCrawler
                 }
                 history.AppendLine();
             }
-            await callback(history.ToString(), (IUserMessage)messages.Where(m => m.Author.IsBot).Last());
+            await callback(history.ToString(), (IUserMessage)messages.Where(m => m.Author.IsBot && m.Embeds.Any()).Last());
         }
 
         public static async Task UpdateBillboardAsync(IGuild guild, IUserMessage message, ISocketMessageChannel channel, GovernanceVote vote)
