@@ -25,6 +25,7 @@ namespace ForumCrawler
 
             services.GetService(typeof(Engine));
 
+            CoronaWatcher.Bind(client);
             QuickReportWatcher.Bind(client);
             MuteWatcher.Bind(client);
             VoiceChat.Bind(client);
