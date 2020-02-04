@@ -29,17 +29,24 @@ namespace ForumCrawler
             {
                 await Task.Delay(TimeSpan.FromMinutes(1));
 
-                using (var web = new WebClient())
+                try
                 {
-                    var coronaJson =  await web.DownloadStringTaskAsync(new Uri(API_URL));
-                    var coronaData = JsonConvert.DeserializeObject<CoronaPayload>(coronaJson);
-                    var sumCases = coronaData.entries.Sum(entry => Convert.ToInt32(entry.cases));
-                    var sumDeaths = coronaData.entries.Sum(entry => Convert.ToInt32(entry.deaths));
-
-                    await client.GetGuild(DiscordSettings.GuildId).GetTextChannel(329335303963803649).ModifyAsync(c =>
+                    using (var web = new WebClient())
                     {
-                        c.Topic = $"Casual Talk. 2019-nCoV Cases: {sumCases} Deaths: {sumDeaths}";
-                    });
+                        var coronaJson = await web.DownloadStringTaskAsync(new Uri(API_URL));
+                        var coronaData = JsonConvert.DeserializeObject<CoronaPayload>(coronaJson);
+                        var sumCases = coronaData.entries.Sum(entry => Convert.ToInt32(entry.cases));
+                        var sumDeaths = coronaData.entries.Sum(entry => Convert.ToInt32(entry.deaths));
+
+                        await client.GetGuild(DiscordSettings.GuildId).GetTextChannel(329335303963803649).ModifyAsync(c =>
+                        {
+                            c.Topic = $"Casual Talk. 2019-nCoV Cases: {sumCases} Deaths: {sumDeaths}";
+                        });
+                    }
+                }
+                catch (Exception ex) 
+                {
+                    Console.WriteLine(ex);
                 }
             }
         }
