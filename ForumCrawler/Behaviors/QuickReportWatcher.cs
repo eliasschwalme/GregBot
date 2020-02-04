@@ -8,17 +8,32 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    static class QuickReportWatcher
+    public static class QuickReportWatcher
     {
         private static event Func<ulong, IUser, IUser, IMessageChannel, IUserMessage, string, Task> OnReport;
         private static event Func<ulong, IUser, Report.ReportStatus, Task> OnResponse;
 
-        public static void Bind(DiscordSocketClient client)
+        public static async Task Bind(DiscordSocketClient client)
         {
-            var reports = new Dictionary<ulong, Report>();
+            var reports = await Database.PullReports(client);
+
             client.ReactionAdded += Client_ReactionAdded;
             OnReport += (a, b, c, d, e, f) => QuickReportWatcher_OnReport(client, reports, a, b, c, d, e, f);
-            OnResponse += (a, b, c) => QuickReportWatcher_OnResponse(client, reports, a, b, c); ;
+            OnReport += (a, b, c, d, e, f) => SaveReportToDatabase(client, reports, a, b, c, d, e, f);
+            OnResponse += (a, b, c) => QuickReportWatcher_OnResponse(client, reports, a, b, c);
+            OnResponse += (a, b, c) => UpdateReportInDatabase(client, reports, a, b, c);
+        }
+
+        private static Task SaveReportToDatabase(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong reportId, IUser reporter, IUser suspect, IMessageChannel channel, IUserMessage message, string reason)
+        {
+            // we expect QuickReportWatcher_OnReport to have executed first
+            return Database.AddReport(reports[reportId]);
+        }
+
+        private static Task UpdateReportInDatabase(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
+        {
+            // we expect QuickReportWatcher_OnResponse to have executed first
+            return Database.UpdateReport(client, reports, msgId, moderator, status);
         }
 
         private static async Task QuickReportWatcher_OnResponse(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
@@ -171,7 +186,7 @@ namespace ForumCrawler
         {
             public ulong Id { get; set; }
 
-            public Dictionary<ulong, string> Reporters { get; } = new Dictionary<ulong, string>();
+            public Dictionary<ulong, string> Reporters { get; set; } = new Dictionary<ulong, string>();
             public IUser Suspect { get; set; }
             public IMessageChannel Channel { get; set; }
             public IUserMessage Message { get; set; }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using EntityFramework.Extensions;
 
 namespace ForumCrawler
@@ -31,6 +32,38 @@ namespace ForumCrawler
                     OnStarboard = post.OnStarboard,
                     StarboardMessageId = (ulong)post.StarboardMessageId
                 };
+            }
+        }
+
+        internal static async Task<Dictionary<ulong, QuickReportWatcher.Report>> PullReports(DiscordSocketClient client)
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                var reports = await ctx.Reports.ToListAsync();
+
+                var dict = new Dictionary<ulong, QuickReportWatcher.Report>();
+                var guild = client.GetGuild(DiscordSettings.GuildId);
+                var reportChannel = guild.GetTextChannel(DiscordSettings.ReportsChannel);
+
+                foreach (var report in reports)
+                {
+                    var channel = guild.GetTextChannel(report.ChannelId);
+
+                    dict[report.ReportId] = new QuickReportWatcher.Report
+                    {
+                        Channel = channel,
+                        Id = report.ReportId,
+                        Message = (IUserMessage)(await channel.GetMessageAsync(report.MessageId).ConfigureAwait(false)),
+                        Moderator = guild.GetUser(report.ModeratorId),
+                        Reporters = report.Reporters,
+                        ReportsMessage = (IUserMessage)(await reportChannel.GetMessageAsync(report.ReportsMessage).ConfigureAwait(false)),
+                        Status = report.Status,
+                        Suspect = guild.GetUser(report.SuspectId),
+                        Timestamp = report.Timestamp
+                    };
+                }
+
+                return dict;
             }
         }
 
@@ -64,7 +97,41 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task DeleteStarboardEntry(ulong messageId)
+        internal static async Task UpdateReport(DiscordSocketClient client, Dictionary<ulong, QuickReportWatcher.Report> reports, ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                var gregReportMessage = await ctx.Reports.FirstAsync(report => report.ReportsMessage == msgId).ConfigureAwait(false);
+
+                gregReportMessage.ModeratorId = moderator.Id;
+                gregReportMessage.Status = status;
+
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
+            }
+        }
+
+        public static async Task AddReport(QuickReportWatcher.Report report)
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                ctx.Reports.Add(new ReportModel
+                {
+                    ReportId = report.Id,
+                    ChannelId = report.Channel.Id,
+                    MessageId = report.Message.Id,
+                    ModeratorId = report.Moderator.Id,
+                    Reporters = report.Reporters,
+                    ReportsMessage = report.ReportsMessage.Id,
+                    Status = report.Status,
+                    SuspectId = report.Suspect.Id,
+                    Timestamp = report.Timestamp
+                });
+
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
+            }
+        }
+
+		public static async Task DeleteStarboardEntry(ulong messageId)
         {
             using (var ctx = new DatabaseContext())
             {

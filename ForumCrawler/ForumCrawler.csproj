@@ -311,6 +311,7 @@
     <Compile Include="Helpers\DMP\diff_match_patch.cs" />
     <Compile Include="Helpers\DiscordAvatar.cs" />
     <Compile Include="Commands\Helpers\IgnoreCaseEnumTypeReader.cs" />
+    <Compile Include="Helpers\UlongLongExtensions.cs" />
     <Compile Include="Migrations\201912250844104_Remove-Messages.cs" />
     <Compile Include="Migrations\201912250844104_Remove-Messages.Designer.cs">
       <DependentUpon>201912250844104_Remove-Messages.cs</DependentUpon>
@@ -323,6 +324,11 @@
     <Compile Include="Migrations\201912262142555_Add-Mutes.Designer.cs">
       <DependentUpon>201912262142555_Add-Mutes.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202002042216130_ReportModelInitialIntroduction.cs" />
+    <Compile Include="Migrations\202002042216130_ReportModelInitialIntroduction.Designer.cs">
+      <DependentUpon>202002042216130_ReportModelInitialIntroduction.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\StarboardInformation.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.Designer.cs">
@@ -468,6 +474,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201912262142555_Add-Mutes.resx">
       <DependentUpon>201912262142555_Add-Mutes.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202002042216130_ReportModelInitialIntroduction.resx">
+      <DependentUpon>202002042216130_ReportModelInitialIntroduction.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>

@@ -11,5 +11,6 @@ namespace ForumCrawler
         public DbSet<StarReaction> StarboardGazers { get; set; }
         public DbSet<Warning> Warnings { get; set; }
         public DbSet<Mute> Mutes { get; set; }
+        public DbSet<ReportModel> Reports { get; set; }
     }
 }
