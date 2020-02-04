@@ -53,10 +53,10 @@ namespace ForumCrawler
                     {
                         Channel = channel,
                         Id = report.ReportId,
-                        Message = (IUserMessage)(await channel.GetMessageAsync(report.MessageId).ConfigureAwait(false)),
-                        Moderator = guild.GetUser(report.ModeratorId),
+                        Message = report.MessageId == 0 ? null : (IUserMessage)(await channel.GetMessageAsync(report.MessageId).ConfigureAwait(false)),
+                        Moderator = report.ModeratorId == 0 ? null : guild.GetUser(report.ModeratorId),
                         Reporters = report.Reporters,
-                        ReportsMessage = (IUserMessage)(await reportChannel.GetMessageAsync(report.ReportsMessage).ConfigureAwait(false)),
+                        ReportsMessage = report.ReportsMessage == 0 ? null : (IUserMessage)(await reportChannel.GetMessageAsync(report.ReportsMessage).ConfigureAwait(false)),
                         Status = report.Status,
                         Suspect = guild.GetUser(report.SuspectId),
                         Timestamp = report.Timestamp
@@ -101,7 +101,11 @@ namespace ForumCrawler
         {
             using (var ctx = new DatabaseContext())
             {
-                var gregReportMessage = await ctx.Reports.FirstAsync(report => report.ReportsMessage == msgId).ConfigureAwait(false);
+                var msgIdLong = msgId.ToLong();
+#if DEBUG
+                var arr = ctx.Reports.ToArray();
+#endif
+                var gregReportMessage = await ctx.Reports.FirstAsync(report => report._reportsMessage == msgIdLong).ConfigureAwait(false);
 
                 gregReportMessage.ModeratorId = moderator.Id;
                 gregReportMessage.Status = status;
@@ -118,8 +122,8 @@ namespace ForumCrawler
                 {
                     ReportId = report.Id,
                     ChannelId = report.Channel.Id,
-                    MessageId = report.Message.Id,
-                    ModeratorId = report.Moderator.Id,
+                    MessageId = report.Message?.Id ?? 0,
+                    ModeratorId = report.Moderator?.Id ?? 0,
                     Reporters = report.Reporters,
                     ReportsMessage = report.ReportsMessage.Id,
                     Status = report.Status,

@@ -10,19 +10,12 @@ namespace ForumCrawler
     public static class Program
     {
         public static string DatabasePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\greg_alts.db";
-        private static void Main()
-        {
-            MainAsync().Wait();
-
-            throw new Exception("Restart me!");
-        }
-
-        public static async Task MainAsync()
+        private static async Task Main()
         {
 			var client = await DiscordSettings.GetClient();
             var services = DiscordSettings.ConfigureServices(client);
             await DiscordSettings.InstallCommands(client, services);
-
+            
             services.GetService(typeof(Engine));
 
             CoronaWatcher.Bind(client);
@@ -37,6 +30,7 @@ namespace ForumCrawler
 			var crawler = new Crawler(client);
             
             await Task.WhenAny(Task.Delay(TimeSpan.FromDays(2)), crawler.StartAsync());
+            throw new Exception("Restart me!");
         }
     }
 }

@@ -18,10 +18,17 @@ namespace ForumCrawler
             var reports = await Database.PullReports(client);
 
             client.ReactionAdded += Client_ReactionAdded;
-            OnReport += (a, b, c, d, e, f) => QuickReportWatcher_OnReport(client, reports, a, b, c, d, e, f);
-            OnReport += (a, b, c, d, e, f) => SaveReportToDatabase(client, reports, a, b, c, d, e, f);
-            OnResponse += (a, b, c) => QuickReportWatcher_OnResponse(client, reports, a, b, c);
-            OnResponse += (a, b, c) => UpdateReportInDatabase(client, reports, a, b, c);
+            OnReport += async (a, b, c, d, e, f) =>
+            {
+                await QuickReportWatcher_OnReport(client, reports, a, b, c, d, e, f);
+                await SaveReportToDatabase(client, reports, a, b, c, d, e, f);
+            };
+
+            OnResponse += async (a, b, c) =>
+            {
+                await QuickReportWatcher_OnResponse(client, reports, a, b, c);
+                await UpdateReportInDatabase(client, reports, a, b, c);
+            };
         }
 
         private static Task SaveReportToDatabase(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong reportId, IUser reporter, IUser suspect, IMessageChannel channel, IUserMessage message, string reason)
@@ -38,7 +45,7 @@ namespace ForumCrawler
 
         private static async Task QuickReportWatcher_OnResponse(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
         {
-            var report = reports.Values.SingleOrDefault(v => v.ReportsMessage.Id == msgId);
+            var report = reports.SingleOrDefault(x => x.Value.ReportsMessage?.Id == msgId).Value;
             if (report == null) return;
             if (report.Status == status) return;
 
@@ -96,7 +103,11 @@ namespace ForumCrawler
                 report.ReportsMessage = await client
                     .GetGuild(DiscordSettings.GuildId)
                     .GetTextChannel(DiscordSettings.ReportsChannel)
+#if DEBUG
+                    .SendMessageAsync("@<debug> A report has been sent in!", embed: embed);
+#else
                     .SendMessageAsync("@here A report has been sent in!", embed: embed);
+#endif
             }
         }
         private static string GetUnmentionedUser(IUser user)
