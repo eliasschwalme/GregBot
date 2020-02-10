@@ -214,6 +214,7 @@ namespace DiscordSocialScore
 			}
 
             if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
+            if ((DateTimeOffset.UtcNow - user.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
 
             var oldScoreData = await Score.GetScoreDataAsync(user);
             var (scoreData, efficiency) = await Score.UpvoteAsync(user, guildUser);
