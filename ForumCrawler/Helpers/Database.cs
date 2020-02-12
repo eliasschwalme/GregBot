@@ -211,6 +211,12 @@ namespace ForumCrawler
             }
         }
 
+        public static async Task<bool> IsScoreUserExempt(IGuildUser guildUser)
+        {
+            var user = await GetOrCreateScoreUserAsync(guildUser).ConfigureAwait(false);
+            return user.EarlyUserExempt;
+        }
+
         public static async Task<ScoreUser> GetOrCreateScoreUserAsync(IGuildUser user)
         {
             using (var context = new DatabaseContext())

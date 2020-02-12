@@ -174,6 +174,21 @@ namespace DiscordSocialScore
             await this.ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
         }
 
+        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        public async Task SetExempt(IGuildUser user, bool value = true)
+        {
+            if (user == null)
+            {
+                throw new Exception("Invalid user specified!");
+            }
+
+            var scoreUser = await Database.GetOrCreateScoreUserAsync(user).ConfigureAwait(false);
+            scoreUser.EarlyUserExempt = value;
+            await Database.AddOrUpdateScoreUserAsync(scoreUser).ConfigureAwait(false);
+
+            await this.ReplyAsync($"{MentionUtils.MentionUser(user.Id)} is now{(value ? " " : " not ")}exempt from the 72 hour g!up wait period.").ConfigureAwait(false);
+        }
+
         [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetEnergy(IGuildUser user, double value)
 		{
@@ -213,8 +228,8 @@ namespace DiscordSocialScore
 				throw new Exception("You aren't a guild user!");
 			}
 
-            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
-            if ((DateTimeOffset.UtcNow - user.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
+            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(guildUser).ConfigureAwait(false))) throw new Exception("You have recently joined this server and may not g!up other users yet!");
+            if ((DateTimeOffset.UtcNow - user.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(user).ConfigureAwait(false))) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
 
             var oldScoreData = await Score.GetScoreDataAsync(user);
             var (scoreData, efficiency) = await Score.UpvoteAsync(user, guildUser);
