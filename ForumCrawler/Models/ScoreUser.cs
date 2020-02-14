@@ -27,6 +27,8 @@ namespace ForumCrawler
             set { this.Id = (long)value; }
         }
 
+        public bool EarlyUserExempt { get; set; }
+
         public DateTime? LastEnergy { get; set; }
         public DateTime? LastActivity { get; set; }
         public DateTime? LastDecay { get; set; }
