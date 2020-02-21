@@ -117,8 +117,8 @@ namespace ForumCrawler.Commands
             {
                 var next = state.Warnings == 0 ? "strike" : "warning";
                 var duration = state.Warnings == 0
-                    ? TimeSpan.FromDays(WarningState.StrikeExpiryDays)
-                    : TimeSpan.FromDays(WarningState.WarningExpiryDays);
+                    ? TimeSpan.FromDays(WarningState.WarningDelayLogicV2.StrikeExpiryDays)
+                    : TimeSpan.FromDays(WarningState.WarningDelayLogicV2.WarningExpiryDays);
                 embed.AddField($"Next {next} expires in", (duration - (DateTime.UtcNow - state.LastTick)).ToHumanReadableString());
             }
 
