@@ -9,8 +9,6 @@ namespace ForumCrawler
     public class WarningState
     {
         public const int WarningsInStrike = 3;
-        public const int WarningExpiryDays = 3;
-        public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
         public const int MuteDaysPerStrike = 2;
 
         public int Warnings { get; private set; }
@@ -43,16 +41,13 @@ namespace ForumCrawler
 
         public void Update(DateTime timestamp)
         {
-            var duration = new Func<TimeSpan>(() => timestamp - this.LastTick);
-            while (this.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
+            if (timestamp < new DateTime(2020, 2, 22, 0, 0, 0))
             {
-                this.LastTick.AddDays(WarningExpiryDays);
-                this.Warnings--;
+                WarningDelayLogicV1.Update(this, timestamp);
             }
-            while (this.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
+            else
             {
-                this.LastTick.AddDays(StrikeExpiryDays);
-                this.Strikes--;
+                WarningDelayLogicV2.Update(this, timestamp);
             }
         }
 
@@ -66,5 +61,47 @@ namespace ForumCrawler
             state.Update(DateTime.UtcNow);
             return state;
         }
+        public class WarningDelayLogicV1
+        {
+            public const int WarningExpiryDays = 3;
+            public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
+
+            public static void Update(WarningState state, DateTime timestamp)
+            {
+                var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
+                while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
+                {
+                    state.LastTick.AddDays(WarningExpiryDays);
+                    state.Warnings--;
+                }
+                while (state.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
+                {
+                    state.LastTick.AddDays(StrikeExpiryDays);
+                    state.Strikes--;
+                }
+            }
+        }
+
+        public class WarningDelayLogicV2
+        {
+            public const int WarningExpiryDays = 9;
+            public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
+
+            public static void Update(WarningState state, DateTime timestamp)
+            {
+                var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
+                while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
+                {
+                    state.LastTick.AddDays(WarningExpiryDays);
+                    state.Warnings--;
+                }
+                while (state.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
+                {
+                    state.LastTick.AddDays(StrikeExpiryDays);
+                    state.Strikes--;
+                }
+            }
+        }
     }
+
 }
