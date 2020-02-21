@@ -9,7 +9,7 @@ namespace ForumCrawler
     public class WarningState
     {
         public const int WarningsInStrike = 3;
-        public const int MuteDaysPerStrike = 2;
+        public const int MuteDaysPerStrike = 7;
 
         public int Warnings { get; private set; }
         public int Strikes { get; private set; }
