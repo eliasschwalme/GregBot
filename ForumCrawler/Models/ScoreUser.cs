@@ -116,7 +116,6 @@ namespace ForumCrawler
         {
             get
             {
-
                 var boostLevel = this.GetBoostLevel();
                 return (this.IsPremium ? 1 : 0) + 
                     (boostLevel >= 3
@@ -178,11 +177,11 @@ namespace ForumCrawler
         public int GetBoostLevel()
         {
             var boosts = this.GetBoostsLeft().Count;
-            return boosts >= 10
+            return boosts >= 6
                 ? 3
-                : boosts >= 5
+                : boosts >= 3
                 ? 2
-                : boosts >= 2
+                : boosts >= 1
                 ? 1
                 : 0;
         }
@@ -190,7 +189,7 @@ namespace ForumCrawler
         public Dictionary<ulong, TimeSpan> GetBoostsLeft()
         {
             return this.Boosts
-                .Select(kv => new KeyValuePair<ulong, TimeSpan>(kv.Key, TimeSpan.FromDays(1) - (DateTime.UtcNow - kv.Value)))
+                .Select(kv => new KeyValuePair<ulong, TimeSpan>(kv.Key, TimeSpan.FromDays(2) - (DateTime.UtcNow - kv.Value)))
                 .Where(boost => boost.Value.TotalSeconds > 0)
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
         }
@@ -198,7 +197,7 @@ namespace ForumCrawler
         public TimeSpan GetBoostLeft(ulong userId)
         {
             var boostDate = this.GetLastBoost(userId);
-            return TimeSpan.FromDays(1) - (DateTime.UtcNow - boostDate);
+            return TimeSpan.FromDays(2) - (DateTime.UtcNow - boostDate);
         }
 
         public DateTime GetLastBoost(ulong userId)
