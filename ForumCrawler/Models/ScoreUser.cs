@@ -52,13 +52,14 @@ namespace ForumCrawler
             get
             {
                 var boostLevel = this.GetBoostLevel();
-                return boostLevel >= 3
+                return (this.IsPremium ? 250 : 0) +
+                    (boostLevel >= 3
                     ? 250
                     : boostLevel >= 2
                     ? 100
                     : boostLevel >= 1
                     ? 25
-                    : 0;
+                    : 0);
             }
         }
 
@@ -117,13 +118,14 @@ namespace ForumCrawler
             {
 
                 var boostLevel = this.GetBoostLevel();
-                return boostLevel >= 3
+                return (this.IsPremium ? 1 : 0) + 
+                    (boostLevel >= 3
                     ? 1.0
                     : boostLevel >= 2
                     ? 0.4
                     : boostLevel >= 1
                     ? 0.1
-                    : 0d;
+                    : 0);
             }
         }
 
@@ -175,8 +177,6 @@ namespace ForumCrawler
 
         public int GetBoostLevel()
         {
-            if (this.IsPremium) return 3;
-
             var boosts = this.GetBoostsLeft().Count;
             return boosts >= 10
                 ? 3
