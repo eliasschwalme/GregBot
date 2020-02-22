@@ -17,6 +17,7 @@ namespace ForumCrawler
         {
             public string cases;
             public string deaths;
+            public string recovered;
         }
     }
 
@@ -37,10 +38,11 @@ namespace ForumCrawler
                         var coronaData = JsonConvert.DeserializeObject<CoronaPayload>(coronaJson);
                         var sumCases = coronaData.entries.Sum(entry => Convert.ToInt32(entry.cases));
                         var sumDeaths = coronaData.entries.Sum(entry => Convert.ToInt32(entry.deaths));
+                        var sumRecovered = coronaData.entries.Sum(entry => Convert.ToInt32(entry.recovered));
 
                         await client.GetGuild(DiscordSettings.GuildId).GetTextChannel(329335303963803649).ModifyAsync(c =>
                         {
-                            c.Topic = $"Casual Talk. 2019-nCoV Cases: {sumCases} Deaths: {sumDeaths}";
+                            c.Topic = $"Casual Talk. 2019-nCoV Cases: {sumCases} Deaths: {sumDeaths} Recovered: {sumRecovered}";
                         });
                     }
                 }
