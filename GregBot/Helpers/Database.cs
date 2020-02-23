@@ -305,9 +305,8 @@ namespace ForumCrawler
         {
             using (var context = new DatabaseContext())
             {
-                var res = await context.GovernanceVotes
-                    .Where(m => m.Id == (long)id)
-                    .ToListAsync();
+                context.GovernanceVotes.RemoveRange(context.GovernanceVotes.Where(m => m.Id == (long)id));
+                await context.SaveChangesAsync();
             }
         }
 
