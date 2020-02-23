@@ -42,7 +42,7 @@ namespace ForumCrawler
 
                         await client.GetGuild(DiscordSettings.GuildId).GetTextChannel(329335303963803649).ModifyAsync(c =>
                         {
-                            c.Topic = $"Casual Talk. 2019-nCoV Cases: {sumCases} Deaths: {sumDeaths} Recovered: {sumRecovered}";
+                            c.Topic = $"Casual Talk. COVID-19 Infected: {sumCases - sumDeaths - sumRecovered}, Recovered: {sumRecovered}, Deaths: {sumDeaths}, Death Rate: {sumDeaths / (sumDeaths + sumRecovered):P1}";
                         });
                     }
                 }
