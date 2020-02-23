@@ -142,7 +142,11 @@ namespace DiscordSocialScore
             var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
             
             var cache = this.cacheProvider.Get(user.Guild);
-            var roles = new[] { await ScoreRoleManager.GetScoreRoleForUserAsync(cache, user, scoreData), await ScoreRoleManager.GetClassRole(cache, scoreData) };
+
+            var muted = (await Database.GetMute(user.Id)) != null;
+            var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(cache, user, scoreData) };
+            if (!muted) roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
+
             var toDelete = user.Roles.GetBotRoles().Where(r => roles.All(r2 => r.Id != r2.Id)).ToList();
             var toAdd = roles.Where(r => user.Roles.All(r2 => r.Id != r2.Id)).ToList();
 
