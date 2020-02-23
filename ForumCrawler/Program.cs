@@ -28,7 +28,9 @@ namespace ForumCrawler
 
             await Task.Delay(10000).ConfigureAwait(false);
 			var crawler = new Crawler(client);
-            
+
+            await client.StartAsync();
+
             await Task.WhenAny(Task.Delay(TimeSpan.FromDays(2)), crawler.StartAsync());
             throw new Exception("Restart me!");
         }
