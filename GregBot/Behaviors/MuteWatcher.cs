@@ -59,7 +59,7 @@ namespace ForumCrawler
         {
             var role = client.GetGuild(DiscordSettings.GuildId).GetRole(DiscordSettings.MutedRole);
             var user = client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
-            if (user.Roles.Contains(role))
+            if (user?.Roles.Contains(role) ?? false)
             {
                 await user.RemoveRoleAsync(role);
             }
