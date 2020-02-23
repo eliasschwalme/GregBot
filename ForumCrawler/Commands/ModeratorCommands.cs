@@ -7,9 +7,23 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordSocialScore;
 
 namespace ForumCrawler.Commands
 {
+    public class RoleCommands : ModuleBase<SocketCommandContext>
+    {
+        [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel)]
+        public async Task ChangeNickname([Remainder] string nick)
+        {
+            var user = (IGuildUser)this.Context.User;
+            var score = await Score.GetScoreDataAsync(user);
+            if (score.ScoreLevel < 4) throw new Exception("You must be a class of 4 or higher to change your nick.");
+            await user.ModifyAsync(u => u.Nickname = nick);
+            await this.ReplyAsync("Your nickname was updated.");
+        }
+    }
+
     public class MuteCommands : ModuleBase<SocketCommandContext>
     {
         private string GetUnmentionedUser(ulong userId)
@@ -80,7 +94,7 @@ namespace ForumCrawler.Commands
             await UnmuteUser(user, false);
         }
 
-        [Command("mute status"), Alias("mute stats"), RequireRole(DiscordSettings.DiscordStaff)]
+        [Command("mute status"), Alias("mute stats"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task MuteState(IUser user = null)
         {
             if (user == null) user = this.Context.User;

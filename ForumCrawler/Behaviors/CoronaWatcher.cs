@@ -11,13 +11,13 @@ namespace ForumCrawler
 {
     class CoronaPayload
     {
-        public List<CoronaEntry> entries;
+        public List<CoronaEntry> entries = null;
         
         public class CoronaEntry
         {
-            public string cases;
-            public string deaths;
-            public string recovered;
+            public string cases = null;
+            public string deaths = null;
+            public string recovered = null;
         }
     }
 
