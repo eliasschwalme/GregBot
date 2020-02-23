@@ -242,7 +242,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<Mute[]> GetAllExpiredMutes(DateTime time)
+        public static async Task<Mute[]> GetAllExpiredMutes(DateTimeOffset time)
         {
             using (var context = new DatabaseContext())
             {
@@ -266,7 +266,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task RemoveAllExpiredMutes(DateTime time)
+        public static async Task RemoveAllExpiredMutes(DateTimeOffset time)
         {
             using (var context = new DatabaseContext())
             {

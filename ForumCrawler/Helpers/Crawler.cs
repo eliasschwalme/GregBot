@@ -26,7 +26,7 @@ namespace ForumCrawler
             {
                 try
                 {
-                    if (DateTime.Now.Second % 60 == 0)
+                    if (DateTimeOffset.UtcNow.Second % 60 == 0)
                         await UpdateOnlineUsersAsync();
 
                     if (await this.CrawlAsync())
@@ -81,10 +81,10 @@ namespace ForumCrawler
 
         private static async Task WaitABitAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow;
             now = now.AddSeconds(10);
             now = now.AddSeconds(-now.Second % 10);
-            var waitTime = now - DateTime.UtcNow;
+            var waitTime = now - DateTimeOffset.UtcNow;
             if (waitTime.TotalMilliseconds > 0)
                 await Task.Delay(waitTime);
         }

@@ -16,7 +16,7 @@ namespace DiscordSocialScore
         static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
         private readonly DiscordSocketClient client;
         private readonly RoleCacheProvider cacheProvider;
-        private readonly Dictionary<ulong, DateTime> ignoreUsers = new Dictionary<ulong, DateTime>();
+        private readonly Dictionary<ulong, DateTimeOffset> ignoreUsers = new Dictionary<ulong, DateTimeOffset>();
 
         public Engine(DiscordSocketClient client, RoleCacheProvider cacheProvider)
         {
@@ -116,7 +116,7 @@ namespace DiscordSocialScore
 			}
 
             ignoreUsers.TryGetValue(newUser.Id, out var lastCall);
-            if ((DateTime.UtcNow - lastCall).Minutes < 1) return;
+            if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
 
             await UpdateUsernameAsync(newUser, await Score.GetScoreDataAsync(newUser));
         }
@@ -152,7 +152,7 @@ namespace DiscordSocialScore
 
             if (user.Nickname != targetNick || toAdd.Any() || toDelete.Any())
             {
-                ignoreUsers[user.Id] = DateTime.UtcNow;
+                ignoreUsers[user.Id] = DateTimeOffset.UtcNow;
 
                 Console.WriteLine("Updated username " + user.Nickname + " to " + targetNick);
 

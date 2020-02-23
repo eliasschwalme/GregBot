@@ -32,13 +32,13 @@ namespace ForumCrawler.Commands
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
-        public Task<Mute> MuteUser(IUser issuer, IUser user, DateTime expiry, string reason, bool shorten, bool sameAuthorShorten)
+        public Task<Mute> MuteUser(IUser issuer, IUser user, DateTimeOffset expiry, string reason, bool shorten, bool sameAuthorShorten)
         {
             return MuteWatcher.MuteUser(new Mute
             {
                 UserId = user.Id,
                 IssuerId = issuer.Id,
-                ExpiryDate = expiry,
+                ExpiryDate = expiry.UtcDateTime,
                 IssueDate = DateTime.UtcNow
             }, reason, shorten, sameAuthorShorten);
         }
@@ -78,7 +78,7 @@ namespace ForumCrawler.Commands
             if (user.RoleIds.Contains(DiscordSettings.DiscordStaff))
                 throw new Exception("User is staff.");
 
-            var res = await MuteUser(this.Context.User, user, DateTime.UtcNow + duration, reason, false, false);
+            var res = await MuteUser(this.Context.User, user, DateTimeOffset.UtcNow + duration, reason, false, false);
             await this.ReplyAsync($"{MentionUtils.MentionUser(user.Id)} muted until {res.ExpiryDate}.");
         }
 
@@ -99,7 +99,7 @@ namespace ForumCrawler.Commands
         {
             if (user == null) user = this.Context.User;
             var mute = await Database.GetMute(user.Id);
-            await this.ReplyAsync($"{this.GetUnmentionedUser(user.Id)} muted until {mute.ExpiryDate}.");
+            await this.ReplyAsync($"{this.GetUnmentionedUser(user.Id)} muted until {mute.ExpiryDate} UTC.");
         }
     }
 
@@ -125,7 +125,7 @@ namespace ForumCrawler.Commands
             }
             else if (state.MutedUntil.HasValue)
             {
-                embed.AddField($"Strike mute penalty expires in", (state.MutedUntil.Value - DateTime.UtcNow).ToHumanReadableString());
+                embed.AddField($"Strike mute penalty expires in", (state.MutedUntil.Value - DateTimeOffset.UtcNow).ToHumanReadableString());
             }
             else
             {
@@ -133,7 +133,7 @@ namespace ForumCrawler.Commands
                 var duration = state.Warnings == 0
                     ? TimeSpan.FromDays(WarningState.WarningDelayLogicV2.StrikeExpiryDays)
                     : TimeSpan.FromDays(WarningState.WarningDelayLogicV2.WarningExpiryDays);
-                embed.AddField($"Next {next} expires in", (duration - (DateTime.UtcNow - state.LastTick)).ToHumanReadableString());
+                embed.AddField($"Next {next} expires in", (duration - (DateTimeOffset.UtcNow - state.LastTick)).ToHumanReadableString());
             }
 
             return embed;
@@ -378,7 +378,7 @@ namespace ForumCrawler.Commands
                     UserId = user.Id,
                     IssuerId = this.Context.Guild.CurrentUser.Id,
                     IssueDate = DateTime.UtcNow,
-                    ExpiryDate = state.MutedUntil.Value
+                    ExpiryDate = state.MutedUntil.Value.UtcDateTime
                 }, "You got a strike!", true, true);
             } else
             {

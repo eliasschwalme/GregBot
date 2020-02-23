@@ -25,7 +25,7 @@ namespace ForumCrawler
         private static async Task VerifyMute(SocketGuildUser user)
         {
             var mute = await Database.GetMute(user.Id);
-            if (mute != null && mute.ExpiryDate > DateTime.UtcNow)
+            if (mute != null && mute.ExpiryDate > DateTimeOffset.UtcNow)
             {
                 await OnMute(mute, "Mute retention after rejoin.");
             }
@@ -67,7 +67,7 @@ namespace ForumCrawler
 
         private static async void OnUpdate(DiscordSocketClient client)
         {
-            var timestamp = DateTime.UtcNow;
+            var timestamp = DateTimeOffset.UtcNow;
             var mutes = await Database.GetAllExpiredMutes(timestamp);
             foreach (var mute in mutes)
             {
@@ -78,7 +78,7 @@ namespace ForumCrawler
 
         public static async Task<Mute> MuteUser(Mute mute, string reason, bool shorten, bool sameAuthorShorten)
         {
-            if (mute.ExpiryDate <= DateTime.UtcNow) return null;
+            if (mute.ExpiryDate <= DateTimeOffset.UtcNow) return null;
             var lastMute = await Database.GetMute(mute.UserId);
             var shorts = mute.ExpiryDate <= lastMute?.ExpiryDate;
             var sameAuthor = lastMute?.IssuerId == mute.IssuerId;

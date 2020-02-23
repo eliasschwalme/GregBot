@@ -56,7 +56,7 @@ namespace ForumCrawler
         
         private static async Task Ready(DiscordSocketClient client)
         {
-            await client.SetGameAsync("Greg Simulator " + DateTime.UtcNow.Year);
+            await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
         }
 
         private static Task Log(LogMessage message)

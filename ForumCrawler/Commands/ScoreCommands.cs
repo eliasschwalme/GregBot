@@ -261,9 +261,9 @@ namespace DiscordSocialScore
                 "```");
         }
 
-        private string GetHistoryAsync((ulong Key, DateTime LastBoost) user)
+        private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user)
         {
-            return $"{ this.Context.Guild.GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ (DateTime.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
+            return $"{ this.Context.Guild.GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
         }
 
         private string GetBoostString((ulong Key, TimeSpan TimeLeft) user)

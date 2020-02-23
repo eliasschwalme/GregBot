@@ -60,9 +60,9 @@ namespace ForumCrawler
             var user = (IGuildUser)this.Context.User;
             var guild = this.Context.Guild;
             var vote = await Database.GetGovernanceVoteAsync(channel.Id);
-            var age = DateTime.UtcNow - channel.CreatedAt;
+            var age = DateTimeOffset.UtcNow - channel.CreatedAt;
             var ageInDays = age.TotalDays;
-            var ageLeft = TimeSpan.FromTicks((channel.CreatedAt.AddDays(3) - DateTime.UtcNow).Ticks);
+            var ageLeft = TimeSpan.FromTicks((channel.CreatedAt.AddDays(3) - DateTimeOffset.UtcNow).Ticks);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff() && ageInDays < 10) throw new Exception("Only the owner or staff can finalize suggestions.");
             if (ageInDays < 3 && (!force || !user.IsStaff())) throw new Exception($"Suggestion too young. " +

@@ -14,16 +14,16 @@ namespace ForumCrawler
         public int Warnings { get; private set; }
         public int Strikes { get; private set; }
 
-        public DateTime LastTick { get; private set; }
-        public DateTime? MutedUntil => this.LastTick > DateTime.UtcNow ? (DateTime?)this.LastTick : null;
+        public DateTimeOffset LastTick { get; private set; }
+        public DateTimeOffset? MutedUntil => this.LastTick > DateTimeOffset.UtcNow ? (DateTimeOffset?)this.LastTick : null;
 
 
-        public void Add(int amount, DateTime timestamp)
+        public void Add(int amount, DateTimeOffset timestamp)
         {
             this.Update(timestamp);
             if (amount == 0) return;
 
-            this.LastTick = new DateTime(Math.Max(this.LastTick.Ticks, timestamp.Ticks));
+            this.LastTick = new DateTimeOffset(Math.Max(this.LastTick.Ticks, timestamp.Ticks), TimeSpan.Zero);
             this.Warnings += amount;
 
             var gotStrike = false;
@@ -39,9 +39,9 @@ namespace ForumCrawler
             }
         }
 
-        public void Update(DateTime timestamp)
+        public void Update(DateTimeOffset timestamp)
         {
-            if (timestamp < new DateTime(2020, 2, 22, 0, 0, 0))
+            if (timestamp < new DateTimeOffset(2020, 2, 22, 0, 0, 0, TimeSpan.Zero))
             {
                 WarningDelayLogicV1.Update(this, timestamp);
             }
@@ -58,7 +58,7 @@ namespace ForumCrawler
             {
                 state.Add(item.Amount, item.IssueDate);
             }
-            state.Update(DateTime.UtcNow);
+            state.Update(DateTimeOffset.UtcNow);
             return state;
         }
         public class WarningDelayLogicV1
@@ -66,7 +66,7 @@ namespace ForumCrawler
             public const int WarningExpiryDays = 3;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
 
-            public static void Update(WarningState state, DateTime timestamp)
+            public static void Update(WarningState state, DateTimeOffset timestamp)
             {
                 var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
                 while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
@@ -87,7 +87,7 @@ namespace ForumCrawler
             public const int WarningExpiryDays = 9;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
 
-            public static void Update(WarningState state, DateTime timestamp)
+            public static void Update(WarningState state, DateTimeOffset timestamp)
             {
                 var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
                 while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)

@@ -87,7 +87,7 @@ namespace DiscordSocialScore
 
                 var lastBoost = target.GetLastBoost(upvoter.UserId);
                 var boostLeft = target.GetBoostLeft(upvoter.UserId);
-                var sinceLastBoost = DateTime.UtcNow - lastBoost;
+                var sinceLastBoost = DateTimeOffset.UtcNow - lastBoost;
                 if (boostLeft.TotalSeconds > 0) throw new Exception($"Please wait {boostLeft.ToHumanReadableString()} before upvoting this person again.");
                 
                 if (upvoter.Energy < 100) throw new Exception($"An upvote costs 100 energy! You currently have __**{Math.Floor(upvoter.Energy)}**__/{upvoter.MaxEnergy} energy.");
@@ -190,7 +190,7 @@ namespace DiscordSocialScore
 				}
 
                 if (user.LastActivity.HasValue
-                && DateTime.UtcNow.Subtract(user.LastActivity.Value).TotalMinutes < 1.5)
+                && DateTimeOffset.UtcNow.Subtract(user.LastActivity.Value).TotalMinutes < 1.5)
                     return (false, user.ScoreData);
 
                 var increase = 3.5 - Math.Max(0.25, Math.Min(3, user.Score));
