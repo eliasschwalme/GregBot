@@ -8,6 +8,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using ForumCrawler;
+using ForumCrawler.Helpers;
 using PastebinAPI;
 
 namespace ForumCrawler

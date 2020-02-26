@@ -48,13 +48,15 @@ namespace ForumCrawler
             client.Ready += () => Ready(client);
 
             await client.LoginAsync(TokenType.Bot, Passwords.DiscordToken);
+            await client.StartAsync();
+            await client.SetStatusAsync(UserStatus.Online);
+
             return client;
         }
         
         private static async Task Ready(DiscordSocketClient client)
         {
             await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
-            await client.SetStatusAsync(UserStatus.Online);
         }
 
         private static Task Log(LogMessage message)
