@@ -1,5 +1,4 @@
 ﻿using System.Data.Entity;
-using MySql.Data.Entity;
 
 namespace ForumCrawler
 {

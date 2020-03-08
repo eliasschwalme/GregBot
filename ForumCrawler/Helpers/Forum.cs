@@ -1,31 +1,29 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
 
 namespace ForumCrawler
 {
     public static class Forum
     {
-        private const string IndexUrl = @"https://forums.everybodyedits.com/index.php";
-        private const string DiffIsBad = @"https://forums.everybodyedits.com/login.php";
-        private const string LoginUrl = @"https://forums.everybodyedits.com/login.php?action=in";
-        private const string Url = @"http://forums.everybodyedits.com/search.php?action=show_recent";
-        private const string DirectUrl = @"https://forums.everybodyedits.com/post.php?tid={0}&qid={1}";
+        private const string IndexUrl = "https://forums.everybodyedits.com/index.php";
+        private const string DiffIsBad = "https://forums.everybodyedits.com/login.php";
+        private const string LoginUrl = "https://forums.everybodyedits.com/login.php?action=in";
+        private const string Url = "http://forums.everybodyedits.com/search.php?action=show_recent";
+        private const string DirectUrl = "https://forums.everybodyedits.com/post.php?tid={0}&qid={1}";
         private static readonly CookieContainer _cookies = new CookieContainer();
 
-        static Forum()
-        {
-            Login();
-        }
+        static Forum() => Login();
 
         public static async Task<string> GetCSRFAsync()
         {
-            using (var client = new WebClientEx(_cookies)) { 
+            using (var client = new WebClientEx(_cookies))
+            {
                 var html = await client.DownloadDataTaskAsync(DiffIsBad);
                 var doc = new HtmlDocument();
                 doc.Load(new MemoryStream(html), Encoding.UTF8);
@@ -107,7 +105,7 @@ namespace ForumCrawler
         public static async Task<string> GetContentAsync(int topicId, int postId)
         {
             var client = new WebClientEx(_cookies);
-            var html = await client.DownloadDataTaskAsync(String.Format(DirectUrl, topicId, postId));
+            var html = await client.DownloadDataTaskAsync(string.Format(DirectUrl, topicId, postId));
             var doc = new HtmlDocument();
             doc.Load(new MemoryStream(html), Encoding.UTF8);
 

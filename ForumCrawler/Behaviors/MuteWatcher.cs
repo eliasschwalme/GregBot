@@ -1,18 +1,19 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
+
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Timers;
 using System.Threading.Tasks;
-using Discord;
+using System.Timers;
 
 namespace ForumCrawler
 {
     public static class MuteWatcher
     {
         private static event Func<Mute, string, Task> OnMute;
+
         private static event Func<ulong, Task> OnUnmute;
+
         public static void Bind(DiscordSocketClient client)
         {
             OnMute += (a, b) => MuteWatcher_OnMute(client, a, b);

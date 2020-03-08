@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Discord.WebSocket;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 
 namespace ForumCrawler
 {
@@ -12,12 +11,9 @@ namespace ForumCrawler
     {
         private readonly DiscordSocketClient _discord;
 
-		private readonly List<int> _consumedPosts = new List<int>();
+        private readonly List<int> _consumedPosts = new List<int>();
 
-        public Crawler(DiscordSocketClient discord)
-        {
-            this._discord = discord;
-        }
+        public Crawler(DiscordSocketClient discord) => _discord = discord;
 
         public async Task StartAsync()
         {
@@ -29,7 +25,7 @@ namespace ForumCrawler
                     if (DateTimeOffset.UtcNow.Second % 60 == 0)
                         await UpdateOnlineUsersAsync();
 
-                    if (await this.CrawlAsync())
+                    if (await CrawlAsync())
                         isDown = false;
                 }
                 catch
@@ -37,7 +33,7 @@ namespace ForumCrawler
                     if (!isDown)
                     {
                         isDown = true;
-                        await DiscordFormatting.AnnounceDownAsync(this._discord);
+                        await DiscordFormatting.AnnounceDownAsync(_discord);
                     }
                 }
                 await WaitABitAsync();
@@ -50,10 +46,10 @@ namespace ForumCrawler
 
             if (_consumedPosts.Count == 0)
             {
-				// if we've consumed nothing, consume all the items
+                // if we've consumed nothing, consume all the items
                 // that way we don't spam #forums with non-new stuff
-				_consumedPosts.AddRange(items.Select(x => x.PostId));
-			}
+                _consumedPosts.AddRange(items.Select(x => x.PostId));
+            }
 
             var filtered = items
                 .Where(item => !_consumedPosts.Contains(item.PostId))
@@ -61,8 +57,8 @@ namespace ForumCrawler
 
             foreach (var item in filtered)
             {
-				_consumedPosts.Add(item.PostId);
-                await DiscordFormatting.AnnouncePostAsync(this._discord, item);
+                _consumedPosts.Add(item.PostId);
+                await DiscordFormatting.AnnouncePostAsync(_discord, item);
             }
 
             return filtered.Any();

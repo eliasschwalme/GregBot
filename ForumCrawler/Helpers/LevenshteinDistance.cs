@@ -14,9 +14,8 @@ namespace ForumCrawler
                 return 1.0;
 
             var stepsToSame = Compute(source, target);
-            return (1.0 - (stepsToSame / (double)Math.Max(source.Length, target.Length)));
+            return 1.0 - (stepsToSame / (double)Math.Max(source.Length, target.Length));
         }
-
 
         /// <summary>
         ///     Compute the distance between two strings.

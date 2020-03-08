@@ -21,29 +21,29 @@ namespace ForumCrawler
         [NotMapped]
         public ulong UserId
         {
-            get { return (ulong)this.UId; }
-            set { this.UId = (long)value; }
+            get => (ulong)UId;
+            set => UId = (long)value;
         }
 
         [NotMapped]
         public ulong ChannelId
         {
-            get { return (ulong)this.Id; }
-            set { this.Id = (long)value; }
+            get => (ulong)Id;
+            set => Id = (long)value;
         }
 
         [NotMapped]
         public ulong MessageId
         {
-            get { return (ulong)this.MId; }
-            set { this.MId = (long)value; }
+            get => (ulong)MId;
+            set => MId = (long)value;
         }
 
         [NotMapped]
         public ulong VoteBillboardId
         {
-            get { return (ulong)this.VId; }
-            set { this.VId = (long)value; }
+            get => (ulong)VId;
+            set => VId = (long)value;
         }
     }
 }

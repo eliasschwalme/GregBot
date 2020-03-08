@@ -1,6 +1,7 @@
 namespace DiffMatchPatch
 {
-    public enum Operation {
+    public enum Operation
+    {
         DELETE, INSERT, EQUAL
     }
 }

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
@@ -15,27 +12,26 @@ namespace ForumCrawler
         public int Strikes { get; private set; }
 
         public DateTimeOffset LastTick { get; private set; }
-        public DateTimeOffset? MutedUntil => this.LastTick > DateTimeOffset.UtcNow ? (DateTimeOffset?)this.LastTick : null;
-
+        public DateTimeOffset? MutedUntil => LastTick > DateTimeOffset.UtcNow ? (DateTimeOffset?)LastTick : null;
 
         public void Add(int amount, DateTimeOffset timestamp)
         {
-            this.Update(timestamp);
+            Update(timestamp);
             if (amount == 0) return;
 
-            this.LastTick = new DateTimeOffset(Math.Max(this.LastTick.Ticks, timestamp.Ticks), TimeSpan.Zero);
-            this.Warnings += amount;
+            LastTick = new DateTimeOffset(Math.Max(LastTick.Ticks, timestamp.Ticks), TimeSpan.Zero);
+            Warnings += amount;
 
             var gotStrike = false;
-            while (this.Warnings >= WarningsInStrike)
+            while (Warnings >= WarningsInStrike)
             {
                 gotStrike = true;
-                this.Strikes++;
-                this.Warnings -= WarningsInStrike;
+                Strikes++;
+                Warnings -= WarningsInStrike;
             }
             if (gotStrike)
             {
-                this.LastTick = this.LastTick.AddDays(this.Strikes * MuteDaysPerStrike);
+                LastTick = LastTick.AddDays(Strikes * MuteDaysPerStrike);
             }
         }
 
@@ -53,7 +49,7 @@ namespace ForumCrawler
 
         public static WarningState FromDatabase(Warning[] warnings)
         {
-            var state = new WarningState(); 
+            var state = new WarningState();
             foreach (var item in warnings.Where(w => !w.RemoveDate.HasValue).OrderBy(w => w.IssueDate))
             {
                 state.Add(item.Amount, item.IssueDate);
@@ -61,7 +57,8 @@ namespace ForumCrawler
             state.Update(DateTimeOffset.UtcNow);
             return state;
         }
-        public class WarningDelayLogicV1
+
+        public static class WarningDelayLogicV1
         {
             public const int WarningExpiryDays = 3;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
@@ -82,7 +79,7 @@ namespace ForumCrawler
             }
         }
 
-        public class WarningDelayLogicV2
+        public static class WarningDelayLogicV2
         {
             public const int WarningExpiryDays = 9;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
@@ -103,5 +100,4 @@ namespace ForumCrawler
             }
         }
     }
-
 }

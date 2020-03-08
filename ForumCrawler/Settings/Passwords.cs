@@ -7,6 +7,6 @@
         public const string ForumPassword = "y36zDt440ijG";
         public const string DiscordToken = "MzI4NTcxODA2MDExMjI4MTYy.XY0vyA.DASbJX7n6YntZQiQGtV1kVfftag";
 
-        #endregion
+        #endregion hidden
     }
 }

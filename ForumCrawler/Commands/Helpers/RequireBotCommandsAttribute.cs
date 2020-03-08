@@ -1,10 +1,9 @@
-namespace ForumCrawler
+﻿namespace ForumCrawler
 {
-    public class RequireBotCommandsAttribute : RequireChannelAttribute
+    public sealed class RequireBotCommandsAttribute : RequireChannelAttribute
     {
         public RequireBotCommandsAttribute() : base(DiscordSettings.BotCommandsChannel)
         {
-            
         }
     }
 }
