@@ -125,9 +125,9 @@ namespace DiscordSocialScore
             if (message.Author.IsBot) return;
             if (message.Channel.Id == 329634826061742081 || // bot-commands
                 message.Channel.Id == 329339732662419457 || // funposting
-                message.Channel.Id == 596114917380325387)
+                message.Channel.Id == 596114917380325387) // other-languages
             {
-                return; // other-languages
+                return;
             }
 
             if (!(message.Author is SocketGuildUser guildUser)) return;
