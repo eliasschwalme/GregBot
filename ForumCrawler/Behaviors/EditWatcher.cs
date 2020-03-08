@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using DiffMatchPatch;
+﻿using DiffMatchPatch;
+
 using Discord;
 using Discord.WebSocket;
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
 namespace ForumCrawler
 {
-    static class EditWatcher
+    internal static class EditWatcher
     {
         public static void Bind(DiscordSocketClient client)
         {
@@ -30,7 +30,7 @@ namespace ForumCrawler
             {
                 var oldMessage = ToMessage(oldCache);
 
-                var oldContent = oldMessage?.Content ?? String.Empty;
+                var oldContent = oldMessage?.Content ?? string.Empty;
                 var newContent = userMessage.Resolve();
                 if (oldContent == newContent) return;
 
@@ -107,19 +107,18 @@ namespace ForumCrawler
         private static async Task PostEmbedAsync(DiscordSocketClient client, string title, Color color, ulong userId, IUser user, IMessageChannel channel, string diff, string attachment, ulong messageId)
         {
             var embed = GetEmbed(title, color, userId, user, channel, diff, attachment, messageId);
-            
+
             await client
                 .GetGuild(DiscordSettings.GuildId)
                 .GetTextChannel(DiscordSettings.LogsChannel)
-                .SendMessageAsync(String.Empty, embed: embed);
-
+                .SendMessageAsync(string.Empty, embed: embed);
         }
 
         private static Embed GetEmbed(string title, Color color, ulong userId, IUser user, IMessageChannel channel, string diff, string attachment, ulong? messageId)
         {
-			var addId = messageId == null ? "" : " (" + messageId + ")";
+            var addId = messageId == null ? "" : " (" + messageId + ")";
 
-			var builder = new EmbedBuilder()
+            var builder = new EmbedBuilder()
                 .WithAuthor(author => author
                     .WithIconUrl(user?.GetAvatarUrlOrDefault())
                     .WithName(user?.Username + "#" + (user?.Discriminator ?? "@" + userId.ToString()) + " " + title + ":"))
@@ -150,23 +149,24 @@ namespace ForumCrawler
             }
 
             return builder.Build();
-
         }
 
         private static string ToMarkdown(List<Diff> diffs)
         {
-            StringBuilder md = new StringBuilder();
-            foreach (Diff diff in diffs)
+            var md = new StringBuilder();
+            foreach (var diff in diffs)
             {
-                string text = diff.text.DiscordEscapeWithoutMentions();
+                var text = diff.text.DiscordEscapeWithoutMentions();
                 switch (diff.operation)
                 {
                     case Operation.INSERT:
                         md.Append("__**").Append(text).Append("**__");
                         break;
+
                     case Operation.DELETE:
                         md.Append("**~~").Append(text).Append("~~**");
                         break;
+
                     case Operation.EQUAL:
                         md.Append(text);
                         break;

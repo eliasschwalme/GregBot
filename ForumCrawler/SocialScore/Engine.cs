@@ -1,19 +1,20 @@
 ﻿using Discord;
 using Discord.WebSocket;
+
+using ForumCrawler;
+
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using ForumCrawler;
 using System.Timers;
 
 namespace DiscordSocialScore
 {
     public class Engine
     {
-        static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
+        private static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
         private readonly DiscordSocketClient client;
         private readonly RoleCacheProvider cacheProvider;
         private readonly Dictionary<ulong, DateTimeOffset> ignoreUsers = new Dictionary<ulong, DateTimeOffset>();
@@ -22,12 +23,12 @@ namespace DiscordSocialScore
         {
             this.client = client;
             this.cacheProvider = cacheProvider;
-            client.MessageReceived += this.Client_MessageReceived;
-            client.GuildMemberUpdated += this.Client_GuildMemberUpdated;
-            client.UserUpdated += this.Client_UserUpdated;
-            client.RoleUpdated += this.Client_RoleUpdated;
-            client.Ready += this.Client_Ready;
-            Score.OnUpdate += this.Score_OnUpdate;
+            client.MessageReceived += Client_MessageReceived;
+            client.GuildMemberUpdated += Client_GuildMemberUpdated;
+            client.UserUpdated += Client_UserUpdated;
+            client.RoleUpdated += Client_RoleUpdated;
+            client.Ready += Client_Ready;
+            Score.OnUpdate += Score_OnUpdate;
         }
 
         private Task Client_Ready()
@@ -44,7 +45,7 @@ namespace DiscordSocialScore
 
             if (oldUser.Username != newUser.Username)
             {
-                foreach (var guild in this.client.Guilds)
+                foreach (var guild in client.Guilds)
                 {
                     var guildUser = guild.GetUser(oldUser.Id);
                     if (guildUser == null) continue;
@@ -54,7 +55,8 @@ namespace DiscordSocialScore
                     if (noNick)
                     {
                         var targetNick = GetTargetNick(newUser.Username, null, scoreData);
-                        await guildUser.ModifyAsync(x => {
+                        await guildUser.ModifyAsync(x =>
+                        {
                             x.Nickname = targetNick;
                         });
                     }
@@ -66,16 +68,13 @@ namespace DiscordSocialScore
         {
             foreach (var guild in client.Guilds)
             {
-                var cache = this.cacheProvider.Get(guild);
+                var cache = cacheProvider.Get(guild);
                 await ScoreRoleManager.DeleteRolesAsync(cache);
                 await Score.UpdateDecays(OnScoreChangeAsync, userId => guild.GetUser(userId));
             }
         }
 
-        private async void Score_OnUpdate(ulong userId, ScoreData scoreData)
-        {
-            await OnScoreChangeAsync(userId, scoreData);
-        }
+        private async void Score_OnUpdate(ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(userId, scoreData);
 
         private async Task OnScoreChangeAsync(ulong userId, ScoreData scoreData)
         {
@@ -100,20 +99,20 @@ namespace DiscordSocialScore
                 await ScoreRoleManager.OrderRolesAsync(arg2.Guild);
             }
         }
-        
+
         private async Task Client_GuildMemberUpdated(SocketGuildUser oldUser, SocketGuildUser newUser)
         {
             if (newUser == null)
             {
-				Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null newUser");
-				return;
-			}
+                Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null newUser");
+                return;
+            }
 
             if (oldUser == null)
             {
-				Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null oldUser");
-				return;
-			}
+                Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null oldUser");
+                return;
+            }
 
             ignoreUsers.TryGetValue(newUser.Id, out var lastCall);
             if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
@@ -130,7 +129,7 @@ namespace DiscordSocialScore
 
             var guildUser = message.Author as SocketGuildUser;
             if (guildUser == null) return;
-            
+
             var scoreData = await Score.CreditActivityScoreAsync(guildUser);
             await UpdateUsernameAsync(guildUser, scoreData);
         }
@@ -140,8 +139,8 @@ namespace DiscordSocialScore
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
             var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
-            
-            var cache = this.cacheProvider.Get(user.Guild);
+
+            var cache = cacheProvider.Get(user.Guild);
 
             var muted = (await Database.GetMute(user.Id)) != null;
             var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(cache, user, scoreData) };
@@ -156,7 +155,8 @@ namespace DiscordSocialScore
 
                 Console.WriteLine("Updated username " + user.Nickname + " to " + targetNick);
 
-                await user.ModifyAsync(x => {
+                await user.ModifyAsync(x =>
+                {
                     x.Nickname = targetNick;
                     x.Roles = Optional.Create(user.Roles.Concat(toAdd).Except(toDelete).Where(r => r != r.Guild.EveryoneRole));
                 });
@@ -171,7 +171,7 @@ namespace DiscordSocialScore
             if (baseNickname.Contains("(") && baseNickname.Contains(")"))
                 show = true;
             if (!show) return baseNickname == username ? null : baseNickname;
-            
+
             var scoreSuffix = $" ({scoreData.ShortScoreString})";
             baseNickname = baseNickname.Substring(0, Math.Min(baseNickname.Length, 32 - scoreSuffix.Length));
             return baseNickname + scoreSuffix;

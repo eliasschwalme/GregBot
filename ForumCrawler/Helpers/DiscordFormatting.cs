@@ -1,11 +1,12 @@
-﻿using System.Linq;
-using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
-using System.Text.RegularExpressions;
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
@@ -13,13 +14,13 @@ namespace ForumCrawler
     {
         public static EmbedBuilder BuildStarboardEmbed(IGuildUser author, IMessage message, int gazers)
         {
-			var builder = new EmbedBuilder()
-				.WithAuthor(author.Nickname, author.GetAvatarUrl(size: 20))
-				.WithDescription(message.Content)
-				.WithFooter("In #" + message.Channel.Name)
-				.WithTimestamp(message.CreatedAt)
-				.WithColor(12345678)
-                
+            var builder = new EmbedBuilder()
+                .WithAuthor(author.Nickname, author.GetAvatarUrl(size: 20))
+                .WithDescription(message.Content)
+                .WithFooter("In #" + message.Channel.Name)
+                .WithTimestamp(message.CreatedAt)
+                .WithColor(12345678)
+
                 .WithFields
                 (
                     new EmbedFieldBuilder()
@@ -35,11 +36,11 @@ namespace ForumCrawler
 
             foreach (var attach in message.Attachments)
             {
-				builder.WithImageUrl(attach.Url);
-			}
+                builder.WithImageUrl(attach.Url);
+            }
 
-			return builder;
-		}
+            return builder;
+        }
 
         public static (List<string> content, string media) BBCodeToMarkdown(string bbCode)
         {
@@ -58,7 +59,7 @@ namespace ForumCrawler
             foreach (var matchUnsafe in matchesUnsafe.Cast<Match>().Skip(1).Take(matchesUnsafe.Count - 3))
             {
                 if (matchUnsafe.Groups[1].Success) // code tag
-                {                   
+                {
                     if (!tagStack.Contains("quote"))
                     {
                         currStr.Append($"```{matchUnsafe.Groups[1].Value.Replace("```", "` ` `")}```");
@@ -85,15 +86,19 @@ namespace ForumCrawler
                         case "b":
                             currStr.Append("**");
                             break;
+
                         case "i":
                             currStr.Append("*");
                             break;
+
                         case "u":
                             currStr.Append("__");
                             break;
+
                         case "s":
                             currStr.Append("~~");
                             break;
+
                         case "h":
                             commit();
                             break;
@@ -104,9 +109,10 @@ namespace ForumCrawler
                             currStr.AppendLine().AppendLine();
                             goto case "hide";
                         case "hide":
-                            if (!tagStack.Contains("cw") && !tagStack.Contains("hide") && !tagStack.Contains("spoiler")) { 
+                            if (!tagStack.Contains("cw") && !tagStack.Contains("hide") && !tagStack.Contains("spoiler"))
+                            {
                                 currStr.Append("||");
-                            }   
+                            }
                             break;
 
                         case "pre":
@@ -120,12 +126,13 @@ namespace ForumCrawler
                                 if (extra.Length > 0)
                                 {
                                     currStr.Append($"(quoting {extra})");
-                                } else
+                                }
+                                else
                                 {
                                     currStr.Append("(quote ommited)");
                                 }
                                 currStr.AppendLine().AppendLine();
-                            }                            
+                            }
                             break;
 
                         case "youtube":
@@ -133,6 +140,7 @@ namespace ForumCrawler
                             if (!open && lastExtra != "") currStr.Append($") ");
                             if (open) currStr.Append("https://www.youtube.com/watch?v=");
                             break;
+
                         case "world":
                             if (open) currStr.Append("https://everybodyedits.com/games/");
                             break;
@@ -141,19 +149,21 @@ namespace ForumCrawler
                             if (open && extra != "") currStr.Append($"[{extra}](");
                             if (!open && lastExtra != "") currStr.Append($") ");
                             break;
-                            
+
                         case "url":
                             if (open && extra != "") currStr.Append(" [");
-                            if (!open && lastExtra != "") currStr.Append($"]({lastExtra}) "); 
+                            if (!open && lastExtra != "") currStr.Append($"]({lastExtra}) ");
                             break;
 
                         case "list":
                             currStr.AppendLine();
                             if (!open) currStr.AppendLine();
                             break;
+
                         case "item":
                             if (open) currStr.AppendLine().Append("- ");
                             break;
+
                         case "color":
                             break;
 
@@ -181,9 +191,11 @@ namespace ForumCrawler
                             case "img":
                                 media.Add(value);
                                 break;
+
                             case "world":
                                 media.Add($"https://mm.sirjosh3917.com/{value}?scale=1");
                                 break;
+
                             case "youtube":
                                 media.Add("https://www.youtube.com/watch?v=" + value);
                                 break;
@@ -194,11 +206,11 @@ namespace ForumCrawler
                 }
             }
             commit();
-            return (res, String.Join(" ", media));
+            return (res, string.Join(" ", media));
         }
 
-
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+
         public static async Task AnnouncePostAsync(DiscordSocketClient client, Post post)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
@@ -222,7 +234,7 @@ namespace ForumCrawler
             var mediaMsg = media.Length > 0 ? "Referenced media: " + media : null;
 
 #if DEBUG
-			Console.WriteLine("Announcing post");
+            Console.WriteLine("Announcing post");
 #else
             await client
                 .GetGuild(DiscordSettings.GuildId)
@@ -245,12 +257,16 @@ namespace ForumCrawler
             {
                 case "Bots and Programming":
                     return "B&P";
+
                 case "Questions and Answers":
                     return "Q&A";
+
                 case "Bug Reports":
                     return "Bugs";
+
                 case "Off-Topic Discussion":
                     return "Off-Topic";
+
                 default:
                     return longName;
             }
@@ -260,7 +276,7 @@ namespace ForumCrawler
         {
             if (sb == null || sb.Length == 0) return sb;
 
-            int i = sb.Length - 1;
+            var i = sb.Length - 1;
             for (; i >= 0; i--)
                 if (!char.IsWhiteSpace(sb[i]))
                     break;

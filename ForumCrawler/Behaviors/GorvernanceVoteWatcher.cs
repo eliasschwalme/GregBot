@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
+
+using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    static class GovernanceVoteWatcher
+    internal static class GovernanceVoteWatcher
     {
         public static void Bind(DiscordSocketClient client)
         {
@@ -15,12 +16,13 @@ namespace ForumCrawler
 
         private static async Task Client_MessageReceived(SocketMessage arg)
         {
-            if (arg is SocketSystemMessage msg) {
+            if (arg is SocketSystemMessage msg)
+            {
                 if (msg.Type == MessageType.ChannelPinnedMessage && msg.Author.IsBot)
                 {
                     await msg.DeleteAsync();
                 }
-            } 
+            }
         }
 
         private static async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
@@ -40,7 +42,6 @@ namespace ForumCrawler
             var governanceVote = await Database.GetGovernanceVoteAsync(channel.Id);
             if (governanceVote == null) return;
             if (governanceVote.MessageId != message.Id) return;
-
 
             if (guildUser.IsStaffOrConsultant())
             {

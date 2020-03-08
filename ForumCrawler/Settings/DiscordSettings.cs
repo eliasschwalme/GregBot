@@ -1,16 +1,19 @@
-﻿using System;
-using System.Reflection;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+
 using DiscordSocialScore;
+
 using Microsoft.Extensions.DependencyInjection;
+
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    static class DiscordSettings
+    internal static class DiscordSettings
     {
 #if DEBUG
         public const string CommandPrefix = "dbg!";
@@ -32,7 +35,7 @@ namespace ForumCrawler
         public const ulong MutedRole = 333618650634387458;
         public const ulong EighteenRole = 407999201830764544;
         public const ulong ReportsChannel = 538738875229667329;
-		public const ulong StarboardChannel = 589926820825006120;
+        public const ulong StarboardChannel = 589926820825006120;
         public const ulong BannedEmote = 614156104682962954;
 
         public const int MinStarboardReactions = 10;
@@ -53,11 +56,8 @@ namespace ForumCrawler
 
             return client;
         }
-        
-        private static async Task Ready(DiscordSocketClient client)
-        {
-            await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
-        }
+
+        private static async Task Ready(DiscordSocketClient client) => await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
 
         private static Task Log(LogMessage message)
         {
@@ -95,41 +95,41 @@ namespace ForumCrawler
 
             Task.Run(async () =>
             {
-                int argPos = 0;
+                var argPos = 0;
 
                 // add ability to run report command via d!report
                 // lol this is so bad
                 if (message.HasStringPrefix("d!", ref argPos))
-				{
-					int argPosCopy = argPos;
-					if (message.HasStringPrefix("d!report", ref argPosCopy))
-					{
-						var context = new SocketCommandContext(client, message);
+                {
+                    var argPosCopy = argPos;
+                    if (message.HasStringPrefix("d!report", ref argPosCopy))
+                    {
+                        var context = new SocketCommandContext(client, message);
 
-						await context.Message.Channel.SendMessageAsync($":slight_frown: | [Warning] {message.Author.Mention} - d!report is obsolete! Please use g!report.")
-                            .ConfigureAwait(false);
+                        await context.Message.Channel.SendMessageAsync($":slight_frown: | [Warning] {message.Author.Mention} - d!report is obsolete! Please use g!report.")
+                            ;
 
-						var result = await commands.ExecuteAsync(context, argPos, services);
+                        var result = await commands.ExecuteAsync(context, argPos, services);
 
-						if (!result.IsSuccess)
-						{
-							await context.Message.Channel.SendErrorAsync(result.ErrorReason);
-						}
-					}
+                        if (!result.IsSuccess)
+                        {
+                            await context.Message.Channel.SendErrorAsync(result.ErrorReason);
+                        }
+                    }
 
-					return;
-				}
+                    return;
+                }
 
-				if (!(message.HasStringPrefix(CommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
+                if (!(message.HasStringPrefix(CommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
 
-				{
-					var context = new SocketCommandContext(client, message);
-					var result = await commands.ExecuteAsync(context, argPos, services);
-					if (!result.IsSuccess)
-					{
-						await context.Message.Channel.SendErrorAsync(result.ErrorReason);
-					}
-				}
+                {
+                    var context = new SocketCommandContext(client, message);
+                    var result = await commands.ExecuteAsync(context, argPos, services);
+                    if (!result.IsSuccess)
+                    {
+                        await context.Message.Channel.SendErrorAsync(result.ErrorReason);
+                    }
+                }
             });
 
             return Task.Delay(0);

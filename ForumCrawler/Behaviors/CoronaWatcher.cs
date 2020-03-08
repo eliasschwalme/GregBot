@@ -1,18 +1,19 @@
 ﻿using Discord.WebSocket;
+
+using Newtonsoft.Json;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace ForumCrawler
 {
-    class CoronaPayload
+    internal class CoronaPayload
     {
         public List<CoronaEntry> entries = null;
-        
+
         public class CoronaEntry
         {
             public string cases = null;
@@ -21,9 +22,10 @@ namespace ForumCrawler
         }
     }
 
-    class CoronaWatcher
+    internal class CoronaWatcher
     {
         public static string API_URL = "https://interactive-static.scmp.com/sheet/wuhan/viruscases.json";
+
         public static async void Bind(DiscordSocketClient client)
         {
             while (true)
@@ -37,7 +39,7 @@ namespace ForumCrawler
                         var coronaJson = await web.DownloadStringTaskAsync(new Uri(API_URL));
                         var coronaData = JsonConvert.DeserializeObject<CoronaPayload>(coronaJson);
                         var sumCases = coronaData.entries.Sum(entry => Convert.ToInt32(entry.cases?.Replace(",", "")?.Replace(".", "") ?? "0"));
-                        var sumDeaths = coronaData.entries.Sum(entry => Convert.ToInt32(entry.deaths?.Replace(",", "")?.Replace(".","") ?? "0"));
+                        var sumDeaths = coronaData.entries.Sum(entry => Convert.ToInt32(entry.deaths?.Replace(",", "")?.Replace(".", "") ?? "0"));
                         var sumRecovered = coronaData.entries.Sum(entry => Convert.ToInt32(entry.recovered?.Replace(",", "")?.Replace(".", "") ?? "0"));
 
                         await client.GetGuild(DiscordSettings.GuildId).GetTextChannel(329335303963803649).ModifyAsync(c =>
@@ -46,7 +48,7 @@ namespace ForumCrawler
                         });
                     }
                 }
-                catch (Exception ex) 
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex);
                 }

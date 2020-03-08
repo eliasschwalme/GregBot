@@ -1,20 +1,20 @@
 ﻿using Discord;
+
 using Newtonsoft.Json;
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
     public class ScoreUser
     {
-        const double ScorePoint_Multiplier = 0.0015;
-        const double ReserveRatio_Multiplier = 0.01;
+        private const double ScorePoint_Multiplier = 0.0015;
+        private const double ReserveRatio_Multiplier = 0.01;
 
         [EditorBrowsable(EditorBrowsableState.Never),
             DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -23,8 +23,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong UserId
         {
-            get { return (ulong)this.Id; }
-            set { this.Id = (long)value; }
+            get => (ulong)Id;
+            set => Id = (long)value;
         }
 
         public bool EarlyUserExempt { get; set; }
@@ -38,12 +38,13 @@ namespace ForumCrawler
 
         [Index]
         public double Score { get; set; } = 1;
+
         public Dictionary<ulong, DateTime> Boosts { get; set; } = new Dictionary<ulong, DateTime>();
-            
+
         public string BoostsAsString
         {
-            get { return JsonConvert.SerializeObject(this.Boosts); }
-            set { this.Boosts = JsonConvert.DeserializeObject<Dictionary<ulong, DateTime>>(value ?? "{}"); }
+            get => JsonConvert.SerializeObject(Boosts);
+            set => Boosts = JsonConvert.DeserializeObject<Dictionary<ulong, DateTime>>(value ?? "{}");
         }
 
         [NotMapped]
@@ -51,8 +52,8 @@ namespace ForumCrawler
         {
             get
             {
-                var boostLevel = this.GetBoostLevel();
-                return (this.IsPremium ? 250 : 0) +
+                var boostLevel = GetBoostLevel();
+                return (IsPremium ? 250 : 0) +
                     (boostLevel >= 3
                     ? 250
                     : boostLevel >= 2
@@ -64,51 +65,27 @@ namespace ForumCrawler
         }
 
         [NotMapped]
-        public int MaxEnergy
-        {
-            get
-            {
-                return 250 + this.BonusEnergy;
-            }
-        }
+        public int MaxEnergy => 250 + BonusEnergy;
 
         [NotMapped]
         public double ScorePoints
         {
-            get
-            {
-                return ToScorePoints(this.Score);
-            }
-            set
-            {
-                this.Score = ToScore(value);
-            }
+            get => ToScorePoints(Score);
+            set => Score = ToScore(value);
         }
 
         [NotMapped]
         public double TotalPoints
         {
-            get
-            {
-                return this.ScorePoints + ReservePoints;
-            }
-            set
-            {
-                this.AddTotalPoints(value - this.TotalPoints);
-            }
+            get => ScorePoints + ReservePoints;
+            set => AddTotalPoints(value - TotalPoints);
         }
 
         [NotMapped]
         public double Inertia
         {
-            get
-            {
-                return 1 - Math.Exp(-ReserveRatio_Multiplier * this.ReservePoints); // 1 - e ^(-0.01x))
-            }
-            set
-            {
-                this.ReservePoints = Math.Log(1 - value) / -ReserveRatio_Multiplier; // ln(1-x)/-0.01
-            }
+            get => 1 - Math.Exp(-ReserveRatio_Multiplier * ReservePoints); // 1 - e ^(-0.01x))
+            set => ReservePoints = Math.Log(1 - value) / -ReserveRatio_Multiplier; // ln(1-x)/-0.01
         }
 
         [NotMapped]
@@ -116,8 +93,8 @@ namespace ForumCrawler
         {
             get
             {
-                var boostLevel = this.GetBoostLevel();
-                return (this.IsPremium ? 1 : 0) + 
+                var boostLevel = GetBoostLevel();
+                return (IsPremium ? 1 : 0) +
                     (boostLevel >= 3
                     ? 1.0
                     : boostLevel >= 2
@@ -129,13 +106,7 @@ namespace ForumCrawler
         }
 
         [NotMapped]
-        public double ScoreAfterBoost
-        {
-            get
-            {
-                return this.Score + this.BonusScore;
-            }
-        }
+        public double ScoreAfterBoost => Score + BonusScore;
 
         [NotMapped]
         public ScoreData ScoreData
@@ -144,39 +115,27 @@ namespace ForumCrawler
             {
                 return new ScoreData
                 {
-                    Score = this.Score,
-                    BoostLevel = this.GetBoostLevel(),
-                    BonusScore = this.BonusScore,
-                    BonusEnergy = this.BonusEnergy,
-                    ShowInUsername = this.ShowInUsername
+                    Score = Score,
+                    BoostLevel = GetBoostLevel(),
+                    BonusScore = BonusScore,
+                    BonusEnergy = BonusEnergy,
+                    ShowInUsername = ShowInUsername
                 };
             }
         }
 
         [NotMapped]
-        public string LongScoreString
-        {
-            get
-            {
-                return string.Format(CultureInfo.InvariantCulture, "{0:F3}", this.ScoreAfterBoost);
-            }
-        }
+        public string LongScoreString => string.Format(CultureInfo.InvariantCulture, "{0:F3}", ScoreAfterBoost);
 
         [NotMapped]
-        public TimeSpan NextEnergy
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(288 * (1 - this.Energy % 1));
-            }
-        }
+        public TimeSpan NextEnergy => TimeSpan.FromSeconds(288 * (1 - Energy % 1));
 
         [NotMapped]
         public bool IsPremium { get; set; }
 
         public int GetBoostLevel()
         {
-            var boosts = this.GetBoostsLeft().Count;
+            var boosts = GetBoostsLeft().Count;
             return boosts >= 6
                 ? 3
                 : boosts >= 3
@@ -188,7 +147,7 @@ namespace ForumCrawler
 
         public Dictionary<ulong, TimeSpan> GetBoostsLeft()
         {
-            return this.Boosts
+            return Boosts
                 .Select(kv => new KeyValuePair<ulong, TimeSpan>(kv.Key, TimeSpan.FromDays(2) - (DateTime.UtcNow - kv.Value)))
                 .Where(boost => boost.Value.TotalSeconds > 0)
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -196,49 +155,42 @@ namespace ForumCrawler
 
         public TimeSpan GetBoostLeft(ulong userId)
         {
-            var boostDate = this.GetLastBoost(userId);
+            var boostDate = GetLastBoost(userId);
             return TimeSpan.FromDays(2) - (DateTime.UtcNow - boostDate);
         }
 
         public DateTime GetLastBoost(ulong userId)
         {
-            this.Boosts.TryGetValue(userId, out var boostDate);
+            Boosts.TryGetValue(userId, out var boostDate);
             return boostDate;
         }
 
-        public static double ToScorePoints(double score)
-        {
-            return Math.Log((5 - score) / 5) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
-        }
+        public static double ToScorePoints(double score) => Math.Log((5 - score) / 5) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
 
-
-        public static double ToScore(double scorePoints)
-        {
-            return 5 - 5 * Math.Exp(-ScorePoint_Multiplier * scorePoints); // 5 - 5 * e^(-0.0015x)
-        }
+        public static double ToScore(double scorePoints) => 5 - 5 * Math.Exp(-ScorePoint_Multiplier * scorePoints); // 5 - 5 * e^(-0.0015x)
 
         private void AddTotalPoints(double value)
         {
             if (value > 0)
             {
-                var p = 0.50 + 0.50 * this.Inertia;
+                var p = 0.50 + 0.50 * Inertia;
                 var q = 1 - p;
-                this.ReservePoints += q * value;
-                this.ScorePoints += p * value;
+                ReservePoints += q * value;
+                ScorePoints += p * value;
             }
             else
             {
-                var consumed = Math.Max(-this.ReservePoints, value);
-                this.ReservePoints += consumed;
-                this.ScorePoints += value - consumed;
+                var consumed = Math.Max(-ReservePoints, value);
+                ReservePoints += consumed;
+                ScorePoints += value - consumed;
             }
         }
 
         public void Update(IGuildUser user)
         {
-            this.IsPremium = user.PremiumSince.HasValue;
-            this.UpdateDecay();
-            this.UpdateEnergy();
+            IsPremium = user.PremiumSince.HasValue;
+            UpdateDecay();
+            UpdateEnergy();
         }
 
         private void UpdateEnergy()
@@ -246,38 +198,38 @@ namespace ForumCrawler
             var time = DateTime.UtcNow;
             var timeSinceLastEnergy = time - (LastEnergy ?? default(DateTime));
             var energyGenerated = timeSinceLastEnergy.TotalSeconds / 288;
-            this.Energy = Math.Min(this.MaxEnergy, this.Energy + energyGenerated);
-            this.LastEnergy = time;
+            Energy = Math.Min(MaxEnergy, Energy + energyGenerated);
+            LastEnergy = time;
             if (energyGenerated < 0)
             {
-                Console.WriteLine($"{this.Energy}, {energyGenerated}");
+                Console.WriteLine($"{Energy}, {energyGenerated}");
             }
         }
 
         private void UpdateDecay()
         {
-            var lastDecay = this.LastDecay ?? DateTime.UtcNow;
-            var lastActivity = this.LastActivity ?? default(DateTime);
+            var lastDecay = LastDecay ?? DateTime.UtcNow;
+            var lastActivity = LastActivity ?? default(DateTime);
             var duration = DateTime.UtcNow - lastDecay;
 
-            if (this.Score >= 1.0)
+            if (Score >= 1.0)
             {
-                this.TotalPoints -= duration.TotalHours * (Math.Pow(this.Score, 2) * 0.02 + Math.Pow(this.Score, 6) * 0.00002);
+                TotalPoints -= duration.TotalHours * (Math.Pow(Score, 2) * 0.02 + Math.Pow(Score, 6) * 0.00002);
 
                 var activityDays = (DateTime.UtcNow - lastActivity).TotalDays;
                 var durationDays = duration.TotalDays;
                 var inactivityTotal = Math.Max(0, activityDays * (activityDays - 1) / 2);
                 var inactivitySubstracted = Math.Max(0, (activityDays - durationDays) * (activityDays - durationDays - 1) / 2);
-                this.TotalPoints -= (inactivityTotal - inactivitySubstracted) * 5;
+                TotalPoints -= (inactivityTotal - inactivitySubstracted) * 5;
 
-                if (this.Score < 1.0) this.Score = 1;
+                if (Score < 1.0) Score = 1;
             }
             else
             {
-                this.Score += duration.TotalHours * 0.02;
+                Score += duration.TotalHours * 0.02;
             }
 
-            this.LastDecay = DateTime.UtcNow;
+            LastDecay = DateTime.UtcNow;
         }
     }
 
@@ -288,32 +240,13 @@ namespace ForumCrawler
         public double BonusScore { get; set; }
         public int BonusEnergy { get; set; }
         public bool ShowInUsername { get; set; }
-        public double ScoreAfterBoost => this.Score + this.BonusScore;
+        public double ScoreAfterBoost => Score + BonusScore;
 
-        public string Class {
-            get
-            {
-                return ToRoman((int)Math.Truncate(this.ScoreLevel));
-            }
-        }
+        public string Class => ToRoman((int)Math.Truncate(ScoreLevel));
 
-        public double ScoreLevel
-        {
-            get
-            {
-                return Math.Truncate(Math.Round(this.ScoreAfterBoost * 1000) / 100) / 10;
-            }
-        }
+        public double ScoreLevel => Math.Truncate(Math.Round(ScoreAfterBoost * 1000) / 100) / 10;
 
-        public string ShortScoreString
-        {
-            get
-            {
-                return string.Format(CultureInfo.InvariantCulture, "{0:F1}", this.ScoreLevel);
-            }
-        }
-
-
+        public string ShortScoreString => string.Format(CultureInfo.InvariantCulture, "{0:F1}", ScoreLevel);
 
         public static string ToRoman(int number)
         {

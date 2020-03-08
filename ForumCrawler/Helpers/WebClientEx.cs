@@ -5,10 +5,7 @@ namespace ForumCrawler
 {
     public class WebClientEx : WebClient
     {
-        public WebClientEx(CookieContainer container)
-        {
-            this.CookieContainer = container;
-        }
+        public WebClientEx(CookieContainer container) => CookieContainer = container;
 
         public CookieContainer CookieContainer { get; set; }
 
@@ -18,7 +15,7 @@ namespace ForumCrawler
             var request = r as HttpWebRequest;
             if (request != null)
             {
-                request.CookieContainer = this.CookieContainer;
+                request.CookieContainer = CookieContainer;
             }
             return r;
         }
@@ -26,14 +23,14 @@ namespace ForumCrawler
         protected override WebResponse GetWebResponse(WebRequest request, IAsyncResult result)
         {
             var response = base.GetWebResponse(request, result);
-            this.ReadCookies(response);
+            ReadCookies(response);
             return response;
         }
 
         protected override WebResponse GetWebResponse(WebRequest request)
         {
             var response = base.GetWebResponse(request);
-            this.ReadCookies(response);
+            ReadCookies(response);
             return response;
         }
 
@@ -43,7 +40,7 @@ namespace ForumCrawler
             if (response != null)
             {
                 var cookies = response.Cookies;
-                this.CookieContainer.Add(cookies);
+                CookieContainer.Add(cookies);
             }
         }
     }

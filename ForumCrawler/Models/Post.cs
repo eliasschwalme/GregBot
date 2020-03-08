@@ -2,14 +2,14 @@
 {
     public Post(string topic, int topicId, string poster, int posterId, string forum, int pnumber, int postId, string time)
     {
-        this.Topic = topic;
-        this.TopicId = topicId;
-        this.Poster = poster;
-        this.PosterId = posterId;
-        this.Forum = forum;
-        this.Pnumber = pnumber;
-        this.PostId = postId;
-        this.Time = time;
+        Topic = topic;
+        TopicId = topicId;
+        Poster = poster;
+        PosterId = posterId;
+        Forum = forum;
+        Pnumber = pnumber;
+        PostId = postId;
+        Time = time;
     }
 
     public string Topic { get; }
