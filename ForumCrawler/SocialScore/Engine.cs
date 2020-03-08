@@ -126,13 +126,13 @@ namespace DiscordSocialScore
             if (message.Channel.Id == 329634826061742081 || // bot-commands
                 message.Channel.Id == 329339732662419457 || // funposting
                 message.Channel.Id == 596114917380325387)
-			{
-				return; // other-languages
-			}
+            {
+                return; // other-languages
+            }
 
-			if (!(message.Author is SocketGuildUser guildUser)) return;
+            if (!(message.Author is SocketGuildUser guildUser)) return;
 
-			var scoreData = await Score.CreditActivityScoreAsync(guildUser);
+            var scoreData = await Score.CreditActivityScoreAsync(guildUser);
             await UpdateUsernameAsync(guildUser, scoreData);
         }
 

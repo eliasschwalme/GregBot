@@ -47,14 +47,14 @@ namespace DiffMatchPatch
                 return false;
             }
 
-			// If parameter cannot be cast to Diff return false.
-			if (!(obj is Diff p))
-			{
-				return false;
-			}
+            // If parameter cannot be cast to Diff return false.
+            if (!(obj is Diff p))
+            {
+                return false;
+            }
 
-			// Return true if the fields match.
-			return p.operation == operation && p.text == text;
+            // Return true if the fields match.
+            return p.operation == operation && p.text == text;
         }
 
         public bool Equals(Diff obj)

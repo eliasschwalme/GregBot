@@ -62,7 +62,7 @@ namespace ForumCrawler
                 {
                     if (!tagStack.Contains("quote"))
                     {
-						currStr.Append("```").Append(matchUnsafe.Groups[1].Value.Replace("```", "` ` `")).Append("```");
+                        currStr.Append("```").Append(matchUnsafe.Groups[1].Value.Replace("```", "` ` `")).Append("```");
                     }
                 }
                 else if (matchUnsafe.Groups[2].Success) // other tag
@@ -125,7 +125,7 @@ namespace ForumCrawler
                                 currStr.AppendLine().AppendLine();
                                 if (extra.Length > 0)
                                 {
-									currStr.Append("(quoting ").Append(extra).Append(')');
+                                    currStr.Append("(quoting ").Append(extra).Append(')');
                                 }
                                 else
                                 {
@@ -168,7 +168,7 @@ namespace ForumCrawler
                             break;
 
                         default:
-							currStr.Append('[').Append(tagAndModifierUnsafe.DiscordEscape()).Append(']');
+                            currStr.Append('[').Append(tagAndModifierUnsafe.DiscordEscape()).Append(']');
                             break;
                     }
 
@@ -278,12 +278,12 @@ namespace ForumCrawler
 
             var i = sb.Length - 1;
             for (; i >= 0; i--)
-			{
-				if (!char.IsWhiteSpace(sb[i]))
+            {
+                if (!char.IsWhiteSpace(sb[i]))
                     break;
-			}
+            }
 
-			if (i < sb.Length - 1)
+            if (i < sb.Length - 1)
                 sb.Length = i + 1;
 
             return sb;

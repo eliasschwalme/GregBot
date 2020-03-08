@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -1743,7 +1743,7 @@ namespace DiffMatchPatch
                     {
                         // Subsequent passes: fuzzy match.
                         rd[j] = (((rd[j + 1] << 1) | 1) & charMatch)
-								| (((last_rd[j + 1] | last_rd[j]) << 1) | 1) | last_rd[j + 1];
+                                | (((last_rd[j + 1] | last_rd[j]) << 1) | 1) | last_rd[j + 1];
                     }
                     if ((rd[j] & matchmask) != 0)
                     {

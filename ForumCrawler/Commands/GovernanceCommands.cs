@@ -349,18 +349,18 @@ namespace ForumCrawler
                 return format + user.Username + "#" + user.Discriminator + format;
             });
             var approvers = (await message.GetReactionUsersAsync(new Emoji("👍"), 1000).FlattenAsync())
-				.Select(user => guild.GetUserAsync(user.Id).Result)
-				.Where(user => user != null)
-				.OrderByDescending(user => user.IsStaffOrConsultant())
-				.Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
-				.Select(user => formatting(user))
+                .Select(user => guild.GetUserAsync(user.Id).Result)
+                .Where(user => user != null)
+                .OrderByDescending(user => user.IsStaffOrConsultant())
+                .Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
+                .Select(user => formatting(user))
                 .ToList();
             var decliners = (await message.GetReactionUsersAsync(new Emoji("👎"), 1000).FlattenAsync())
-				.Select(user => guild.GetUserAsync(user.Id).Result)
-				.Where(user => user != null)
-				.OrderByDescending(user => user.IsStaffOrConsultant())
-				.Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
-				.Select(user => formatting(user))
+                .Select(user => guild.GetUserAsync(user.Id).Result)
+                .Where(user => user != null)
+                .OrderByDescending(user => user.IsStaffOrConsultant())
+                .Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
+                .Select(user => formatting(user))
                 .ToList();
             return builder
                 .AddField($":thumbsup: ({approvers.Count})", approvers.Count == 0 ? "Nobody" : string.Join(", ", approvers))
