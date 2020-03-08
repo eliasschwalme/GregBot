@@ -1,13 +1,15 @@
-﻿using System;
+using Discord;
+using Discord.WebSocket;
+
+using EntityFramework.Extensions;
+
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
-using EntityFramework.Extensions;
 
 namespace ForumCrawler
 {
@@ -20,7 +22,7 @@ namespace ForumCrawler
                 var post = await ctx.StarboardPosts.FirstOrDefaultAsync
                 (
                     p => p.MessageId == (long)messageId
-                ).ConfigureAwait(false);
+                );
 
                 if (post == null)
                 {
@@ -73,7 +75,7 @@ namespace ForumCrawler
             {
                 var post = await ctx.StarboardPosts
                     .FirstOrDefaultAsync(p => p.MessageId == (long)messageId)
-                    .ConfigureAwait(false);
+                    ;
 
                 if (post == null)
                 {
@@ -105,12 +107,12 @@ namespace ForumCrawler
 #if DEBUG
                 var arr = ctx.Reports.ToArray();
 #endif
-                var gregReportMessage = await ctx.Reports.FirstAsync(report => report._reportsMessage == msgIdLong).ConfigureAwait(false);
+                var gregReportMessage = await ctx.Reports.FirstAsync(report => report._reportsMessage == msgIdLong);
 
                 gregReportMessage.ModeratorId = moderator.Id;
                 gregReportMessage.Status = status;
 
-                await ctx.SaveChangesAsync().ConfigureAwait(false);
+                await ctx.SaveChangesAsync();
             }
         }
 
@@ -131,18 +133,18 @@ namespace ForumCrawler
                     Timestamp = report.Timestamp
                 });
 
-                await ctx.SaveChangesAsync().ConfigureAwait(false);
+                await ctx.SaveChangesAsync();
             }
         }
 
-		public static async Task DeleteStarboardEntry(ulong messageId)
+        public static async Task DeleteStarboardEntry(ulong messageId)
         {
             using (var ctx = new DatabaseContext())
             {
                 var post = await ctx.StarboardPosts.FirstOrDefaultAsync
                 (
                     p => p.MessageId == (long)messageId
-                ).ConfigureAwait(false);
+                );
 
                 if (post == null)
                 {
@@ -163,10 +165,10 @@ namespace ForumCrawler
             {
                 var user = await context.ScoreUsers
                     .FirstAsync(userPredicate)
-                    .ConfigureAwait(false);
+                    ;
 
                 var users = await context.ScoreUsers
-                    .ToListAsync().ConfigureAwait(false);
+                    .ToListAsync();
 
                 var query = users
                     .Where(u => u.Boosts.Keys.Contains(user.UserId))
@@ -213,7 +215,7 @@ namespace ForumCrawler
 
         public static async Task<bool> IsScoreUserExempt(IGuildUser guildUser)
         {
-            var user = await GetOrCreateScoreUserAsync(guildUser).ConfigureAwait(false);
+            var user = await GetOrCreateScoreUserAsync(guildUser);
             return user.EarlyUserExempt;
         }
 
@@ -289,7 +291,6 @@ namespace ForumCrawler
             {
                 context.GovernanceVotes.Add(vote);
                 await context.SaveChangesAsync();
-
             }
         }
 

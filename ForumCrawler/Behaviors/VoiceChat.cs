@@ -1,25 +1,21 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
+
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    class VoiceChat
+    internal static class VoiceChat
     {
-        public static void Bind(DiscordSocketClient client)
-        {
-            client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
-        }
+        public static void Bind(DiscordSocketClient client) => client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
 
         private static async Task Client_UserVoiceStateUpdated(SocketUser user, SocketVoiceState old, SocketVoiceState state)
         {
             if (old.VoiceChannel?.Id != state.VoiceChannel?.Id)
             {
                 if (old.VoiceChannel != null)
-                await UpdatePermissionsAsync(user, old.VoiceChannel,false);
+                    await UpdatePermissionsAsync(user, old.VoiceChannel, false);
                 if (state.VoiceChannel != null)
                     await UpdatePermissionsAsync(user, state.VoiceChannel, true);
             }

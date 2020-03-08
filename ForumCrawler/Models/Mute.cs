@@ -1,13 +1,6 @@
-﻿using Discord;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
@@ -20,8 +13,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong UserId
         {
-            get { return (ulong)this.Id; }
-            set { this.Id = (long)value; }
+            get => (ulong)Id;
+            set => Id = (long)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -31,8 +24,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong IssuerId
         {
-            get { return (ulong)this.IssuerUId; }
-            set { this.IssuerUId = (long)value; }
+            get => (ulong)IssuerUId;
+            set => IssuerUId = (long)value;
         }
 
         public DateTime ExpiryDate { get; set; }

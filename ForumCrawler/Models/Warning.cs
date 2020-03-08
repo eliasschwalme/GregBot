@@ -1,13 +1,6 @@
-﻿using Discord;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
@@ -16,7 +9,6 @@ namespace ForumCrawler
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
 
-
         [EditorBrowsable(EditorBrowsableState.Never),
             DatabaseGenerated(DatabaseGeneratedOption.None), Index]
         public long UId { get; set; }
@@ -24,8 +16,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong UserId
         {
-            get { return (ulong)this.UId; }
-            set { this.UId = (long)value; }
+            get => (ulong)UId;
+            set => UId = (long)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -35,8 +27,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong MessageId
         {
-            get { return (ulong)this.MId; }
-            set { this.MId = (long)value; }
+            get => (ulong)MId;
+            set => MId = (long)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -46,8 +38,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong ChannelId
         {
-            get { return (ulong)this.CId; }
-            set { this.CId = (long)value; }
+            get => (ulong)CId;
+            set => CId = (long)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -55,9 +47,10 @@ namespace ForumCrawler
         public long? RemoverUId { get; set; }
 
         [NotMapped]
-        public ulong? RemoverId { 
-            get { return (ulong?)this.RemoverUId; }
-            set { this.RemoverUId = (long?)value; }
+        public ulong? RemoverId
+        {
+            get => (ulong?)RemoverUId;
+            set => RemoverUId = (long?)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -67,8 +60,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong IssuerId
         {
-            get { return (ulong)this.IssuerUId; }
-            set { this.IssuerUId = (long)value; }
+            get => (ulong)IssuerUId;
+            set => IssuerUId = (long)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -78,8 +71,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong? RemoveMessageId
         {
-            get { return (ulong?)this.RemoveMId; }
-            set { this.RemoveMId = (long?)value; }
+            get => (ulong?)RemoveMId;
+            set => RemoveMId = (long?)value;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never),
@@ -89,8 +82,8 @@ namespace ForumCrawler
         [NotMapped]
         public ulong? RemoveChannelId
         {
-            get { return (ulong?)this.RemoveCId; }
-            set { this.RemoveCId = (long?)value; }
+            get => (ulong?)RemoveCId;
+            set => RemoveCId = (long?)value;
         }
 
         public int Amount { get; set; }
@@ -100,6 +93,6 @@ namespace ForumCrawler
         public DateTime IssueDate { get; set; }
         public DateTime? RemoveDate { get; set; }
 
-        public string Type => this.Amount == 0 ? "Initial Warning" : this.Amount == 1 ? "Warning" : "Strike";
+        public string Type => Amount == 0 ? "Initial Warning" : Amount == 1 ? "Warning" : "Strike";
     }
 }

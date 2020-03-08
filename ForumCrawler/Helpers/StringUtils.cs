@@ -5,17 +5,15 @@ namespace ForumCrawler
 {
     public static class StringUtils
     {
-        static readonly char[] _escapeCharacters = { '\\', '/', ':', '[', '_', '*', '~', '`' };
+        private static readonly char[] _escapeCharacters = { '\\', '/', ':', '[', '_', '*', '~', '`' };
+
         public static string DiscordEscape(this string text)
         {
             var escapeChars = _escapeCharacters.Concat(new[] { '<' });
             return string.Concat(text.Select(c => escapeChars.Contains(c) ? "\\" + c : c.ToString()));
         }
 
-        public static string DiscordEscapeWithoutMentions(this string text)
-        {
-            return string.Concat(text.Select(c => _escapeCharacters.Contains(c) ? "\\" + c : c.ToString()));
-        }
+        public static string DiscordEscapeWithoutMentions(this string text) => string.Concat(text.Select(c => _escapeCharacters.Contains(c) ? "\\" + c : c.ToString()));
 
         public static string TruncateAtWord(this string text, int maxCharacters, string trailingStringIfTextCut = " ...")
         {

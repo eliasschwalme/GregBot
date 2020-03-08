@@ -1,9 +1,9 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ForumCrawler
@@ -11,6 +11,7 @@ namespace ForumCrawler
     public static class QuickReportWatcher
     {
         private static event Func<ulong, IUser, IUser, IMessageChannel, IUserMessage, string, Task> OnReport;
+
         private static event Func<ulong, IUser, Report.ReportStatus, Task> OnResponse;
 
         public static async Task Bind(DiscordSocketClient client)
@@ -54,7 +55,7 @@ namespace ForumCrawler
 
             report.Moderator = moderator;
             report.Status = status;
-            await Task.WhenAll(report.Reporters.Keys.Select(u => 
+            await Task.WhenAll(report.Reporters.Keys.Select(u =>
                 client.GetUser(u).SendMessageAsync("Your report was updated.", embed: GetReportEmbed(client, report, u))));
             await SendOrUpdateReport(client, report);
         }
@@ -64,15 +65,16 @@ namespace ForumCrawler
             if (!reports.TryGetValue(reportId, out var report))
             {
                 if (suspect == null || channel == null) throw new Exception("Unknown user / message / report id.");
-                reports.Add(reportId, report = new Report { 
+                reports.Add(reportId, report = new Report
+                {
                     Id = reportId,
-                    Timestamp = DateTimeOffset.UtcNow 
+                    Timestamp = DateTimeOffset.UtcNow
                 });
             }
 
             if (report.Status != Report.ReportStatus.Open)
             {
-                await reporter.SendMessageAsync("Message already handled by a moderator. Your report was cancelled.", 
+                await reporter.SendMessageAsync("Message already handled by a moderator. Your report was cancelled.",
                     embed: GetReportEmbed(client, report, reporter.Id));
                 return;
             }
@@ -83,7 +85,7 @@ namespace ForumCrawler
             report.Channel = channel ?? report.Channel;
             report.MessageId = message?.Id ?? report.MessageId;
 
-            var embed = GetReportHeaderEmbed(report); 
+            var embed = GetReportHeaderEmbed(report);
             if (report.Reporters[reporter.Id] != null)
                 embed.AddField("Reason", report.Reporters[reporter.Id]);
             await SendOrUpdateReport(client, report);
@@ -113,22 +115,20 @@ namespace ForumCrawler
                 report.ReportsMessageId = reportsMessage.Id;
             }
         }
-        private static string GetUnmentionedUser(IUser user)
-        {
-            return user.Username.DiscordEscape() + "#" + user.Discriminator;
-        }
+
+        private static string GetUnmentionedUser(IUser user) => user.Username.DiscordEscape() + "#" + user.Discriminator;
 
         private static Embed GetReportEmbed(DiscordSocketClient client, Report report, ulong? privacy)
         {
             var embed = GetReportHeaderEmbed(report);
 
-            var reportersStr = String.Join(", ", report.Reporters.Keys.Where(k => privacy == null || k == privacy.Value).Select(u => MentionUtils.MentionUser(u)));
+            var reportersStr = string.Join(", ", report.Reporters.Keys.Where(k => privacy == null || k == privacy.Value).Select(u => MentionUtils.MentionUser(u)));
             // Reported by
             embed.AddField($"Reported by {report.Reporters.Count} {(report.Reporters.Count == 1 ? "user" : "users")}",
                     string.IsNullOrEmpty(reportersStr) ? "<Hidden>" : reportersStr);
 
             // Reasons
-            foreach (var kv in report.Reporters.Where(kv => privacy == null || kv.Key == privacy.Value).Where(kv => kv.Value != null))
+            foreach (var kv in report.Reporters.Where(kv => (privacy == null || kv.Key == privacy.Value) && kv.Value != null))
             {
                 embed.AddField(GetUnmentionedUser(client.GetUser(kv.Key)) + "'s reason", kv.Value);
             }
@@ -159,10 +159,15 @@ namespace ForumCrawler
 
             // Message
             if (report.MessageId is ulong reportMessageId)
+            {
                 embed.AddField("Message", $"[Link](https://discordapp.com/channels/{DiscordSettings.GuildId}/{report.Channel.Id}/{reportMessageId})", true)
-                    .WithTimestamp(SnowflakeUtils.FromSnowflake(reportMessageId));
+                   .WithTimestamp(SnowflakeUtils.FromSnowflake(reportMessageId));
+            }
             else
+            {
                 embed.WithTimestamp(report.Timestamp);
+            }
+
             return embed;
         }
 
@@ -186,15 +191,9 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task FileReport(ulong reportId, IUser reporter, IUser suspect = null, IMessageChannel channel = null, IUserMessage message = null, string reason = null)
-        {
-            await OnReport(reportId, reporter, suspect, channel, message, reason);
-        }
+        public static async Task FileReport(ulong reportId, IUser reporter, IUser suspect = null, IMessageChannel channel = null, IUserMessage message = null, string reason = null) => await OnReport(reportId, reporter, suspect, channel, message, reason);
 
-        public static async Task FileResponse(ulong msgId, IUser moderator, Report.ReportStatus status)
-        {
-            await OnResponse(msgId, moderator, status);
-        }
+        public static async Task FileResponse(ulong msgId, IUser moderator, Report.ReportStatus status) => await OnResponse(msgId, moderator, status);
 
         public class Report
         {

@@ -1,8 +1,7 @@
 namespace ForumCrawler.Migrations
 {
-    using System;
     using System.Data.Entity.Migrations;
-    
+
     public partial class InitialCreate : DbMigration
     {
         public override void Up()
@@ -10,19 +9,15 @@ namespace ForumCrawler.Migrations
             CreateTable(
                 "dbo.Messages",
                 c => new
-                    {
-                        Id = c.Long(nullable: false),
-                        UId = c.Long(nullable: false),
-                        Content = c.String(),
-                        Attachment = c.String(),
-                    })
+                {
+                    Id = c.Long(nullable: false),
+                    UId = c.Long(nullable: false),
+                    Content = c.String(),
+                    Attachment = c.String(),
+                })
                 .PrimaryKey(t => t.Id);
-            
         }
-        
-        public override void Down()
-        {
-            DropTable("dbo.Messages");
-        }
+
+        public override void Down() => DropTable("dbo.Messages");
     }
 }

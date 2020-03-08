@@ -12,17 +12,17 @@ namespace ForumCrawler
             }
             if (t.TotalMinutes <= 1)
             {
-                return $@"{Math.Ceiling(t.TotalSeconds)} seconds";
+                return $"{Math.Ceiling(t.TotalSeconds)} seconds";
             }
             if (t.TotalHours <= 1)
             {
-                return $@"{Math.Ceiling(t.TotalMinutes)} minutes";
+                return $"{Math.Ceiling(t.TotalMinutes)} minutes";
             }
             if (t.TotalDays <= 1)
             {
-                return $@"{Math.Ceiling(t.TotalHours)} hours";
+                return $"{Math.Ceiling(t.TotalHours)} hours";
             }
-            return $@"{Math.Ceiling(t.TotalDays)} days";
+            return $"{Math.Ceiling(t.TotalDays)} days";
         }
     }
 }
