@@ -45,7 +45,7 @@ namespace ForumCrawler
 
         private static async Task QuickReportWatcher_OnResponse(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
         {
-            var report = reports.SingleOrDefault(x => x.Value.ReportsMessage?.Id == msgId).Value;
+            var report = reports.SingleOrDefault(x => x.Value.ReportsMessageId == msgId).Value;
             if (report == null) return;
             if (report.Status == status) return;
 
@@ -81,7 +81,7 @@ namespace ForumCrawler
             report.Reporters[reporter.Id] = reason ?? oldReason;
             report.Suspect = suspect ?? report.Suspect;
             report.Channel = channel ?? report.Channel;
-            report.Message = message ?? report.Message;
+            report.MessageId = message?.Id ?? report.MessageId;
 
             var embed = GetReportHeaderEmbed(report); 
             if (report.Reporters[reporter.Id] != null)
@@ -94,13 +94,14 @@ namespace ForumCrawler
         {
             var embed = GetReportEmbed(client, report, null);
 
-            if (report.ReportsMessage != null)
+            if (report.ReportsMessageId is ulong reportsMessageId)
             {
-                await report.ReportsMessage.ModifyAsync(m => m.Embed = embed);
+                var reportMessage = (IUserMessage)(await report.Channel.GetMessageAsync(reportsMessageId));
+                await reportMessage.ModifyAsync(m => m.Embed = embed);
             }
             else
             {
-                report.ReportsMessage = await client
+                var reportsMessage = await client
                     .GetGuild(DiscordSettings.GuildId)
                     .GetTextChannel(DiscordSettings.ReportsChannel)
 #if DEBUG
@@ -108,6 +109,8 @@ namespace ForumCrawler
 #else
                     .SendMessageAsync("@here A report has been sent in!", embed: embed);
 #endif
+
+                report.ReportsMessageId = reportsMessage.Id;
             }
         }
         private static string GetUnmentionedUser(IUser user)
@@ -155,9 +158,9 @@ namespace ForumCrawler
                 .WithFooter("ID: " + report.Id);
 
             // Message
-            if (report.Message != null)
-                embed.AddField("Message", $"[Link](https://discordapp.com/channels/{DiscordSettings.GuildId}/{report.Channel.Id}/{report.Message.Id})", true)
-                    .WithTimestamp(SnowflakeUtils.FromSnowflake(report.Message.Id));
+            if (report.MessageId is ulong reportMessageId)
+                embed.AddField("Message", $"[Link](https://discordapp.com/channels/{DiscordSettings.GuildId}/{report.Channel.Id}/{reportMessageId})", true)
+                    .WithTimestamp(SnowflakeUtils.FromSnowflake(reportMessageId));
             else
                 embed.WithTimestamp(report.Timestamp);
             return embed;
@@ -200,8 +203,8 @@ namespace ForumCrawler
             public Dictionary<ulong, string> Reporters { get; set; } = new Dictionary<ulong, string>();
             public IUser Suspect { get; set; }
             public IMessageChannel Channel { get; set; }
-            public IUserMessage Message { get; set; }
-            public IUserMessage ReportsMessage { get; set; }
+            public ulong? MessageId { get; set; }
+            public ulong? ReportsMessageId { get; set; }
 
             public DateTimeOffset Timestamp { get; set; }
             public ReportStatus Status { get; set; }
