@@ -35,7 +35,7 @@ namespace DiscordSocialScore
 
         public static async Task<IRole> GetScoreRoleForUserAsync(RoleCache cache, SocketGuildUser user, ScoreData scoreData)
         {
-            var specialRole = SpecialRoles.FirstOrDefault(kv => user.Roles.Any(r => r.Name == kv.Item1));
+            var specialRole = SpecialRoles.Find(kv => user.Roles.Any(r => r.Name == kv.Item1));
             return specialRole.Item1 == null
                 ? await GetScoreRole(cache, scoreData)
                 : await GetSpecialScoreRole(cache, specialRole.Item1, specialRole.Item2, scoreData);

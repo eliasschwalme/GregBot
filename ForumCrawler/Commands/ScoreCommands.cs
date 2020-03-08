@@ -13,9 +13,9 @@ namespace DiscordSocialScore
     [Group]
     public class ScoreCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly RoleCacheProvider provider;
-
-        public ScoreCommands(RoleCacheProvider provider) => this.provider = provider;
+        public ScoreCommands()
+        {
+        }
 
         [Command("help"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task GetHelp() => await ReplyAsync($"Help is here! <https://gist.github.com/Yonom/126e7b6741f4e865c8b41e9488cf578a>");
@@ -102,9 +102,7 @@ namespace DiscordSocialScore
         [Command("score show"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task ShowUsername()
         {
-            var guildUser = Context.User as IGuildUser;
-
-            if (guildUser == null)
+            if (!(Context.User is IGuildUser guildUser))
             {
                 throw new Exception("You're not a guild user!");
             }
@@ -116,9 +114,7 @@ namespace DiscordSocialScore
         [Command("score hide"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task HideUsername()
         {
-            var guildUser = Context.User as IGuildUser;
-
-            if (guildUser == null)
+            if (!(Context.User is IGuildUser guildUser))
             {
                 throw new Exception("You're not a guild user!");
             }
@@ -203,9 +199,7 @@ namespace DiscordSocialScore
                 throw new Exception("Invalid user specified!");
             }
 
-            var guildUser = Context.User as IGuildUser;
-
-            if (guildUser == null)
+            if (!(Context.User is IGuildUser guildUser))
             {
                 throw new Exception("You aren't a guild user!");
             }
@@ -230,7 +224,7 @@ namespace DiscordSocialScore
             var topPlayers = await Database.GetScoreUsersByLeaderboardPositionAsync(page - 1);
             var myPlayer = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.User as IGuildUser);
 
-            var topPlayerStrings = topPlayers.Select(t => GetLeaderboardPlayerString(t, 10 * (page - 1) + 1 + topPlayers.Count(t2 => t2.Score > t.Score)));
+            var topPlayerStrings = topPlayers.Select(t => GetLeaderboardPlayerString(t, (10 * (page - 1)) + 1 + topPlayers.Count(t2 => t2.Score > t.Score)));
             var myPlayerString = GetLeaderboardPlayerString(myPlayer.Item1, myPlayer.Item2);
 
             await ReplyAsync("```py\n" +

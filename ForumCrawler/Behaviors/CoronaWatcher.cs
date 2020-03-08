@@ -22,7 +22,7 @@ namespace ForumCrawler
         }
     }
 
-    internal class CoronaWatcher
+    internal static class CoronaWatcher
     {
         public static string API_URL = "https://interactive-static.scmp.com/sheet/wuhan/viruscases.json";
 

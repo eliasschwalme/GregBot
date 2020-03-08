@@ -128,7 +128,7 @@ namespace ForumCrawler
         public string LongScoreString => string.Format(CultureInfo.InvariantCulture, "{0:F3}", ScoreAfterBoost);
 
         [NotMapped]
-        public TimeSpan NextEnergy => TimeSpan.FromSeconds(288 * (1 - Energy % 1));
+        public TimeSpan NextEnergy => TimeSpan.FromSeconds(288 * (1 - (Energy % 1)));
 
         [NotMapped]
         public bool IsPremium { get; set; }
@@ -167,13 +167,13 @@ namespace ForumCrawler
 
         public static double ToScorePoints(double score) => Math.Log((5 - score) / 5) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
 
-        public static double ToScore(double scorePoints) => 5 - 5 * Math.Exp(-ScorePoint_Multiplier * scorePoints); // 5 - 5 * e^(-0.0015x)
+        public static double ToScore(double scorePoints) => 5 - (5 * Math.Exp(-ScorePoint_Multiplier * scorePoints)); // 5 - 5 * e^(-0.0015x)
 
         private void AddTotalPoints(double value)
         {
             if (value > 0)
             {
-                var p = 0.50 + 0.50 * Inertia;
+                var p = 0.50 + (0.50 * Inertia);
                 var q = 1 - p;
                 ReservePoints += q * value;
                 ScorePoints += p * value;
@@ -196,7 +196,7 @@ namespace ForumCrawler
         private void UpdateEnergy()
         {
             var time = DateTime.UtcNow;
-            var timeSinceLastEnergy = time - (LastEnergy ?? default(DateTime));
+            var timeSinceLastEnergy = time - (LastEnergy ?? default);
             var energyGenerated = timeSinceLastEnergy.TotalSeconds / 288;
             Energy = Math.Min(MaxEnergy, Energy + energyGenerated);
             LastEnergy = time;
@@ -209,12 +209,12 @@ namespace ForumCrawler
         private void UpdateDecay()
         {
             var lastDecay = LastDecay ?? DateTime.UtcNow;
-            var lastActivity = LastActivity ?? default(DateTime);
+            var lastActivity = LastActivity ?? default;
             var duration = DateTime.UtcNow - lastDecay;
 
             if (Score >= 1.0)
             {
-                TotalPoints -= duration.TotalHours * (Math.Pow(Score, 2) * 0.02 + Math.Pow(Score, 6) * 0.00002);
+                TotalPoints -= duration.TotalHours * ((Math.Pow(Score, 2) * 0.02) + (Math.Pow(Score, 6) * 0.00002));
 
                 var activityDays = (DateTime.UtcNow - lastActivity).TotalDays;
                 var durationDays = duration.TotalDays;

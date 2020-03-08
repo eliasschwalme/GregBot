@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    internal class RequireRoleParameterAttribute : ParameterPreconditionAttribute
+    internal sealed class RequireRoleParameterAttribute : ParameterPreconditionAttribute
     {
         public ulong RoleId { get; }
 

@@ -62,7 +62,7 @@ namespace ForumCrawler
                 {
                     if (!tagStack.Contains("quote"))
                     {
-                        currStr.Append($"```{matchUnsafe.Groups[1].Value.Replace("```", "` ` `")}```");
+						currStr.Append("```").Append(matchUnsafe.Groups[1].Value.Replace("```", "` ` `")).Append("```");
                     }
                 }
                 else if (matchUnsafe.Groups[2].Success) // other tag
@@ -125,7 +125,7 @@ namespace ForumCrawler
                                 currStr.AppendLine().AppendLine();
                                 if (extra.Length > 0)
                                 {
-                                    currStr.Append($"(quoting {extra})");
+									currStr.Append("(quoting ").Append(extra).Append(')');
                                 }
                                 else
                                 {
@@ -136,8 +136,8 @@ namespace ForumCrawler
                             break;
 
                         case "youtube":
-                            if (open && extra != "") currStr.Append($"[{extra}](");
-                            if (!open && lastExtra != "") currStr.Append($") ");
+                            if (open && extra != "") currStr.Append('[').Append(extra).Append("](");
+                            if (!open && lastExtra != "") currStr.Append(") ");
                             if (open) currStr.Append("https://www.youtube.com/watch?v=");
                             break;
 
@@ -146,13 +146,13 @@ namespace ForumCrawler
                             break;
 
                         case "img":
-                            if (open && extra != "") currStr.Append($"[{extra}](");
-                            if (!open && lastExtra != "") currStr.Append($") ");
+                            if (open && extra != "") currStr.Append('[').Append(extra).Append("](");
+                            if (!open && lastExtra != "") currStr.Append(") ");
                             break;
 
                         case "url":
                             if (open && extra != "") currStr.Append(" [");
-                            if (!open && lastExtra != "") currStr.Append($"]({lastExtra}) ");
+                            if (!open && lastExtra != "") currStr.Append("](").Append(lastExtra).Append(") ");
                             break;
 
                         case "list":
@@ -168,7 +168,7 @@ namespace ForumCrawler
                             break;
 
                         default:
-                            currStr.Append($"[{tagAndModifierUnsafe.DiscordEscape()}]");
+							currStr.Append('[').Append(tagAndModifierUnsafe.DiscordEscape()).Append(']');
                             break;
                     }
 
@@ -226,7 +226,7 @@ namespace ForumCrawler
 
             for (var i = 1; i <= content.Count / 2; i++)
             {
-                var title = content[i * 2 - 1];
+                var title = content[(i * 2) - 1];
                 var value = content[i * 2];
                 embed.AddField(title.Substring(0, Math.Min(title.Length, 256)), value.Substring(0, Math.Min(value.Length, 1024)));
             }
@@ -278,10 +278,12 @@ namespace ForumCrawler
 
             var i = sb.Length - 1;
             for (; i >= 0; i--)
-                if (!char.IsWhiteSpace(sb[i]))
+			{
+				if (!char.IsWhiteSpace(sb[i]))
                     break;
+			}
 
-            if (i < sb.Length - 1)
+			if (i < sb.Length - 1)
                 sb.Length = i + 1;
 
             return sb;

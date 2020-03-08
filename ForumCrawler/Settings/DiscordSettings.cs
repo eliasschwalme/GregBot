@@ -83,15 +83,14 @@ namespace ForumCrawler
                 .AddSingleton(client)
                 .AddSingleton<InteractiveService>()
                 .AddSingleton(new RoleCacheProvider(client))
-                .AddSingleton<Engine>(); ;
+                .AddSingleton<Engine>();
             var provider = services.BuildServiceProvider();
             return provider;
         }
 
         public static Task HandleCommand(DiscordSocketClient client, IServiceProvider services, CommandService commands, SocketMessage messageParam)
         {
-            var message = messageParam as SocketUserMessage;
-            if (message == null) return Task.Delay(0);
+            if (!(messageParam is SocketUserMessage message)) return Task.Delay(0);
 
             Task.Run(async () =>
             {

@@ -51,7 +51,7 @@ namespace DiscordSocialScore
             return Task.CompletedTask;
         }
 
-        public async Task<IRole> CreateOrUpdateRoleAsync(string roleName, GuildPermissions? permissions = null, Color color = default(Color), bool isHoisted = false)
+        public async Task<IRole> CreateOrUpdateRoleAsync(string roleName, GuildPermissions? permissions = null, Color color = default, bool isHoisted = false)
         {
             var name = ScoreRoleManager.RolePrefix + roleName;
             IRole res = Guild.Roles.FirstOrDefault(r => r.Name == name);

@@ -125,7 +125,7 @@ namespace ForumCrawler
                     string.IsNullOrEmpty(reportersStr) ? "<Hidden>" : reportersStr);
 
             // Reasons
-            foreach (var kv in report.Reporters.Where(kv => privacy == null || kv.Key == privacy.Value).Where(kv => kv.Value != null))
+            foreach (var kv in report.Reporters.Where(kv => (privacy == null || kv.Key == privacy.Value) && kv.Value != null))
             {
                 embed.AddField(GetUnmentionedUser(client.GetUser(kv.Key)) + "'s reason", kv.Value);
             }
@@ -156,10 +156,15 @@ namespace ForumCrawler
 
             // Message
             if (report.Message != null)
+            {
                 embed.AddField("Message", $"[Link](https://discordapp.com/channels/{DiscordSettings.GuildId}/{report.Channel.Id}/{report.Message.Id})", true)
-                    .WithTimestamp(SnowflakeUtils.FromSnowflake(report.Message.Id));
+                   .WithTimestamp(SnowflakeUtils.FromSnowflake(report.Message.Id));
+            }
             else
+            {
                 embed.WithTimestamp(report.Timestamp);
+            }
+
             return embed;
         }
 

@@ -116,10 +116,12 @@ csharp_space_between_method_call_empty_parameter_list_parentheses = false
 # Wrapping preferences 
 csharp_preserve_single_line_statements = true 
 csharp_preserve_single_line_blocks = true 
-# CS8625: Cannot convert null literal to non-nullable reference type.
+# CS8625: Cannot convert null literal to non-nullable reference type. 
 dotnet_diagnostic.CS8625.severity = error 
-# RCS1090: call 'ConfigureAwait(false).
+# RCS1090: Call 'ConfigureAwait(false)'. 
 dotnet_diagnostic.RCS1090.severity = none 
+# IDE0063: Use simple 'using' statement 
+csharp_prefer_simple_using_statement = true:none 
 ############################### 
 # VB Coding Conventions       # 
 ############################### 

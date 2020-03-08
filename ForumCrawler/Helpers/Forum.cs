@@ -11,11 +11,11 @@ namespace ForumCrawler
 {
     public static class Forum
     {
-        private const string IndexUrl = @"https://forums.everybodyedits.com/index.php";
-        private const string DiffIsBad = @"https://forums.everybodyedits.com/login.php";
-        private const string LoginUrl = @"https://forums.everybodyedits.com/login.php?action=in";
-        private const string Url = @"http://forums.everybodyedits.com/search.php?action=show_recent";
-        private const string DirectUrl = @"https://forums.everybodyedits.com/post.php?tid={0}&qid={1}";
+        private const string IndexUrl = "https://forums.everybodyedits.com/index.php";
+        private const string DiffIsBad = "https://forums.everybodyedits.com/login.php";
+        private const string LoginUrl = "https://forums.everybodyedits.com/login.php?action=in";
+        private const string Url = "http://forums.everybodyedits.com/search.php?action=show_recent";
+        private const string DirectUrl = "https://forums.everybodyedits.com/post.php?tid={0}&qid={1}";
         private static readonly CookieContainer _cookies = new CookieContainer();
 
         static Forum() => Login();

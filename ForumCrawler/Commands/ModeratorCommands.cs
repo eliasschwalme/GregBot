@@ -33,7 +33,7 @@ namespace ForumCrawler.Commands
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
-        public Task<Mute> MuteUser(IUser issuer, IUser user, DateTimeOffset expiry, string reason, bool shorten, bool sameAuthorShorten)
+        public static Task<Mute> MuteUser(IUser issuer, IUser user, DateTimeOffset expiry, string reason, bool shorten, bool sameAuthorShorten)
         {
             return MuteWatcher.MuteUser(new Mute
             {
@@ -101,7 +101,7 @@ namespace ForumCrawler.Commands
     [Group("warn"), Alias("warning", "warns", "warnings")]
     public class WarningCommands : InteractiveBase<SocketCommandContext>
     {
-        private EmbedBuilder AddWarningsToEmbed(EmbedBuilder embed, WarningState state)
+        private static EmbedBuilder AddWarningsToEmbed(EmbedBuilder embed, WarningState state)
         {
             if (state.Warnings > 0)
             {
@@ -134,7 +134,7 @@ namespace ForumCrawler.Commands
             return embed;
         }
 
-        private EmbedBuilder GetWarningEmbed(IUser user, Warning warning)
+        private static EmbedBuilder GetWarningEmbed(IUser user, Warning warning)
         {
             return new EmbedBuilder()
                 .WithAuthor(user)
@@ -150,14 +150,14 @@ namespace ForumCrawler.Commands
         private EmbedBuilder GetWarningIssuedEmbed(IUser user, Warning warning, WarningState state)
         {
             return (warning.Amount == 0 ? GetWarningEmbed(user, warning) : AddWarningsToEmbed(GetWarningEmbed(user, warning), state))
-                            .WithTitle($"**{(warning.Type)}**");
+                            .WithTitle($"**{warning.Type}**");
         }
 
         private async Task EditWarningInternalAsync(IUser user, long id, string reason, bool force)
         {
             await Database.WithWarningsAsync(user.Id, async history =>
             {
-                var warning = history.FirstOrDefault(w => w.Id == id);
+                var warning = Array.Find(history, w => w.Id == id);
                 if (warning == null)
                     throw new Exception("Invalid warning ID.");
                 if (warning.UserId != user.Id) // this check exists to catch typos in warning IDs
@@ -439,7 +439,7 @@ namespace ForumCrawler.Commands
                 await Context.Message.DeleteAsync();
             }
 
-            private bool TryGetRole(IGuild guild, out IRole muted)
+            private static bool TryGetRole(IGuild guild, out IRole muted)
             {
                 var query = guild.Roles
                     .Where(role => role.Id == DiscordSettings.EighteenRole)

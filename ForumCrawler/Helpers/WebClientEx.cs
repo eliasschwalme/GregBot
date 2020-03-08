@@ -12,12 +12,11 @@ namespace ForumCrawler
         protected override WebRequest GetWebRequest(Uri address)
         {
             var r = base.GetWebRequest(address);
-            var request = r as HttpWebRequest;
-            if (request != null)
-            {
-                request.CookieContainer = CookieContainer;
-            }
-            return r;
+			if (r is HttpWebRequest request)
+			{
+				request.CookieContainer = CookieContainer;
+			}
+			return r;
         }
 
         protected override WebResponse GetWebResponse(WebRequest request, IAsyncResult result)
@@ -36,12 +35,11 @@ namespace ForumCrawler
 
         private void ReadCookies(WebResponse r)
         {
-            var response = r as HttpWebResponse;
-            if (response != null)
-            {
-                var cookies = response.Cookies;
-                CookieContainer.Add(cookies);
-            }
-        }
+			if (r is HttpWebResponse response)
+			{
+				var cookies = response.Cookies;
+				CookieContainer.Add(cookies);
+			}
+		}
     }
 }

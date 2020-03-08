@@ -33,7 +33,7 @@ namespace DiffMatchPatch
             }
             else
             {
-                coords1 = (start1 + 1) + "," + length1;
+                coords1 = start1 + 1 + "," + length1;
             }
             if (length2 == 0)
             {
@@ -45,7 +45,7 @@ namespace DiffMatchPatch
             }
             else
             {
-                coords2 = (start2 + 1) + "," + length2;
+                coords2 = start2 + 1 + "," + length2;
             }
             var text = new StringBuilder();
             text.Append("@@ -").Append(coords1).Append(" +").Append(coords2)

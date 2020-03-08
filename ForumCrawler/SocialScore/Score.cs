@@ -96,7 +96,7 @@ namespace DiscordSocialScore
 
                 var randomEff = Math.Max(0.5, Math.Min(2.5, random.RandomNormal(1.5, 0.4)));
 
-                var discount = 0.25 + 0.50 * Math.Min(3, sinceLastBoost.TotalDays) / 3 + 0.25 * Math.Min(7, sinceLastBoost.TotalDays) / 7;
+                var discount = 0.25 + (0.50 * Math.Min(3, sinceLastBoost.TotalDays) / 3) + (0.25 * Math.Min(7, sinceLastBoost.TotalDays) / 7);
                 var scoreDifference = upvoter.Score - target.Score;
                 var scoreDiffModifier = Math.Sqrt(1 + Math.Max(-0.75, scoreDifference));
 
@@ -194,7 +194,9 @@ namespace DiscordSocialScore
 
                 if (user.LastActivity.HasValue
                 && DateTimeOffset.UtcNow.Subtract(user.LastActivity.Value).TotalMinutes < 1.5)
+                {
                     return (false, user.ScoreData);
+                }
 
                 var increase = 3.5 - Math.Max(0.25, Math.Min(3, user.Score));
 
@@ -223,34 +225,37 @@ namespace DiscordSocialScore
 
     public static class MyEnumerableExtensions
     {
-        private static readonly Random rand = new Random();
-
         public static IEnumerable<T> LastN<T>(this IList<T> list, int n)
         {
             if (list == null)
             {
-                throw new ArgumentNullException("list");
+                throw new ArgumentNullException(nameof(list));
             }
 
-            if (list.Count - n < 0)
-            {
-                n = list.Count;
-            }
+            return LastN2();
 
-            for (var i = list.Count - n; i < list.Count; i++)
+            IEnumerable<T> LastN2()
             {
-                yield return list[i];
+                if (list.Count - n < 0)
+                {
+                    n = list.Count;
+                }
+
+                for (var i = list.Count - n; i < list.Count; i++)
+                {
+                    yield return list[i];
+                }
             }
         }
 
         public static double RandomNormal(this Random random, double mean, double stdDev)
         {
-            var u1 = 1.0 - rand.NextDouble(); //uniform(0,1] random doubles
-            var u2 = 1.0 - rand.NextDouble();
+            var u1 = 1.0 - random.NextDouble(); //uniform(0,1] random doubles
+            var u2 = 1.0 - random.NextDouble();
             var randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
                          Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
             var randNormal =
-                         mean + stdDev * randStdNormal; //random normal(mean,stdDev^2)
+                         mean + (stdDev * randStdNormal); //random normal(mean,stdDev^2)
             return randNormal;
         }
     }

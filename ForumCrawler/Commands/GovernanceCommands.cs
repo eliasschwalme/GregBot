@@ -64,18 +64,18 @@ namespace ForumCrawler
             var ageLeft = TimeSpan.FromTicks((channel.CreatedAt.AddDays(3) - DateTimeOffset.UtcNow).Ticks);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff() && ageInDays < 10) throw new Exception("Only the owner or staff can finalize suggestions.");
-            if (ageInDays < 3 && (!force || !user.IsStaff())) throw new Exception($"Suggestion too young. " +
+            if (ageInDays < 3 && (!force || !user.IsStaff()))
+            {
+                throw new Exception($"Suggestion too young. " +
                 $"{ToHumanCounter(ageLeft.Days, "day")}, {ToHumanCounter(ageLeft.Hours, "hour")}, {ToHumanCounter(ageLeft.Minutes, "minute")} left.");
+            }
 
             var textChannel = (SocketTextChannel)channel;
             var message = (IUserMessage)await Context.Channel.GetMessageAsync(vote.MessageId);
 
             await Context.Message.DeleteAsync();
 
-            await textChannel.ModifyAsync(props =>
-            {
-                props.Name = "vote" + textChannel.Name;
-            });
+            await textChannel.ModifyAsync(props => props.Name = "vote" + textChannel.Name);
             await ReorderChannels();
 
             await message.AddReactionsAsync(new[] { new Emoji("👍"), new Emoji("👎") });
@@ -141,14 +141,8 @@ namespace ForumCrawler
                 var editEmbed = EditWatcher.GetEditEmbed(user, "edited their suggestion", submissionOld.Description, submissionNew.Description);
                 if (editEmbed != null)
                 {
-                    await message.ModifyAsync(props =>
-                    {
-                        props.Embed = submissionNew;
-                    });
-                    await textChannel.ModifyAsync(props =>
-                    {
-                        props.Topic = submissionNew.Description;
-                    });
+                    await message.ModifyAsync(props => props.Embed = submissionNew);
+                    await textChannel.ModifyAsync(props => props.Topic = submissionNew.Description);
                     await channel.SendMessageAsync(string.Empty, embed: editEmbed);
                 }
             }
@@ -170,7 +164,7 @@ namespace ForumCrawler
 
             var guild = Context.Guild;
 
-            var channels = guild.CategoryChannels.Where(c => c.Id == DiscordSettings.GovernanceArea).First().Channels.OrderBy(c => c.Position).ToList();
+            var channels = guild.CategoryChannels.First(c => c.Id == DiscordSettings.GovernanceArea).Channels.OrderBy(c => c.Position).ToList();
             await guild.ReorderChannelsAsync(channels.Select((c, i) => new ReorderChannelProperties(c.Id, i)));
             var channel = await guild.CreateTextChannelAsync("_" + shortName, props =>
             {
@@ -250,7 +244,7 @@ namespace ForumCrawler
             }
         }
 
-        private Embed GetSuggestionEmbed(IUser user, string suggestion)
+        private static Embed GetSuggestionEmbed(IUser user, string suggestion)
         {
             return new EmbedBuilder()
              .WithAuthor(author => author
@@ -285,21 +279,21 @@ namespace ForumCrawler
         public async Task ReorderChannels()
         {
             var guild = Context.Guild;
-            var channels = guild.CategoryChannels.Where(c => c.Id == DiscordSettings.GovernanceArea).First().Channels.OrderByDescending(c => c.Id).ToList();
+            var channels = guild.CategoryChannels.First(c => c.Id == DiscordSettings.GovernanceArea).Channels.OrderByDescending(c => c.Id).ToList();
             var normal = channels.Where(c => !c.IsSuggestionChannelByName()).Reverse();
             var vote = channels.Where(c => c.Name.StartsWith("vote_"));
             var draft = channels.Where(c => c.Name.StartsWith("_"));
             await guild.ReorderChannelsAsync(normal.Concat(vote).Concat(draft).Select((c, i) => new ReorderChannelProperties(c.Id, i)));
         }
 
-        private async Task ArchiveChannel(ISocketMessageChannel channel, Func<string, IUserMessage, Task> callback)
+        private static async Task ArchiveChannel(ISocketMessageChannel channel, Func<string, IUserMessage, Task> callback)
         {
             var history = new StringBuilder();
             var messages = (await channel.GetMessagesAsync(limit: 5000).FlattenAsync()).ToList();
             foreach (var message in Enumerable.Reverse(messages))
             {
-                history.Append("[" + message.Timestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss") + " UTC] ");
-                history.Append(message.Author.Username + "#" + (message.Author.Discriminator ?? "@" + message.Author.Id.ToString()));
+                history.Append('[').Append(message.Timestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss")).Append(" UTC] ");
+                history.Append(message.Author.Username).Append('#').Append(message.Author.Discriminator ?? "@" + message.Author.Id.ToString());
                 history.Append(": ");
 
                 if (message is IUserMessage userMsg)
@@ -308,7 +302,7 @@ namespace ForumCrawler
 
                     if (userMsg.Reactions.Count > 0)
                     {
-                        history.Append(" (" + string.Join(", ", userMsg.Reactions.Select(r => r.Key.Name + ": " + r.Value.ReactionCount)) + ")");
+                        history.Append(" (").Append(string.Join(", ", userMsg.Reactions.Select(r => r.Key.Name + ": " + r.Value.ReactionCount))).Append(')');
                     }
                 }
 
@@ -316,22 +310,22 @@ namespace ForumCrawler
                 {
                     foreach (var embed in message.Embeds)
                     {
-                        history.Append(" " + embed.Author?.Name + " " + embed.Description);
+                        history.Append(' ').Append(embed.Author?.Name).Append(' ').Append(embed.Description);
                     }
                 }
 
                 foreach (var attachment in message.Attachments)
                 {
-                    history.Append(" (Attachment: " + attachment.Url + ")");
+                    history.Append(" (Attachment: ").Append(attachment.Url).Append(')');
                 }
 
                 if (message.EditedTimestamp.HasValue)
                 {
-                    history.Append(" (Edited: " + message.EditedTimestamp.Value.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss") + " UTC)");
+                    history.Append(" (Edited: ").Append(message.EditedTimestamp.Value.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss")).Append(" UTC)");
                 }
                 history.AppendLine();
             }
-            await callback(history.ToString(), (IUserMessage)messages.Where(m => m.Author.IsBot && m.Embeds.Any()).Last());
+            await callback(history.ToString(), (IUserMessage)messages.Last(m => m.Author.IsBot && m.Embeds.Any()));
         }
 
         public static async Task UpdateBillboardAsync(IGuild guild, IUserMessage message, ISocketMessageChannel channel, GovernanceVote vote)
@@ -355,20 +349,18 @@ namespace ForumCrawler
                 return format + user.Username + "#" + user.Discriminator + format;
             });
             var approvers = (await message.GetReactionUsersAsync(new Emoji("👍"), 1000).FlattenAsync())
-                .Select(user => guild.GetUserAsync(user.Id).Result)
-                .Where(user => user != null)
-                .OrderByDescending(user => user.IsStaffOrConsultant())
-                .Where(user => filter?.Invoke(user) ?? true)
-                .Where(user => !user.IsBot)
-                .Select(user => formatting(user))
+				.Select(user => guild.GetUserAsync(user.Id).Result)
+				.Where(user => user != null)
+				.OrderByDescending(user => user.IsStaffOrConsultant())
+				.Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
+				.Select(user => formatting(user))
                 .ToList();
             var decliners = (await message.GetReactionUsersAsync(new Emoji("👎"), 1000).FlattenAsync())
-                .Select(user => guild.GetUserAsync(user.Id).Result)
-                .Where(user => user != null)
-                .OrderByDescending(user => user.IsStaffOrConsultant())
-                .Where(user => filter?.Invoke(user) ?? true)
-                .Where(user => !user.IsBot)
-                .Select(user => formatting(user))
+				.Select(user => guild.GetUserAsync(user.Id).Result)
+				.Where(user => user != null)
+				.OrderByDescending(user => user.IsStaffOrConsultant())
+				.Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
+				.Select(user => formatting(user))
                 .ToList();
             return builder
                 .AddField($":thumbsup: ({approvers.Count})", approvers.Count == 0 ? "Nobody" : string.Join(", ", approvers))

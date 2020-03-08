@@ -125,12 +125,14 @@ namespace DiscordSocialScore
             if (message.Author.IsBot) return;
             if (message.Channel.Id == 329634826061742081 || // bot-commands
                 message.Channel.Id == 329339732662419457 || // funposting
-                message.Channel.Id == 596114917380325387) return; // other-languages
+                message.Channel.Id == 596114917380325387)
+			{
+				return; // other-languages
+			}
 
-            var guildUser = message.Author as SocketGuildUser;
-            if (guildUser == null) return;
+			if (!(message.Author is SocketGuildUser guildUser)) return;
 
-            var scoreData = await Score.CreditActivityScoreAsync(guildUser);
+			var scoreData = await Score.CreditActivityScoreAsync(guildUser);
             await UpdateUsernameAsync(guildUser, scoreData);
         }
 
@@ -163,7 +165,7 @@ namespace DiscordSocialScore
             }
         }
 
-        private string GetTargetNick(string username, string nickname, ScoreData scoreData)
+        private static string GetTargetNick(string username, string nickname, ScoreData scoreData)
         {
             var baseNickname = GetBaseNick(username, nickname);
 

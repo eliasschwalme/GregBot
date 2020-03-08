@@ -25,8 +25,7 @@ namespace ForumCrawler
             if (newMessage.Author.IsBot) return;
             if (newMessage.Content == null) return;
 
-            var userMessage = newMessage as IUserMessage;
-            if (userMessage != null)
+            if (newMessage is IUserMessage userMessage)
             {
                 var oldMessage = ToMessage(oldCache);
 
@@ -60,8 +59,7 @@ namespace ForumCrawler
         {
             if (cached.HasValue)
             {
-                var userMessage = cached.Value as IUserMessage;
-                if (userMessage != null)
+                if (cached.Value is IUserMessage userMessage)
                 {
                     return ToMessage(userMessage);
                 }

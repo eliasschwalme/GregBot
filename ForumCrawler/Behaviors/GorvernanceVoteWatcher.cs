@@ -29,8 +29,7 @@ namespace ForumCrawler
         {
             if (!channel.IsSuggestionChannelByName()) return;
 
-            var guildUser = reaction.User.GetValueOrDefault() as IGuildUser;
-            if (guildUser == null) return;
+            if (!(reaction.User.GetValueOrDefault() is IGuildUser guildUser)) return;
 
             var msg = await message.GetOrDownloadAsync();
             if (!channel.IsSuggestionChannelFinalized() && msg.Author.IsBot && !guildUser.IsBot)

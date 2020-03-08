@@ -58,7 +58,7 @@ namespace ForumCrawler
             return state;
         }
 
-        public class WarningDelayLogicV1
+        public static class WarningDelayLogicV1
         {
             public const int WarningExpiryDays = 3;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;
@@ -79,7 +79,7 @@ namespace ForumCrawler
             }
         }
 
-        public class WarningDelayLogicV2
+        public static class WarningDelayLogicV2
         {
             public const int WarningExpiryDays = 9;
             public const int StrikeExpiryDays = WarningExpiryDays * WarningsInStrike;

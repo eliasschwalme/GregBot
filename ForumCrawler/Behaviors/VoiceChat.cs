@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    internal class VoiceChat
+    internal static class VoiceChat
     {
         public static void Bind(DiscordSocketClient client) => client.UserVoiceStateUpdated += Client_UserVoiceStateUpdated;
 

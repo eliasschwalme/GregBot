@@ -127,7 +127,7 @@ namespace DiffMatchPatch
             // Restore the prefix and suffix.
             if (commonprefix.Length != 0)
             {
-                diffs.Insert(0, (new Diff(Operation.EQUAL, commonprefix)));
+                diffs.Insert(0, new Diff(Operation.EQUAL, commonprefix));
             }
             if (commonsuffix.Length != 0)
             {
@@ -345,7 +345,7 @@ namespace DiffMatchPatch
                 {
                     var k1_offset = v_offset + k1;
                     int x1;
-                    if (k1 == -d || k1 != d && v1[k1_offset - 1] < v1[k1_offset + 1])
+                    if (k1 == -d || (k1 != d && v1[k1_offset - 1] < v1[k1_offset + 1]))
                     {
                         x1 = v1[k1_offset + 1];
                     }
@@ -392,7 +392,7 @@ namespace DiffMatchPatch
                 {
                     var k2_offset = v_offset + k2;
                     int x2;
-                    if (k2 == -d || k2 != d && v2[k2_offset - 1] < v2[k2_offset + 1])
+                    if (k2 == -d || (k2 != d && v2[k2_offset - 1] < v2[k2_offset + 1]))
                     {
                         x2 = v2[k2_offset + 1];
                     }
@@ -509,7 +509,7 @@ namespace DiffMatchPatch
      * @return Encoded string.
      */
 
-        private string diff_linesToCharsMunge(string text, List<string> lineArray,
+        private static string diff_linesToCharsMunge(string text, List<string> lineArray,
             Dictionary<string, int> lineHash)
         {
             var lineStart = 0;
@@ -531,13 +531,13 @@ namespace DiffMatchPatch
 
                 if (lineHash.ContainsKey(line))
                 {
-                    chars.Append(((char)lineHash[line]));
+                    chars.Append((char)lineHash[line]);
                 }
                 else
                 {
                     lineArray.Add(line);
                     lineHash.Add(line, lineArray.Count - 1);
-                    chars.Append(((char)(lineArray.Count - 1)));
+                    chars.Append((char)(lineArray.Count - 1));
                 }
             }
             return chars.ToString();
@@ -550,7 +550,7 @@ namespace DiffMatchPatch
      * @param lineArray List of unique strings.
      */
 
-        protected void diff_charsToLines(ICollection<Diff> diffs,
+        protected static void diff_charsToLines(ICollection<Diff> diffs,
             List<string> lineArray)
         {
             StringBuilder text;
@@ -572,7 +572,7 @@ namespace DiffMatchPatch
      * @return The number of characters common to the start of each string.
      */
 
-        public int diff_commonPrefix(string text1, string text2)
+        public static int diff_commonPrefix(string text1, string text2)
         {
             // Performance analysis: http://neil.fraser.name/news/2007/10/09/
             var n = Math.Min(text1.Length, text2.Length);
@@ -593,7 +593,7 @@ namespace DiffMatchPatch
      * @return The number of characters common to the end of each string.
      */
 
-        public int diff_commonSuffix(string text1, string text2)
+        public static int diff_commonSuffix(string text1, string text2)
         {
             // Performance analysis: http://neil.fraser.name/news/2007/10/09/
             var text1_length = text1.Length;
@@ -617,7 +617,7 @@ namespace DiffMatchPatch
      *     string and the start of the second string.
      */
 
-        protected int diff_commonOverlap(string text1, string text2)
+        protected static int diff_commonOverlap(string text1, string text2)
         {
             // Cache the text lengths to prevent multiple calls.
             var text1_length = text1.Length;
@@ -1330,7 +1330,7 @@ namespace DiffMatchPatch
      * @return Location within text2.
      */
 
-        public int diff_xIndex(List<Diff> diffs, int loc)
+        public static int diff_xIndex(List<Diff> diffs, int loc)
         {
             var chars1 = 0;
             var chars2 = 0;
@@ -1373,7 +1373,7 @@ namespace DiffMatchPatch
      * @return HTML representation.
      */
 
-        public string diff_prettyHtml(List<Diff> diffs)
+        public static string diff_prettyHtml(List<Diff> diffs)
         {
             var html = new StringBuilder();
             foreach (var aDiff in diffs)
@@ -1406,7 +1406,7 @@ namespace DiffMatchPatch
      * @return Source text.
      */
 
-        public string diff_text1(List<Diff> diffs)
+        public static string diff_text1(List<Diff> diffs)
         {
             var text = new StringBuilder();
             foreach (var aDiff in diffs)
@@ -1425,7 +1425,7 @@ namespace DiffMatchPatch
      * @return Destination text.
      */
 
-        public string diff_text2(List<Diff> diffs)
+        public static string diff_text2(List<Diff> diffs)
         {
             var text = new StringBuilder();
             foreach (var aDiff in diffs)
@@ -1445,7 +1445,7 @@ namespace DiffMatchPatch
      * @return Number of changes.
      */
 
-        public int diff_levenshtein(List<Diff> diffs)
+        public static int diff_levenshtein(List<Diff> diffs)
         {
             var levenshtein = 0;
             var insertions = 0;
@@ -1484,7 +1484,7 @@ namespace DiffMatchPatch
      * @return Delta text.
      */
 
-        public string diff_toDelta(List<Diff> diffs)
+        public static string diff_toDelta(List<Diff> diffs)
         {
             var text = new StringBuilder();
             foreach (var aDiff in diffs)
@@ -1524,7 +1524,7 @@ namespace DiffMatchPatch
      * @throws ArgumentException If invalid input.
      */
 
-        public List<Diff> diff_fromDelta(string text1, string delta)
+        public static List<Diff> diff_fromDelta(string text1, string delta)
         {
             var diffs = new List<Diff>();
             var pointer = 0;  // Cursor in text1
@@ -1713,7 +1713,7 @@ namespace DiffMatchPatch
                     {
                         bin_max = bin_mid;
                     }
-                    bin_mid = (bin_max - bin_min) / 2 + bin_min;
+                    bin_mid = ((bin_max - bin_min) / 2) + bin_min;
                 }
                 // Use the result from this iteration as the maximum for the next.
                 bin_max = bin_mid;
@@ -1742,8 +1742,8 @@ namespace DiffMatchPatch
                     else
                     {
                         // Subsequent passes: fuzzy match.
-                        rd[j] = ((rd[j + 1] << 1) | 1) & charMatch
-                                | (((last_rd[j + 1] | last_rd[j]) << 1) | 1) | last_rd[j + 1];
+                        rd[j] = (((rd[j + 1] << 1) | 1) & charMatch)
+								| (((last_rd[j + 1] | last_rd[j]) << 1) | 1) | last_rd[j + 1];
                     }
                     if ((rd[j] & matchmask) != 0)
                     {
@@ -1758,7 +1758,7 @@ namespace DiffMatchPatch
                             if (best_loc > loc)
                             {
                                 // When passing loc, don't exceed our current distance from loc.
-                                start = Math.Max(1, 2 * loc - best_loc);
+                                start = Math.Max(1, (2 * loc) - best_loc);
                             }
                             else
                             {
@@ -1805,7 +1805,7 @@ namespace DiffMatchPatch
      * @return Hash of character locations.
      */
 
-        protected Dictionary<char, int> match_alphabet(string pattern)
+        protected static Dictionary<char, int> match_alphabet(string pattern)
         {
             var s = new Dictionary<char, int>();
             var char_pattern = pattern.ToCharArray();
@@ -2032,7 +2032,7 @@ namespace DiffMatchPatch
      * @return Array of Patch objects.
      */
 
-        public List<Patch> patch_deepCopy(List<Patch> patches)
+        public static List<Patch> patch_deepCopy(List<Patch> patches)
         {
             var patchesCopy = new List<Patch>();
             foreach (var aPatch in patches)
@@ -2184,7 +2184,7 @@ namespace DiffMatchPatch
             }
             // Strip the padding off.
             text = text.Substring(nullPadding.Length, text.Length
-                                                      - 2 * nullPadding.Length);
+                                                      - (2 * nullPadding.Length));
             return new object[] { text, results };
         }
 
@@ -2392,7 +2392,7 @@ namespace DiffMatchPatch
      * @return Text representation of patches.
      */
 
-        public string patch_toText(List<Patch> patches)
+        public static string patch_toText(List<Patch> patches)
         {
             var text = new StringBuilder();
             foreach (var aPatch in patches)
@@ -2410,7 +2410,7 @@ namespace DiffMatchPatch
      * @throws ArgumentException If invalid input.
      */
 
-        public List<Patch> patch_fromText(string textline)
+        public static List<Patch> patch_fromText(string textline)
         {
             var patches = new List<Patch>();
             if (textline.Length == 0)
