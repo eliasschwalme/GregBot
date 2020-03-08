@@ -48,7 +48,7 @@ namespace ForumCrawler
                 foreach (var report in reports)
                 {
                     var channel = guild.GetTextChannel(report.ChannelId);
-
+                    if (channel == null) continue;
                     dict[report.ReportId] = new QuickReportWatcher.Report
                     {
                         Channel = channel,
