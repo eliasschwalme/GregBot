@@ -167,8 +167,9 @@ namespace ForumCrawler
         public static async Task<CoronaData> GetData(string url)
         {
             var web = new HtmlWeb();
-            var coronaStats = await web.LoadFromWebAsync(url);
-
+            try
+            {
+                var coronaStats = await web.LoadFromWebAsync(url);
             var result = new CoronaData();
             result.LastUpdated = DateTimeOffset.Parse(
                     coronaStats.DocumentNode.SelectNodes("//div")
@@ -201,6 +202,12 @@ namespace ForumCrawler
                 result.Entries.Add(entry.Name, entry);
             }
             return result;
+            }
+            catch
+            {
+                throw new Exception(url);
+            }
+
         }
     }
 }
