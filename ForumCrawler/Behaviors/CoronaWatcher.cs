@@ -60,7 +60,7 @@ namespace ForumCrawler
 
     internal static class CoronaWatcher
     {
-        public static string API_URL = "https://www.worldometers.info/coronavirus/";
+        public static string API_URL = "https://sand-grandiose-draw.glitch.me/";
         public static string ARCHIVE_API_URL = "https://web.archive.org/web/{0}/https://www.worldometers.info/coronavirus/";
 
         public static async void Bind(DiscordSocketClient client)
@@ -166,9 +166,6 @@ namespace ForumCrawler
 
         public static async Task<CoronaData> GetData(string url)
         {
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
-
             var web = new HtmlWeb();
             var coronaStats = await web.LoadFromWebAsync(url);
             var result = new CoronaData();
