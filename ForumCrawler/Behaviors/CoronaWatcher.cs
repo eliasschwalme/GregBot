@@ -25,7 +25,7 @@ namespace ForumCrawler
         public int Recovered => this.Entries.Values.Sum(e => e.Recovered);
         public int Serious => this.Entries.Values.Sum(e => e.Serious);
 
-        public double GrowthFactorAveraged => (GetGrowthFactor(4) - 1) / 4 + 1;
+        public double GrowthFactorAveraged => (GetGrowthFactor(3) - 1) / 3 + 1;
 
         public int RegionsActive => this.Entries.Values.Count(e => e.Active > 0);
         public int RegionsRecovered => this.Entries.Values.Count(e => e.Active == 0);
