@@ -111,7 +111,7 @@ namespace ForumCrawler
                         .AddField("Total Recovered", RelativeChangeString(current.Recovered, past.Recovered), true)
                         .AddField("Notes", "*: Growth factor is the factor by which a quantity multiplies itself over time. The average of the growth factors observed in the past three days is shown here.")
                         .AddField("Links", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
-                    
+
                     var msg = (IUserMessage)await client
                         .GetGuild(DiscordSettings.GuildId)
                         .GetTextChannel(688447767529521332)
@@ -161,15 +161,16 @@ namespace ForumCrawler
         public static double ParseDouble(HtmlNode node)
         {
             Double.TryParse(node.InnerText, NumberStyles.Number, CultureInfo.InvariantCulture, out var num);
-            return num; 
+            return num;
         }
 
         public static async Task<CoronaData> GetData(string url)
         {
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             var web = new HtmlWeb();
-            try
-            {
-                var coronaStats = await web.LoadFromWebAsync(url);
+            var coronaStats = await web.LoadFromWebAsync(url);
             var result = new CoronaData();
             result.LastUpdated = DateTimeOffset.Parse(
                     coronaStats.DocumentNode.SelectNodes("//div")
@@ -181,7 +182,7 @@ namespace ForumCrawler
             result.CaseHistory = Regex.Match(
                     coronaStats.DocumentNode.SelectNodes("//script")
                         .First(e => e.InnerText.StartsWith(" Highcharts.chart('coronavirus-cases-linear'"))
-                    .InnerText, 
+                    .InnerText,
                     @"\[([0-9,]+)\]"
                 ).Groups[1].Value.Split(',')
                 .Select(i => Int32.Parse(i))
@@ -202,12 +203,6 @@ namespace ForumCrawler
                 result.Entries.Add(entry.Name, entry);
             }
             return result;
-            }
-            catch
-            {
-                throw new Exception(url);
-            }
-
         }
     }
 }
