@@ -167,7 +167,7 @@ namespace ForumCrawler
         public static async Task<CoronaData> GetData(string url)
         {
             ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
 
             var web = new HtmlWeb();
             var coronaStats = await web.LoadFromWebAsync(url);
