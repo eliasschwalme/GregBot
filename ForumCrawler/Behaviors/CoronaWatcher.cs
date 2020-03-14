@@ -25,7 +25,7 @@ namespace ForumCrawler
         public int Recovered => this.Entries.Values.Sum(e => e.Recovered);
         public int Serious => this.Entries.Values.Sum(e => e.Serious);
 
-        public double GrowthFactorAveraged => new[] { GetGrowthFactor(0), GetGrowthFactor(1), GetGrowthFactor(2) }.Average();
+        public double GrowthFactorAveraged => (GetGrowthFactor(4) - 1) / 4 + 1;
 
         public int RegionsActive => this.Entries.Values.Count(e => e.Active > 0);
         public int RegionsRecovered => this.Entries.Values.Count(e => e.Active == 0);
@@ -34,8 +34,8 @@ namespace ForumCrawler
 
         public double GetGrowthFactor(int offset)
         {
-            var growthDay = this.CaseHistory[this.CaseHistory.Count - 1 - offset] - this.CaseHistory[this.CaseHistory.Count - 2 - offset];
-            var growthPrevious = this.CaseHistory[this.CaseHistory.Count - 2 - offset] - this.CaseHistory[this.CaseHistory.Count - 3 - offset];
+            var growthDay = this.CaseHistory[this.CaseHistory.Count - 1] - this.CaseHistory[this.CaseHistory.Count - 2];
+            var growthPrevious = this.CaseHistory[this.CaseHistory.Count - 1 - offset] - this.CaseHistory[this.CaseHistory.Count - 2 - offset];
             return (double)growthDay / growthPrevious;
         }
 
@@ -65,7 +65,7 @@ namespace ForumCrawler
 
         public static async void Bind(DiscordSocketClient client)
         {
-            await Task.Delay(TimeSpan.FromMinutes(1));
+            //await Task.Delay(TimeSpan.FromMinutes(1));
 
             while (true)
             {
@@ -109,7 +109,7 @@ namespace ForumCrawler
                         .AddField("Regions Recovered", AbsoluteChangeString(current.RegionsRecovered, past.RegionsRecovered), true)
                         .AddField("Total Serious", RelativeChangeString(current.Serious, past.Serious), true)
                         .AddField("Total Recovered", RelativeChangeString(current.Recovered, past.Recovered), true)
-                        .AddField("Notes", "*: Growth factor is the factor by which the number of infected patients multiplies itself over time. The average growth factor in the past three days is shown here.")
+                        .AddField("Notes", "*: Growth factor is the factor by which the number of new cases multiplies itself every day. The average growth factor in the past three days is shown here.")
                         .AddField("Links", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
@@ -178,7 +178,7 @@ namespace ForumCrawler
 
             result.CaseHistory = Regex.Match(
                     coronaStats.DocumentNode.SelectNodes("//script")
-                        .First(e => e.InnerText.Contains("Highcharts.chart('total-currently-infected-linear'"))
+                        .First(e => e.InnerText.Contains("Highcharts.chart('coronavirus-cases-linear'"))
                     .InnerText,
                     @"data: \[([0-9,]+)\]"
                 ).Groups[1].Value.Split(',')
