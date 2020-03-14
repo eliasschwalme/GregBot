@@ -109,7 +109,7 @@ namespace ForumCrawler
                         .AddField("Regions Recovered", AbsoluteChangeString(current.RegionsRecovered, past.RegionsRecovered), true)
                         .AddField("Total Serious", RelativeChangeString(current.Serious, past.Serious), true)
                         .AddField("Total Recovered", RelativeChangeString(current.Recovered, past.Recovered), true)
-                        .AddField("Notes", "*: Growth factor is the factor by which a quantity multiplies itself over time. The average of the growth factors observed in the past three days is shown here.")
+                        .AddField("Notes", "*: Growth factor is the factor by which the number of infected patients multiplies itself over time. The average growth factor in the past three days is shown here.")
                         .AddField("Links", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
@@ -178,9 +178,9 @@ namespace ForumCrawler
 
             result.CaseHistory = Regex.Match(
                     coronaStats.DocumentNode.SelectNodes("//script")
-                        .First(e => e.InnerText.StartsWith(" Highcharts.chart('coronavirus-cases-linear'"))
+                        .First(e => e.InnerText.Contains("Highcharts.chart('total-currently-infected-linear'"))
                     .InnerText,
-                    @"\[([0-9,]+)\]"
+                    @"data: \[([0-9,]+)\]"
                 ).Groups[1].Value.Split(',')
                 .Select(i => Int32.Parse(i))
                 .ToList();
