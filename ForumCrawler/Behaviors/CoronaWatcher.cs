@@ -65,7 +65,7 @@ namespace ForumCrawler
 
         public static async void Bind(DiscordSocketClient client)
         {
-            await Task.Delay(TimeSpan.FromMinutes(0.2));
+            await Task.Delay(TimeSpan.FromMinutes(1));
 
             while (true)
             {
