@@ -13,7 +13,16 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    internal class CoronaData
+    public interface ICoronaEntry
+    {
+        int Cases { get; }
+        int Deaths { get; }
+        int Recovered { get; }
+        int Serious { get; }
+        int Active { get; }
+    }
+
+    internal class CoronaData : ICoronaEntry
     {
         public List<int> CaseHistory { get; set; }
         public Dictionary<string, CoronaEntry> Entries { get; set; } = new Dictionary<string, CoronaEntry>();
@@ -24,20 +33,12 @@ namespace ForumCrawler
         public int Deaths => this.Entries.Values.Sum(e => e.Deaths);
         public int Recovered => this.Entries.Values.Sum(e => e.Recovered);
         public int Serious => this.Entries.Values.Sum(e => e.Serious);
-
-        public double GrowthFactorAveraged => (GetGrowthFactor(3) - 1) / 3 + 1;
+        public int Mild => this.Active - this.Serious;
 
         public int RegionsActive => this.Entries.Values.Count(e => e.Active > 0);
         public int RegionsRecovered => this.Entries.Values.Count(e => e.Active == 0);
 
         public double DeathRate => (double)this.Deaths / (this.Recovered + this.Deaths);
-
-        public double GetGrowthFactor(int offset)
-        {
-            var growthDay = this.CaseHistory[this.CaseHistory.Count - 1] - this.CaseHistory[this.CaseHistory.Count - 2];
-            var growthPrevious = this.CaseHistory[this.CaseHistory.Count - 1 - offset] - this.CaseHistory[this.CaseHistory.Count - 2 - offset];
-            return (double)growthDay / growthPrevious;
-        }
 
         public enum CoronaEntryType
         {
@@ -45,7 +46,7 @@ namespace ForumCrawler
             Other
         }
 
-        public class CoronaEntry
+        public class CoronaEntry : ICoronaEntry
         {
             public CoronaEntryType Type { get; set; }
             public string Name { get; set; }
@@ -54,7 +55,6 @@ namespace ForumCrawler
             public int Recovered { get; set; }
             public int Serious { get; set; }
             public int Active => this.Cases - this.Deaths - this.Recovered;
-            public double DeathRate => (double)this.Deaths / (this.Recovered + this.Deaths);
         }
     }
 
@@ -71,44 +71,62 @@ namespace ForumCrawler
             {
                 try
                 {
+                    const int GROWTH_OFFSET = 3;
                     var datas = await Task.WhenAll(
                         GetData(API_URL),
-                        GetData(String.Format(ARCHIVE_API_URL, DateTime.UtcNow.Subtract(TimeSpan.FromDays(1)).ToString("yyyyMMddHHmmss"))));
+                        GetArchiveData(1),
+                        GetArchiveData(2),
+                        GetArchiveData(GROWTH_OFFSET),
+                        GetArchiveData(GROWTH_OFFSET + 1),
+                        GetArchiveData(GROWTH_OFFSET + 2));
+
                     var current = datas[0];
                     var past = datas[1];
 
                     var regionsNames = new StringBuilder();
                     var regionsActive = new StringBuilder();
-                    var regionDeaths = new StringBuilder();
+                    var growthFactor = new StringBuilder();
                     foreach (var currentRegion in current.Entries.Values.OrderByDescending(e => e.Active).Take(20))
                     {
-                        if (!past.Entries.TryGetValue(currentRegion.Name, out var pastRegion))
-                            pastRegion = new CoronaData.CoronaEntry();
+                        var regions = datas.Select(d =>
+                        {
+                            d.Entries.TryGetValue(currentRegion.Name, out var res);
+                            return res ?? new CoronaData.CoronaEntry();
+                        }).ToArray();
+
+                        var currentRegionGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, regions[0], regions[1], regions[3], regions[4]);
+                        var pastRegionGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, regions[1], regions[2], regions[4], regions[5]);
+
+                        var pastRegion = regions[1];
                         regionsNames.AppendLine(currentRegion.Name);
                         regionsActive.AppendLine(RelativeChangeString(currentRegion.Active, pastRegion.Active));
-                        regionDeaths.AppendLine(RelativeChangeString(currentRegion.Deaths, pastRegion.Deaths));
+                        growthFactor.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
                     }
+
+                    var currentGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, datas[0], datas[1], datas[3], datas[4]);
+                    var pastGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, datas[1], datas[2], datas[4], datas[5]);
 
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Live Tracker")
                         .WithTimestamp(current.LastUpdated)
                         .WithUrl("https://www.worldometers.info/coronavirus/")
 
-                        .AddField("Cases", RelativeChangeString(current.Cases, past.Cases), true)
-                        .AddField("Growth Factor*", AbsoluteFactorChangeString(current.GrowthFactorAveraged, past.GrowthFactorAveraged), true)
-                        .AddField("Global Death Rate", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
+                        .AddField("Regions Affected", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
+                        .AddField("Total Cases", RelativeChangeString(current.Cases, past.Cases), true)
+                        .AddField("Global Growth Factor*", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
 
                         .AddField("Region", regionsNames.TrimEnd().ToString(), true)
                         .AddField("Infected", regionsActive.TrimEnd().ToString(), true)
-                        .AddField("Deaths", regionDeaths.TrimEnd().ToString(), true)
+                        .AddField("Growth Factor*", growthFactor.TrimEnd().ToString(), true)
 
-                        .AddField("Regions Affected", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
                         .AddField("Total Infected", RelativeChangeString(current.Active, past.Active), true)
-                        .AddField("Total Deaths", RelativeChangeString(current.Deaths, past.Deaths), true)
-
-                        .AddField("Regions Recovered", AbsoluteChangeString(current.RegionsRecovered, past.RegionsRecovered), true)
                         .AddField("Total Serious", RelativeChangeString(current.Serious, past.Serious), true)
+                        .AddField("Total Mild", RelativeChangeString(current.Mild, past.Mild), true)
+
                         .AddField("Total Recovered", RelativeChangeString(current.Recovered, past.Recovered), true)
+                        .AddField("Total Deaths", RelativeChangeString(current.Deaths, past.Deaths), true)
+                        .AddField("Global Death Rate", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
+
                         .AddField("Notes", "*: Growth factor is the factor by which the number of new cases multiplies itself every day. The average growth factor in the past three days is shown here.")
                         .AddField("Links", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
@@ -126,6 +144,16 @@ namespace ForumCrawler
 
                 await Task.Delay(TimeSpan.FromMinutes(2.5));
             }
+        }
+
+        public static double GetGrowthFactor(int offset, ICoronaEntry current, ICoronaEntry past, ICoronaEntry past2, ICoronaEntry past3)
+        {
+            var growthDay = current.Cases - past.Cases;
+            var growthPrevious = past2.Cases - past3.Cases;
+            var res = ((double)growthDay / growthPrevious - 1) / offset + 1;
+            if (Double.IsNaN(res))
+                return 0;
+            return res;
         }
 
         public static string AbsoluteChangeString(int current, int past)
@@ -162,6 +190,11 @@ namespace ForumCrawler
         {
             Double.TryParse(node.InnerText, NumberStyles.Number, CultureInfo.InvariantCulture, out var num);
             return num;
+        }
+
+        public static Task<CoronaData> GetArchiveData(int offset)
+        {
+            return GetData(String.Format(ARCHIVE_API_URL, DateTime.UtcNow.Subtract(TimeSpan.FromDays(offset)).ToString("yyyyMMddHHmmss")));
         }
 
         public static async Task<CoronaData> GetData(string url)
