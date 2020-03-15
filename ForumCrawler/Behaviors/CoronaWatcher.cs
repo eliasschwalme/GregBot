@@ -97,7 +97,7 @@ namespace ForumCrawler
                         var pastRegion = regions[1];
                         var cc = GetCountryEmoji(currentRegion);
                         regionsNames.AppendLine(cc + " " + currentRegion.Name);
-                        regionsActive.AppendLine(RelativeChangeString(currentRegion.Active, pastRegion.Active));
+                        regionsActive.AppendLine(AbsoluteChangeString(currentRegion.Active, pastRegion.Active));
                         growthFactor.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
                     }
 
@@ -110,19 +110,19 @@ namespace ForumCrawler
                         .WithUrl("https://www.worldometers.info/coronavirus/")
 
                         .AddField("**Regions Affected**", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
-                        .AddField("**Total Cases**", RelativeChangeString(current.Cases, past.Cases), true)
+                        .AddField("**Total Cases**", AbsoluteChangeString(current.Cases, past.Cases), true)
                         .AddField("**Global Growth Factor\\***", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
 
                         .AddField("**Region**", regionsNames.TrimEnd().ToString(), true)
                         .AddField("**Infected**", regionsActive.TrimEnd().ToString(), true)
                         .AddField("**Growth Factor\\***", growthFactor.TrimEnd().ToString(), true)
 
-                        .AddField("**Total Infected**", RelativeChangeString(current.Active, past.Active), true)
-                        .AddField("**Total Serious**", RelativeChangeString(current.Serious, past.Serious), true)
-                        .AddField("**Total Mild**", RelativeChangeString(current.Mild, past.Mild), true)
+                        .AddField("**Total Infected**", AbsoluteChangeString(current.Active, past.Active), true)
+                        .AddField("**Total Serious**", AbsoluteChangeString(current.Serious, past.Serious), true)
+                        .AddField("**Total Mild**", AbsoluteChangeString(current.Mild, past.Mild), true)
 
-                        .AddField("**Total Recovered**", RelativeChangeString(current.Recovered, past.Recovered), true)
-                        .AddField("**Total Deaths**", RelativeChangeString(current.Deaths, past.Deaths), true)
+                        .AddField("**Total Recovered**", AbsoluteChangeString(current.Recovered, past.Recovered), true)
+                        .AddField("**Total Deaths**", AbsoluteChangeString(current.Deaths, past.Deaths), true)
                         .AddField("**Global Death Rate**", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
 
                         .AddField("**Notes**", "_Growth factor: Factor, by which the number of new cases multiplies itself every day._")
@@ -167,31 +167,22 @@ namespace ForumCrawler
 
         public static string AbsoluteChangeString(int current, int past)
         {
+            var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
+            nfi.NumberDecimalDigits = 0;
+            nfi.NumberGroupSeparator = " ";
+
             var change = current - past;
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{current}{change: (+0); (-0);#}";
+            return $"{emojiStr}{current.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#}", nfi)}";
         }
 
         public static string AbsoluteFactorChangeString(double current, double past)
         {
             var change = current - past;
             if (Double.IsInfinity(change)) change = 0;
-            var inf = Double.IsPositiveInfinity(current) ? "∞x" : $"{current:0.00}x";
+            var inf = Double.IsPositiveInfinity(current) ? "∞" : current.ToString("0.00");
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{inf}{change: (+0.00); (-0.00);#}";
-        }
-
-        public static string RelativeChangeString(int current, int past)
-        {
-            var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
-            nfi.NumberDecimalDigits = 0;
-            nfi.NumberGroupSeparator = " ";
-
-            var change = (double)current / past - 1;
-            var inf = Double.IsPositiveInfinity(change) ? " (+∞)" : "";
-            if (Double.IsNaN(change) || Double.IsInfinity(change)) change = 0;
-            var emojiStr = GetEmojiString(change);
-            return String.Format(nfi, "{0}{1:N}{2}{3: (+0%); (-0%);#}", emojiStr, current, inf, change);
+            return $"{emojiStr}{inf}x{change: (+#,0.00); (-#,0.00);#}";
         }
 
         private static string GetEmojiString(double change)
