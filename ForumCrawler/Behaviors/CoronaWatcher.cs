@@ -71,14 +71,11 @@ namespace ForumCrawler
             {
                 try
                 {
-                    const int GROWTH_OFFSET = 3;
                     var datas = await Task.WhenAll(
                         GetData(API_URL),
                         GetArchiveData(1),
                         GetArchiveData(2),
-                        GetArchiveData(GROWTH_OFFSET),
-                        GetArchiveData(GROWTH_OFFSET + 1),
-                        GetArchiveData(GROWTH_OFFSET + 2));
+                        GetArchiveData(3));
 
                     var current = datas[0];
                     var past = datas[1];
@@ -94,8 +91,8 @@ namespace ForumCrawler
                             return res ?? new CoronaData.CoronaEntry();
                         }).ToArray();
 
-                        var currentRegionGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, regions[0], regions[1], regions[3], regions[4]);
-                        var pastRegionGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, regions[1], regions[2], regions[4], regions[5]);
+                        var currentRegionGrowthFactor = GetGrowthFactor(regions[0], regions[1], regions[2]);
+                        var pastRegionGrowthFactor = GetGrowthFactor(regions[1], regions[2], regions[3]);
 
                         var pastRegion = regions[1];
                         var cc = GetCountryEmoji(currentRegion);
@@ -104,8 +101,8 @@ namespace ForumCrawler
                         growthFactor.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
                     }
 
-                    var currentGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, datas[0], datas[1], datas[3], datas[4]);
-                    var pastGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, datas[1], datas[2], datas[4], datas[5]);
+                    var currentGrowthFactor = GetGrowthFactor(datas[0], datas[1], datas[2]);
+                    var pastGrowthFactor = GetGrowthFactor(datas[1], datas[2], datas[3]);
 
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Live Tracker")
@@ -128,7 +125,7 @@ namespace ForumCrawler
                         .AddField("**Total Deaths**", RelativeChangeString(current.Deaths, past.Deaths), true)
                         .AddField("**Global Death Rate**", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
 
-                        .AddField("**Notes**", "_\\*: Growth factor is the factor by which the number of new cases multiplies itself every day. The average growth factor in the past three days is shown here._")
+                        .AddField("**Notes**", "_Growth factor: Factor, by which the number of new cases multiplies itself every day._")
                         .AddField("**Links**", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
@@ -155,11 +152,11 @@ namespace ForumCrawler
             return $":flag_{cc.ToLowerInvariant()}:";
         }
 
-        public static double GetGrowthFactor(int offset, ICoronaEntry current, ICoronaEntry past, ICoronaEntry past2, ICoronaEntry past3)
+        public static double GetGrowthFactor(ICoronaEntry current, ICoronaEntry past, ICoronaEntry past2)
         {
             var growthDay = current.Cases - past.Cases;
-            var growthPrevious = past2.Cases - past3.Cases;
-            var res = ((double)growthDay / growthPrevious - 1) / offset + 1;
+            var growthPrevious = past.Cases - past2.Cases;
+            var res = (double)growthDay / growthPrevious;
             if (Double.IsNaN(res))
                 return 0;
             return res;
