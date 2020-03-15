@@ -112,24 +112,24 @@ namespace ForumCrawler
                         .WithTimestamp(current.LastUpdated)
                         .WithUrl("https://www.worldometers.info/coronavirus/")
 
-                        .AddField("Regions Affected", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
-                        .AddField("Total Cases", RelativeChangeString(current.Cases, past.Cases), true)
-                        .AddField("Global Growth Factor*", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
+                        .AddField("**Regions Affected**", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
+                        .AddField("**Total Cases**", RelativeChangeString(current.Cases, past.Cases), true)
+                        .AddField("**Global Growth Factor\\***", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
 
-                        .AddField("Region", regionsNames.TrimEnd().ToString(), true)
-                        .AddField("Infected", regionsActive.TrimEnd().ToString(), true)
-                        .AddField("Growth Factor*", growthFactor.TrimEnd().ToString(), true)
+                        .AddField("**Region**", regionsNames.TrimEnd().ToString(), true)
+                        .AddField("**Infected**", regionsActive.TrimEnd().ToString(), true)
+                        .AddField("**Growth Factor\\***", growthFactor.TrimEnd().ToString(), true)
 
-                        .AddField("Total Infected", RelativeChangeString(current.Active, past.Active), true)
-                        .AddField("Total Serious", RelativeChangeString(current.Serious, past.Serious), true)
-                        .AddField("Total Mild", RelativeChangeString(current.Mild, past.Mild), true)
+                        .AddField("**Total Infected**", RelativeChangeString(current.Active, past.Active), true)
+                        .AddField("**Total Serious**", RelativeChangeString(current.Serious, past.Serious), true)
+                        .AddField("**Total Mild**", RelativeChangeString(current.Mild, past.Mild), true)
 
-                        .AddField("Total Recovered", RelativeChangeString(current.Recovered, past.Recovered), true)
-                        .AddField("Total Deaths", RelativeChangeString(current.Deaths, past.Deaths), true)
-                        .AddField("Global Death Rate", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
+                        .AddField("**Total Recovered**", RelativeChangeString(current.Recovered, past.Recovered), true)
+                        .AddField("**Total Deaths**", RelativeChangeString(current.Deaths, past.Deaths), true)
+                        .AddField("**Global Death Rate**", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
 
-                        .AddField("Notes", "*: Growth factor is the factor by which the number of new cases multiplies itself every day. The average growth factor in the past three days is shown here.")
-                        .AddField("Links", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
+                        .AddField("**Notes**", "_\\*: Growth factor is the factor by which the number of new cases multiplies itself every day. The average growth factor in the past three days is shown here._")
+                        .AddField("**Links**", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
                         .GetGuild(DiscordSettings.GuildId)
