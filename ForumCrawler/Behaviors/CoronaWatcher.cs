@@ -175,7 +175,7 @@ namespace ForumCrawler
         {
             var change = current - past;
             if (Double.IsInfinity(change)) change = 0;
-            var inf = Double.IsPositiveInfinity(change) ? "∞x" : $"{current:0.00}x";
+            var inf = Double.IsPositiveInfinity(current) ? "∞x" : $"{current:0.00}x";
             return $"{inf}{change: (+0.00); (-0.00);#}";
         }
 
