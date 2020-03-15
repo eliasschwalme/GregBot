@@ -62,11 +62,11 @@ namespace ForumCrawler
     {
         public static string API_URL = "https://sand-grandiose-draw.glitch.me/";
         public static string ARCHIVE_API_URL = "https://web.archive.org/web/{0}/https://www.worldometers.info/coronavirus/";
+        public static CountryList Countries = new CountryList(true);
 
         public static async void Bind(DiscordSocketClient client)
         {
             //await Task.Delay(TimeSpan.FromMinutes(1));
-
             while (true)
             {
                 try
@@ -98,7 +98,8 @@ namespace ForumCrawler
                         var pastRegionGrowthFactor = GetGrowthFactor(GROWTH_OFFSET, regions[1], regions[2], regions[4], regions[5]);
 
                         var pastRegion = regions[1];
-                        regionsNames.AppendLine(currentRegion.Name);
+                        var cc = GetCountryEmoji(currentRegion);
+                        regionsNames.AppendLine(cc + " " + currentRegion.Name);
                         regionsActive.AppendLine(RelativeChangeString(currentRegion.Active, pastRegion.Active));
                         growthFactor.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
                     }
@@ -141,9 +142,17 @@ namespace ForumCrawler
                     Console.WriteLine(ex);
                     throw;
                 }
-
+                
                 await Task.Delay(TimeSpan.FromMinutes(2.5));
             }
+        }
+
+        public static string GetCountryEmoji(CoronaData.CoronaEntry region)
+        {
+            var cc = Countries.GetTwoLettersName(region.Name, false);
+            if (cc == "") cc = new string(region.Name.Where(c => Char.IsLetter(c)).Take(2).ToArray());
+            if (cc == "UK") cc = "GB";
+            return $":flag_{cc.ToLowerInvariant()}:";
         }
 
         public static double GetGrowthFactor(int offset, ICoronaEntry current, ICoronaEntry past, ICoronaEntry past2, ICoronaEntry past3)
@@ -165,7 +174,9 @@ namespace ForumCrawler
         public static string AbsoluteFactorChangeString(double current, double past)
         {
             var change = current - past;
-            return $"{current:0.00}x{change: (+0.00); (-0.00);#}";
+            if (Double.IsInfinity(change)) change = 0;
+            var inf = Double.IsPositiveInfinity(change) ? "∞x" : $"{current:0.00}x";
+            return $"{inf}{change: (+0.00); (-0.00);#}";
         }
 
         public static string RelativeChangeString(int current, int past)
@@ -175,7 +186,7 @@ namespace ForumCrawler
             nfi.NumberGroupSeparator = " ";
 
             var change = (double)current / past - 1;
-            var inf = Double.IsPositiveInfinity(change) ? " (+∞)" : Double.IsNegativeInfinity(change) ? " (+∞)" : "";
+            var inf = Double.IsPositiveInfinity(change) ? " (+∞)" : "";
             if (Double.IsNaN(change) || Double.IsInfinity(change)) change = 0;
             return String.Format(nfi, "{0:N}{1}{2: (+0%); (-0%);#}", current, inf, change);
         }
@@ -233,6 +244,90 @@ namespace ForumCrawler
                 result.Entries.Add(entry.Name, entry);
             }
             return result;
+        }
+
+        public class CountryList
+        {
+            private CultureTypes _AllCultures;
+            public CountryList(bool AllCultures)
+            {
+                this._AllCultures = (AllCultures) ? CultureTypes.AllCultures : CultureTypes.SpecificCultures;
+                this.Countries = GetAllCountries(this._AllCultures);
+            }
+
+            public List<CountryInfo> Countries { get; set; }
+
+            public List<CountryInfo> GetCountryInfoByName(string CountryName, bool NativeName)
+            {
+                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName).ToList()
+                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName).ToList();
+            }
+
+            public List<CountryInfo> GetCountryInfoByName(string CountryName, bool NativeName, bool IsNeutral)
+            {
+                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName &&
+                                                                   info.Culture.IsNeutralCulture == IsNeutral).ToList()
+                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName &&
+                                                                   info.Culture.IsNeutralCulture == IsNeutral).ToList();
+            }
+
+            public string GetTwoLettersName(string CountryName, bool NativeName)
+            {
+                CountryInfo country = (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName)
+                                                                   .FirstOrDefault()
+                                                   : this.Countries.Where(info => info.Region.EnglishName == CountryName)
+                                                                   .FirstOrDefault();
+
+                return (country != null) ? country.Region.TwoLetterISORegionName : string.Empty;
+            }
+
+            public string GetThreeLettersName(string CountryName, bool NativeName)
+            {
+                CountryInfo country = (NativeName) ? this.Countries.Where(info => info.Region.NativeName.Contains(CountryName))
+                                                                    .FirstOrDefault()
+                                                   : this.Countries.Where(info => info.Region.EnglishName.Contains(CountryName))
+                                                                    .FirstOrDefault();
+
+                return (country != null) ? country.Region.ThreeLetterISORegionName : string.Empty;
+            }
+
+            public List<string> GetIetfLanguageTag(string CountryName, bool NativeName)
+            {
+                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName)
+                                                    .Select(info => info.Culture.IetfLanguageTag).ToList()
+                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName)
+                                                    .Select(info => info.Culture.IetfLanguageTag).ToList();
+            }
+
+            public List<int> GetRegionGeoId(string CountryName, bool NativeName)
+            {
+                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName)
+                                                    .Select(info => info.Region.GeoId).ToList()
+                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName)
+                                                    .Select(info => info.Region.GeoId).ToList();
+            }
+
+            private static List<CountryInfo> GetAllCountries(CultureTypes cultureTypes)
+            {
+                List<CountryInfo> Countries = new List<CountryInfo>();
+
+                foreach (CultureInfo culture in CultureInfo.GetCultures(cultureTypes))
+                {
+                    if (culture.LCID != 127)
+                        Countries.Add(new CountryInfo()
+                        {
+                            Culture = culture,
+                            Region = new RegionInfo(culture.TextInfo.CultureName)
+                        });
+                }
+                return Countries;
+            }
+
+            public class CountryInfo
+            {
+                public CultureInfo Culture { get; set; }
+                public RegionInfo Region { get; set; }
+            }
         }
     }
 }
