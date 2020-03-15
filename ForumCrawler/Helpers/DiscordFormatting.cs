@@ -228,6 +228,7 @@ namespace ForumCrawler
             {
                 var title = content[(i * 2) - 1];
                 var value = content[i * 2];
+                
                 embed.AddField(title.Substring(0, Math.Min(title.Length, 256)), value.Substring(0, Math.Min(value.Length, 1024)));
             }
 

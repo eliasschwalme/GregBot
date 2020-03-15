@@ -146,9 +146,12 @@ namespace ForumCrawler
 
         public static string GetCountryEmoji(CoronaData.CoronaEntry region)
         {
-            var cc = Countries.GetTwoLettersName(region.Name, false);
+            var cc = "";
+            if (region.Name == "UK") cc = "GB";
+            if (region.Name == "S. Korea") cc = "KR";
+            if (region.Name == "Diamond Princess") return ":cruise_ship:";
+            if (cc == "") cc = Countries.GetTwoLettersName(region.Name, false);
             if (cc == "") cc = new string(region.Name.Where(c => Char.IsLetter(c)).Take(2).ToArray());
-            if (cc == "UK") cc = "GB";
             return $":flag_{cc.ToLowerInvariant()}:";
         }
 
@@ -165,7 +168,8 @@ namespace ForumCrawler
         public static string AbsoluteChangeString(int current, int past)
         {
             var change = current - past;
-            return $"{current}{change: (+0); (-0);#}";
+            var emojiStr = GetEmojiString(change);
+            return $"{emojiStr}{current}{change: (+0); (-0);#}";
         }
 
         public static string AbsoluteFactorChangeString(double current, double past)
@@ -173,7 +177,8 @@ namespace ForumCrawler
             var change = current - past;
             if (Double.IsInfinity(change)) change = 0;
             var inf = Double.IsPositiveInfinity(current) ? "∞x" : $"{current:0.00}x";
-            return $"{inf}{change: (+0.00); (-0.00);#}";
+            var emojiStr = GetEmojiString(change);
+            return $"{emojiStr}{inf}{change: (+0.00); (-0.00);#}";
         }
 
         public static string RelativeChangeString(int current, int past)
@@ -185,13 +190,24 @@ namespace ForumCrawler
             var change = (double)current / past - 1;
             var inf = Double.IsPositiveInfinity(change) ? " (+∞)" : "";
             if (Double.IsNaN(change) || Double.IsInfinity(change)) change = 0;
-            return String.Format(nfi, "{0:N}{1}{2: (+0%); (-0%);#}", current, inf, change);
+            var emojiStr = GetEmojiString(change);
+            return String.Format(nfi, "{0}{1:N}{2}{3: (+0%); (-0%);#}", emojiStr, current, inf, change);
+        }
+
+        private static string GetEmojiString(double change)
+        {
+            return change > 0
+                ? "<:u:688860234449813591>"
+                : change < 0
+                    ? "<:d:688860234474979334>"
+                    : "<:n:688859293205921857>";
         }
 
         public static string AbsolutePercentageChangeString(double current, double past)
         {
             var change = current - past;
-            return $"{current:0.0%}{change: (+0.0%); (-0.0%);#}";
+            var emojiStr = GetEmojiString(change);
+            return $"{emojiStr}{current:0.0%}{change: (+0.0%); (-0.0%);#}";
         }
 
         public static double ParseDouble(HtmlNode node)
