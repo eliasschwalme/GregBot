@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 
 using EntityFramework.Extensions;
@@ -55,10 +55,10 @@ namespace ForumCrawler
                     {
                         Channel = channel,
                         Id = report.ReportId,
-                        Message = report.MessageId == 0 ? null : (IUserMessage)(await channel.GetMessageAsync(report.MessageId)),
+                        MessageId = report.MessageId == 0 ? (ulong?)null : report.MessageId,
                         Moderator = report.ModeratorId == 0 ? null : guild.GetUser(report.ModeratorId),
                         Reporters = report.Reporters,
-                        ReportsMessage = report.ReportsMessage == 0 ? null : (IUserMessage)(await reportChannel.GetMessageAsync(report.ReportsMessage)),
+                        ReportsMessageId = report.ReportsMessage == 0 ? (ulong?)null : report.ReportsMessage,
                         Status = report.Status,
                         Suspect = guild.GetUser(report.SuspectId),
                         Timestamp = report.Timestamp
@@ -124,10 +124,10 @@ namespace ForumCrawler
                 {
                     ReportId = report.Id,
                     ChannelId = report.Channel.Id,
-                    MessageId = report.Message?.Id ?? 0,
+                    MessageId = report.MessageId ?? 0,
                     ModeratorId = report.Moderator?.Id ?? 0,
                     Reporters = report.Reporters,
-                    ReportsMessage = report.ReportsMessage.Id,
+                    ReportsMessage = report.ReportsMessageId ?? 0,
                     Status = report.Status,
                     SuspectId = report.Suspect.Id,
                     Timestamp = report.Timestamp
