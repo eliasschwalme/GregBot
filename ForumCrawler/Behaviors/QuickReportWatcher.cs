@@ -1,4 +1,4 @@
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 
 using System;
@@ -14,7 +14,12 @@ namespace ForumCrawler
 
         private static event Func<ulong, IUser, Report.ReportStatus, Task> OnResponse;
 
-        public static async Task Bind(DiscordSocketClient client)
+        public static void Bind(DiscordSocketClient client)
+        {
+            client.Ready += () => Client_Ready(client);
+        }
+
+        private static async Task Client_Ready(DiscordSocketClient client)
         {
             var reports = await Database.PullReports(client);
 

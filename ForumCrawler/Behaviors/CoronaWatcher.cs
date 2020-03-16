@@ -64,9 +64,15 @@ namespace ForumCrawler
         public static string ARCHIVE_API_URL = "https://web.archive.org/web/{0}/https://www.worldometers.info/coronavirus/";
         public static CountryList Countries = new CountryList(true);
 
-        public static async void Bind(DiscordSocketClient client)
+        public static void Bind(DiscordSocketClient client)
         {
-            //await Task.Delay(TimeSpan.FromMinutes(1));
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+            client.Ready += async () => Client_Ready(client);
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+
+        }
+        private static async void Client_Ready(DiscordSocketClient client)
+        {
             while (true)
             {
                 try
@@ -141,7 +147,7 @@ namespace ForumCrawler
                     Console.WriteLine(ex);
                     throw;
                 }
-                
+
                 await Task.Delay(TimeSpan.FromMinutes(2.5));
             }
         }
