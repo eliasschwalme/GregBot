@@ -80,10 +80,10 @@ namespace ForumCrawler
                     var current = datas[0];
                     var past = datas[1];
 
-                    var regionsNames = new StringBuilder();
-                    var regionsActive = new StringBuilder();
-                    var growthFactor = new StringBuilder();
-                    foreach (var currentRegion in current.Entries.Values.OrderByDescending(e => e.Active).Take(20))
+                    var regionsNamesSb = new StringBuilder();
+                    var regionsActiveSb = new StringBuilder();
+                    var growthFactorSb = new StringBuilder();
+                    foreach (var currentRegion in current.Entries.Values.OrderByDescending(e => e.Active))
                     {
                         var regions = datas.Select(d =>
                         {
@@ -96,9 +96,12 @@ namespace ForumCrawler
 
                         var pastRegion = regions[1];
                         var cc = GetCountryEmoji(currentRegion);
-                        regionsNames.AppendLine(cc + " " + currentRegion.Name);
-                        regionsActive.AppendLine(AbsoluteChangeString(currentRegion.Active, pastRegion.Active));
-                        growthFactor.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
+                        regionsNamesSb.AppendLine(cc + " " + currentRegion.Name);
+                        regionsActiveSb.AppendLine(AbsoluteChangeString(currentRegion.Active, pastRegion.Active));
+                        growthFactorSb.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
+
+                        if (regionsNamesSb.Length > 1024 || regionsActiveSb.Length > 1024 || growthFactorSb.Length > 1024)
+                            break;
                     }
 
                     var currentGrowthFactor = GetGrowthFactor(datas[0], datas[1], datas[2]);
@@ -106,16 +109,17 @@ namespace ForumCrawler
 
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Live Tracker")
+                        .WithDescription("The data is updated every 2.5 minutes and compared to numbers from yesterday.")
                         .WithTimestamp(current.LastUpdated)
                         .WithUrl("https://www.worldometers.info/coronavirus/")
 
                         .AddField("**Regions Affected**", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
                         .AddField("**Total Cases**", AbsoluteChangeString(current.Cases, past.Cases), true)
-                        .AddField("**Global Growth Factor\\***", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
+                        .AddField("**Global Growth Factor**", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
 
-                        .AddField("**Region**", regionsNames.TrimEnd().ToString(), true)
-                        .AddField("**Infected**", regionsActive.TrimEnd().ToString(), true)
-                        .AddField("**Growth Factor\\***", growthFactor.TrimEnd().ToString(), true)
+                        .AddField("**Region**", GetExceptLastLine(regionsNamesSb), true)
+                        .AddField("**Infected**", GetExceptLastLine(regionsActiveSb), true)
+                        .AddField("**Growth Factor**", GetExceptLastLine(growthFactorSb), true)
 
                         .AddField("**Total Infected**", AbsoluteChangeString(current.Active, past.Active), true)
                         .AddField("**Total Serious**", AbsoluteChangeString(current.Serious, past.Serious), true)
@@ -124,8 +128,6 @@ namespace ForumCrawler
                         .AddField("**Total Recovered**", AbsoluteChangeString(current.Recovered, past.Recovered), true)
                         .AddField("**Total Deaths**", AbsoluteChangeString(current.Deaths, past.Deaths), true)
                         .AddField("**Global Death Rate**", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
-
-                        .AddField("**Notes**", "_Growth factor: Factor, by which the number of new cases multiplies itself every day._")
                         .AddField("**Links**", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
@@ -142,6 +144,12 @@ namespace ForumCrawler
                 
                 await Task.Delay(TimeSpan.FromMinutes(2.5));
             }
+        }
+
+        private static string GetExceptLastLine(StringBuilder sb)
+        {
+            var str = sb.ToString();
+            return str.Remove(str.TrimEnd().LastIndexOf('\n'));
         }
 
         public static string GetCountryEmoji(CoronaData.CoronaEntry region)
@@ -170,19 +178,20 @@ namespace ForumCrawler
             var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
             nfi.NumberDecimalDigits = 0;
             nfi.NumberGroupSeparator = " ";
-
+          
             var change = current - past;
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{current.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#}", nfi)}";
+            return $"{emojiStr}{current.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#", nfi)}";
         }
 
         public static string AbsoluteFactorChangeString(double current, double past)
         {
             var change = current - past;
-            if (Double.IsInfinity(change)) change = 0;
-            var inf = Double.IsPositiveInfinity(current) ? "∞" : current.ToString("0.00");
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{inf}x{change: (+#,0.00); (-#,0.00);#}";
+
+            if (Double.IsInfinity(change)) change = 0;
+            var inf = Double.IsPositiveInfinity(current) ? "N/A" : current.ToString("0.00x");
+            return $"{emojiStr}{inf}{change: (+#,0.00); (-#,0.00);#}";
         }
 
         private static string GetEmojiString(double change)
