@@ -13,6 +13,18 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
+    // so we can more easily know what the issue is in AppHarbor
+    public class CoronaScrapeException : InvalidOperationException
+    {
+        public CoronaScrapeException()
+        {
+        }
+
+        public CoronaScrapeException(string message) : base(message)
+        {
+        }
+    }
+
     public interface ICoronaEntry
     {
         int Cases { get; }
@@ -250,6 +262,22 @@ namespace ForumCrawler
 
 
             var countries = coronaStats.DocumentNode.SelectNodes("//*[@id=\"main_table_countries\"]/tbody[1]/tr");
+
+            if (countries == null)
+            {
+                // this was returning null, and it seems like main_table_countries_today and main_table_countries_yesterday
+                // are valid substitutes
+                //
+                // idk what other api calls there are, so i'm just simply saying that if it's null,
+                // it should be replaced with the main_table_countries_today since that's probably what's needed?
+                countries = coronaStats.DocumentNode.SelectNodes("//*[@id=\"main_table_countries_today\"]/tbody[1]/tr");
+
+                if (countries == null)
+                {
+                    throw new CoronaScrapeException();
+                }
+            }
+
             foreach (var country in countries)
             {
                 var entry = new CoronaData.CoronaEntry();
