@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -89,11 +90,38 @@ namespace ForumCrawler
             {
                 try
                 {
-                    var datas = await Task.WhenAll(
-                        GetData(API_URL),
-                        GetArchiveData(1),
-                        GetArchiveData(2),
-                        GetArchiveData(3));
+                    CoronaData[] datas;
+
+                    try
+                    {
+                        datas = await Task.WhenAll(
+                            GetData(API_URL),
+                            GetArchiveData(1),
+                            GetArchiveData(2),
+                            GetArchiveData(3));
+                    }
+
+                    // these catch statements are being applied as a hotfix, since greg seems to be crashing on GetData frequently
+                    // currently this hox fix will retry in a little bit after it gets the error.
+                    // TODO: properly fix greg
+                    catch (TaskCanceledException)
+                    {
+                        // see: https://appharbor.com/applications/forumcrawler/errors/54190059-f591-4564-b74d-35d778e68cd2
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // see: https://appharbor.com/applications/forumcrawler/errors/aed08d37-34ca-4d2a-bdd3-a3618410185e
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
+                    catch (HttpRequestException)
+                    {
+                        // see: https://appharbor.com/applications/forumcrawler/errors/477305d4-5540-4cc2-a9d9-66bc2f417d3b
+                        await Task.Delay(TimeSpan.FromSeconds(10));
+                        continue;
+                    }
 
                     var current = datas[0];
                     var past = datas[1];
