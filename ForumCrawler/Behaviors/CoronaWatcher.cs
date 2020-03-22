@@ -13,34 +13,30 @@ using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    // so we can more easily know what the issue is in AppHarbor
-    public class CoronaScrapeException : InvalidOperationException
-    {
-        public CoronaScrapeException()
-        {
-        }
-
-        public CoronaScrapeException(string message) : base(message)
-        {
-        }
-    }
-
     public interface ICoronaEntry
     {
         int Cases { get; }
+        int CaseIncrease { get; }
         int Deaths { get; }
         int Recovered { get; }
         int Serious { get; }
         int Active { get; }
     }
 
+    internal class CoronaLiveData
+    {
+        public DateTime LastUpdate { get; set; }
+        public DateTime LastReset { get; set; }
+        public CoronaData Now { get; set; }
+        public CoronaData Today { get; set; }
+    }
+
     internal class CoronaData : ICoronaEntry
     {
-        public List<int> CaseHistory { get; set; }
         public Dictionary<string, CoronaEntry> Entries { get; set; } = new Dictionary<string, CoronaEntry>();
-        public DateTime LastUpdated { get; set; }
 
         public int Cases => this.Entries.Values.Sum(e => e.Cases);
+        public int CaseIncrease => this.Entries.Values.Sum(e => e.CaseIncrease);
         public int Active => this.Entries.Values.Sum(e => e.Active);
         public int Deaths => this.Entries.Values.Sum(e => e.Deaths);
         public int Recovered => this.Entries.Values.Sum(e => e.Recovered);
@@ -63,6 +59,7 @@ namespace ForumCrawler
             public CoronaEntryType Type { get; set; }
             public string Name { get; set; }
             public int Cases { get; set; }
+            public int CaseIncrease { get; set; }
             public int Deaths { get; set; }
             public int Recovered { get; set; }
             public int Serious { get; set; }
@@ -73,7 +70,7 @@ namespace ForumCrawler
     internal static class CoronaWatcher
     {
         public static string API_URL = "https://sand-grandiose-draw.glitch.me/";
-        public static string ARCHIVE_API_URL = "https://web.archive.org/web/{0}/https://www.worldometers.info/coronavirus/";
+        public static string ARCHIVE_API_URL = "https://web.archive.org/web/{0}120000/https://www.worldometers.info/coronavirus/";
         public static CountryList Countries = new CountryList(true);
 
         public static void Bind(DiscordSocketClient client)
@@ -89,64 +86,67 @@ namespace ForumCrawler
             {
                 try
                 {
-                    var datas = await Task.WhenAll(
-                        GetData(API_URL),
-                        GetArchiveData(1),
-                        GetArchiveData(2),
-                        GetArchiveData(3));
 
-                    var current = datas[0];
-                    var past = datas[1];
+                    var liveData = await GetLiveData(API_URL);
+
+                    var datas = new[] { liveData.Now, liveData.Today }.Concat(await Task.WhenAll(
+                        GetArchiveData(liveData.LastReset),
+                        GetArchiveData(liveData.LastReset.AddDays(-1)))).ToArray();
+
+                    var now = liveData.Now;
+                    var today = liveData.Today;
+                    var yesterday = datas[1];
 
                     var regionsNamesSb = new StringBuilder();
                     var regionsActiveSb = new StringBuilder();
                     var growthFactorSb = new StringBuilder();
-                    foreach (var currentRegion in current.Entries.Values.OrderByDescending(e => e.Active))
+                    foreach (var regionNow in now.Entries.Values.OrderByDescending(e => e.Active))
                     {
                         var regions = datas.Select(d =>
                         {
-                            d.Entries.TryGetValue(currentRegion.Name, out var res);
+                            d.Entries.TryGetValue(regionNow.Name, out var res);
                             return res ?? new CoronaData.CoronaEntry();
                         }).ToArray();
 
-                        var currentRegionGrowthFactor = GetGrowthFactor(regions[0], regions[1], regions[2]);
-                        var pastRegionGrowthFactor = GetGrowthFactor(regions[1], regions[2], regions[3]);
+                        var currentRegionGrowthFactor = GetCurrentGrowthFactor(regions[0], regions[1], regions[2]);
+                        var pastRegionGrowthFactor = GetGrowthFactor(regions[2], regions[3]);
 
-                        var pastRegion = regions[1];
-                        var cc = GetCountryEmoji(currentRegion);
-                        regionsNamesSb.AppendLine(cc + " " + currentRegion.Name);
-                        regionsActiveSb.AppendLine(AbsoluteChangeString(currentRegion.Active, pastRegion.Active));
+                        var regionToday = regions[1];
+                        var regionYesterday = regions[2];
+                        var cc = GetCountryEmoji(regionNow);
+                        regionsNamesSb.AppendLine(cc + " " + regionNow.Name);
+                        regionsActiveSb.AppendLine(AbsoluteChangeString(regionNow.Active, regionToday.Active, regionYesterday.Active));
                         growthFactorSb.AppendLine(AbsoluteFactorChangeString(currentRegionGrowthFactor, pastRegionGrowthFactor));
 
                         if (regionsNamesSb.Length > 1024 || regionsActiveSb.Length > 1024 || growthFactorSb.Length > 1024)
                             break;
                     }
 
-                    var currentGrowthFactor = GetGrowthFactor(datas[0], datas[1], datas[2]);
-                    var pastGrowthFactor = GetGrowthFactor(datas[1], datas[2], datas[3]);
+                    var currentGrowthFactor = GetCurrentGrowthFactor(datas[0], datas[1], datas[2]);
+                    var pastGrowthFactor = GetGrowthFactor(datas[2], datas[3]);
 
                     var embedBuilder = new EmbedBuilder()
-                        .WithTitle("COVID-19 Live Tracker")
+                        .WithTitle("COVID-19 Coronavirus Pandemic Live Tracker")
                         .WithDescription("The data is updated every 2.5 minutes and compared to numbers from yesterday.")
-                        .WithTimestamp(current.LastUpdated)
+                        .WithTimestamp(liveData.LastUpdate)
                         .WithUrl("https://www.worldometers.info/coronavirus/")
 
-                        .AddField("**Regions Affected**", AbsoluteChangeString(current.RegionsActive, past.RegionsActive), true)
-                        .AddField("**Total Cases**", AbsoluteChangeString(current.Cases, past.Cases), true)
+                        .AddField("**Regions Affected**", AbsoluteChangeString(now.RegionsActive, today.RegionsActive, yesterday.RegionsActive), true)
+                        .AddField("**Total Cases**", AbsoluteChangeString(now.Cases, today.Cases, yesterday.Cases), true)
                         .AddField("**Global Growth Factor**", AbsoluteFactorChangeString(currentGrowthFactor, pastGrowthFactor), true)
 
                         .AddField("**Region**", GetExceptLastLine(regionsNamesSb), true)
                         .AddField("**Infected**", GetExceptLastLine(regionsActiveSb), true)
                         .AddField("**Growth Factor**", GetExceptLastLine(growthFactorSb), true)
 
-                        .AddField("**Total Infected**", AbsoluteChangeString(current.Active, past.Active), true)
-                        .AddField("**Total Serious**", AbsoluteChangeString(current.Serious, past.Serious), true)
-                        .AddField("**Total Mild**", AbsoluteChangeString(current.Mild, past.Mild), true)
+                        .AddField("**Total Infected**", AbsoluteChangeString(now.Active, today.Active, yesterday.Active), true)
+                        .AddField("**Total Serious**", AbsoluteChangeString(now.Serious, today.Serious, yesterday.Serious), true)
+                        .AddField("**Total Mild**", AbsoluteChangeString(now.Mild, today.Mild, yesterday.Mild), true)
 
-                        .AddField("**Total Recovered**", AbsoluteChangeString(current.Recovered, past.Recovered), true)
-                        .AddField("**Total Deaths**", AbsoluteChangeString(current.Deaths, past.Deaths), true)
-                        .AddField("**Global Death Rate**", AbsolutePercentageChangeString(current.DeathRate, past.DeathRate), true)
-                        .AddField("**Links**", "[WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
+                        .AddField("**Total Recovered**", AbsoluteChangeString(now.Recovered, today.Recovered, yesterday.Recovered), true)
+                        .AddField("**Total Deaths**", AbsoluteChangeString(now.Deaths, today.Deaths, yesterday.Deaths), true)
+                        .AddField("**Global Death Rate**", AbsolutePercentageChangeString(now.DeathRate, yesterday.DeathRate), true)
+                        .AddField("**Links**", "[Worldometers](https://www.worldometers.info/coronavirus/) | [WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
                         .GetGuild(DiscordSettings.GuildId)
@@ -181,25 +181,39 @@ namespace ForumCrawler
             return $":flag_{cc.ToLowerInvariant()}:";
         }
 
-        public static double GetGrowthFactor(ICoronaEntry current, ICoronaEntry past, ICoronaEntry past2)
+        public static int GetCurrentChange(int now, int today, int yesterday)
         {
-            var growthDay = current.Cases - past.Cases;
-            var growthPrevious = past.Cases - past2.Cases;
-            var res = (double)growthDay / growthPrevious;
+            var todayChange = now - today;
+            var yesterdayChange = today - yesterday;
+            var moreToday = Math.Abs(todayChange) > Math.Abs(yesterdayChange);
+            return moreToday ? todayChange : yesterdayChange;
+        }
+
+        public static double GetCurrentGrowthFactor(ICoronaEntry now, ICoronaEntry today, ICoronaEntry yesterday)
+        {
+            var todayGrowth = GetGrowthFactor(now, today);
+            var yesteredayGrowth = GetGrowthFactor(today, yesterday);
+            var moreToday = todayGrowth> yesteredayGrowth;
+            return moreToday ? todayGrowth : yesteredayGrowth;
+        }
+
+        public static double GetGrowthFactor(ICoronaEntry current, ICoronaEntry past)
+        {
+            var res = (double)current.CaseIncrease / past.CaseIncrease;
             if (Double.IsNaN(res))
                 return 0;
             return res;
         }
 
-        public static string AbsoluteChangeString(int current, int past)
+        public static string AbsoluteChangeString(int now, int today, int yesterday)
         {
             var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
             nfi.NumberDecimalDigits = 0;
             nfi.NumberGroupSeparator = " ";
-          
-            var change = current - past;
+
+            var change = GetCurrentChange(now, today, yesterday);
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{current.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#", nfi)}";
+            return $"{emojiStr}{now.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#", nfi)}";
         }
 
         public static string AbsoluteFactorChangeString(double current, double past)
@@ -234,49 +248,41 @@ namespace ForumCrawler
             return num;
         }
 
-        public static Task<CoronaData> GetArchiveData(int offset)
+        public static async Task<CoronaData> GetArchiveData(DateTime time)
         {
-            return GetData(String.Format(ARCHIVE_API_URL, DateTime.UtcNow.Subtract(TimeSpan.FromDays(offset)).ToString("yyyyMMddHHmmss")));
+            var web = new HtmlWeb();
+            var coronaStats = await web.LoadFromWebAsync(String.Format(ARCHIVE_API_URL, time.ToString("yyyyMMdd")));
+            return GetFromTable(coronaStats, "yesterday");
         }
 
-        public static async Task<CoronaData> GetData(string url)
+        public static async Task<CoronaLiveData> GetLiveData(string url)
         {
             var web = new HtmlWeb();
             var coronaStats = await web.LoadFromWebAsync(url);
+
+            var lastUpdate = DateTimeOffset.Parse(
+                coronaStats.DocumentNode.SelectNodes("//div")
+                .First(e => e.GetAttributeValue("style", "") == "font-size:13px; color:#999; text-align:center")
+                .InnerText.Substring("Last updated: ".Length)).UtcDateTime;
+
+            var lastReset = DateTime.Parse(Regex.Match(
+               coronaStats.DocumentNode.SelectNodes("//script")
+               .First(e => e.InnerText.Contains("Highcharts.chart('total-currently-infected-linear',"))
+               .InnerText, "categories: \\[.+\"([A-Za-z0-9 ]*)\"\\]")
+                .Groups[1].Value, CultureInfo.InvariantCulture);
+
+            return new CoronaLiveData {
+                LastUpdate = lastUpdate,
+                LastReset = lastReset,
+                Now = GetFromTable(coronaStats, "today"),
+                Today = GetFromTable(coronaStats, "yesterday") // this is NOT a typo
+            };
+        }
+
+        private static CoronaData GetFromTable(HtmlDocument coronaStats, string time)
+        {
             var result = new CoronaData();
-            result.LastUpdated = DateTimeOffset.Parse(
-                    coronaStats.DocumentNode.SelectNodes("//div")
-                    .First(e => e.GetAttributeValue("style", "") == "font-size:13px; color:#999; text-align:center")
-                    .InnerText
-                    .Substring("Last updated: ".Length)
-                ).UtcDateTime;
-
-            result.CaseHistory = Regex.Match(
-                    coronaStats.DocumentNode.SelectNodes("//script")
-                        .First(e => e.InnerText.Contains("Highcharts.chart('coronavirus-cases-linear'"))
-                    .InnerText,
-                    @"data: \[([0-9,]+)\]"
-                ).Groups[1].Value.Split(',')
-                .Select(i => Int32.Parse(i))
-                .ToList();
-
-
-            var countries = coronaStats.DocumentNode.SelectNodes("//*[@id=\"main_table_countries\"]/tbody[1]/tr");
-
-            if (countries == null)
-            {
-                // this was returning null, and it seems like main_table_countries_today and main_table_countries_yesterday
-                // are valid substitutes
-                //
-                // idk what other api calls there are, so i'm just simply saying that if it's null,
-                // it should be replaced with the main_table_countries_today since that's probably what's needed?
-                countries = coronaStats.DocumentNode.SelectNodes("//*[@id=\"main_table_countries_today\"]/tbody[1]/tr");
-
-                if (countries == null)
-                {
-                    throw new CoronaScrapeException();
-                }
-            }
+            var countries = coronaStats.DocumentNode.SelectNodes($"//*[@id=\"main_table_countries_{time}\"]/tbody[1]/tr");
 
             foreach (var country in countries)
             {
@@ -285,6 +291,7 @@ namespace ForumCrawler
                 entry.Name = cells[0].InnerText.Trim();
                 entry.Type = cells[0].SelectSingleNode("span") == null ? CoronaData.CoronaEntryType.Country : CoronaData.CoronaEntryType.Other;
                 entry.Cases = (int)ParseDouble(cells[1]);
+                entry.CaseIncrease = (int)ParseDouble(cells[2]);
                 entry.Deaths = (int)ParseDouble(cells[3]);
                 entry.Recovered = (int)ParseDouble(cells[5]);
                 entry.Serious = (int)ParseDouble(cells[7]);
@@ -295,7 +302,7 @@ namespace ForumCrawler
 
         public class CountryList
         {
-            private CultureTypes _AllCultures;
+            private readonly CultureTypes _AllCultures;
             public CountryList(bool AllCultures)
             {
                 this._AllCultures = (AllCultures) ? CultureTypes.AllCultures : CultureTypes.SpecificCultures;
@@ -304,19 +311,6 @@ namespace ForumCrawler
 
             public List<CountryInfo> Countries { get; set; }
 
-            public List<CountryInfo> GetCountryInfoByName(string CountryName, bool NativeName)
-            {
-                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName).ToList()
-                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName).ToList();
-            }
-
-            public List<CountryInfo> GetCountryInfoByName(string CountryName, bool NativeName, bool IsNeutral)
-            {
-                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName &&
-                                                                   info.Culture.IsNeutralCulture == IsNeutral).ToList()
-                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName &&
-                                                                   info.Culture.IsNeutralCulture == IsNeutral).ToList();
-            }
 
             public string GetTwoLettersName(string CountryName, bool NativeName)
             {
@@ -326,32 +320,6 @@ namespace ForumCrawler
                                                                    .FirstOrDefault();
 
                 return (country != null) ? country.Region.TwoLetterISORegionName : string.Empty;
-            }
-
-            public string GetThreeLettersName(string CountryName, bool NativeName)
-            {
-                CountryInfo country = (NativeName) ? this.Countries.Where(info => info.Region.NativeName.Contains(CountryName))
-                                                                    .FirstOrDefault()
-                                                   : this.Countries.Where(info => info.Region.EnglishName.Contains(CountryName))
-                                                                    .FirstOrDefault();
-
-                return (country != null) ? country.Region.ThreeLetterISORegionName : string.Empty;
-            }
-
-            public List<string> GetIetfLanguageTag(string CountryName, bool NativeName)
-            {
-                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName)
-                                                    .Select(info => info.Culture.IetfLanguageTag).ToList()
-                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName)
-                                                    .Select(info => info.Culture.IetfLanguageTag).ToList();
-            }
-
-            public List<int> GetRegionGeoId(string CountryName, bool NativeName)
-            {
-                return (NativeName) ? this.Countries.Where(info => info.Region.NativeName == CountryName)
-                                                    .Select(info => info.Region.GeoId).ToList()
-                                    : this.Countries.Where(info => info.Region.EnglishName == CountryName)
-                                                    .Select(info => info.Region.GeoId).ToList();
             }
 
             private static List<CountryInfo> GetAllCountries(CultureTypes cultureTypes)
