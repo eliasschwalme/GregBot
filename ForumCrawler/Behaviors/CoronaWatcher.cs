@@ -89,13 +89,14 @@ namespace ForumCrawler
                 {
                     var liveData = await GetLiveData(API_URL);
 
-                    var datas = new[] { liveData.Now, liveData.Today }.Concat(await Task.WhenAll(
+                    var datas = new[] { liveData.Today }.Concat(await Task.WhenAll(
                         GetArchiveData(liveData.LastReset),
                         GetArchiveData(liveData.LastReset.AddDays(-1)))).ToArray();
 
                     var now = liveData.Now;
                     var today = liveData.Today;
                     var yesterday = datas[1];
+                    var twoDaysAgo = datas[2];
 
                     var regionsNamesSb = new StringBuilder();
                     var regionsActiveSb = new StringBuilder();
@@ -107,12 +108,13 @@ namespace ForumCrawler
                             d.Entries.TryGetValue(regionNow.Name, out var res);
                             return res ?? new CoronaData.CoronaEntry();
                         }).ToArray();
+                        var regionToday = regions[0];
+                        var regionYesterday = regions[1];
+                        var regionTwoDaysAgo = regions[2];
 
-                        var currentRegionGrowthFactor = GetCurrentGrowthFactor(regions[0], regions[1], regions[2]);
-                        var pastRegionGrowthFactor = GetGrowthFactor(regions[2], regions[3]);
+                        var currentRegionGrowthFactor = GetCurrentGrowthFactor(regionNow, regionToday, regionYesterday);
+                        var pastRegionGrowthFactor = GetGrowthFactor(regionYesterday, regionTwoDaysAgo);
 
-                        var regionToday = regions[1];
-                        var regionYesterday = regions[2];
                         var cc = GetCountryEmoji(regionNow);
                         regionsNamesSb.AppendLine(cc + " " + regionNow.Name);
                         regionsActiveSb.AppendLine(AbsoluteChangeString(regionNow.Active, regionToday.Active, regionYesterday.Active));
@@ -122,8 +124,8 @@ namespace ForumCrawler
                             break;
                     }
 
-                    var currentGrowthFactor = GetCurrentGrowthFactor(datas[0], datas[1], datas[2]);
-                    var pastGrowthFactor = GetGrowthFactor(datas[2], datas[3]);
+                    var currentGrowthFactor = GetCurrentGrowthFactor(now, today, yesterday);
+                    var pastGrowthFactor = GetGrowthFactor(yesterday, twoDaysAgo);
 
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Coronavirus Pandemic Live Tracker")
