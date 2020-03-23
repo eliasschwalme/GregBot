@@ -147,7 +147,7 @@ namespace ForumCrawler
 
                         .AddField("**Total Recovered**", AbsoluteChangeString(now.Recovered, today.Recovered, yesterday.Recovered), true)
                         .AddField("**Total Deaths**", AbsoluteChangeString(now.Deaths, today.Deaths, yesterday.Deaths), true)
-                        .AddField("**Global Death Rate**", AbsolutePercentageChangeString(now.DeathRate, yesterday.DeathRate), true)
+                        .AddField("**Global Death Rate**", AbsolutePercentageChangeString(now.DeathRate, today.DeathRate, yesterday.DeathRate), true)
                         .AddField("**Links**", "[Worldometers](https://www.worldometers.info/coronavirus/) | [WHO](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public) | [CDC (USA)](https://www.cdc.gov/coronavirus/2019-nCoV/index.html) | [Reddit](https://www.reddit.com/r/Coronavirus/)");
 
                     var msg = (IUserMessage)await client
@@ -184,6 +184,14 @@ namespace ForumCrawler
         }
 
         public static int GetCurrentChange(int now, int today, int yesterday)
+        {
+            var todayChange = now - today;
+            var yesterdayChange = today - yesterday;
+            var moreToday = Math.Abs(todayChange) > Math.Abs(yesterdayChange);
+            return moreToday ? todayChange : yesterdayChange;
+        }
+
+        public static double GetCurrentChange(double now, double today, double yesterday)
         {
             var todayChange = now - today;
             var yesterdayChange = today - yesterday;
@@ -237,11 +245,11 @@ namespace ForumCrawler
                     : "<:n:688859293205921857>";
         }
 
-        public static string AbsolutePercentageChangeString(double current, double past)
+        public static string AbsolutePercentageChangeString(double now, double today, double past)
         {
-            var change = current - past;
+            var change = GetCurrentChange(now, today, past);
             var emojiStr = GetEmojiString(change);
-            return $"{emojiStr}{current:0.0%}{change: (+0.0%); (-0.0%);#}";
+            return $"{emojiStr}{now:0.0%}{change: (+0.0%); (-0.0%);#}";
         }
 
         public static double ParseDouble(HtmlNode node)
