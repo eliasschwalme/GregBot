@@ -17,8 +17,8 @@ namespace DiscordSocialScore
         private static readonly List<(string, (Color, Color))> SpecialRoles = new List<(string, (Color, Color))>
         {
             ("Nitro Booster", (new Color(116, 0, 127), new Color(244, 127, 255))),
-            ("Discord Staff", (Color.DarkTeal, Color.Teal)),
-            ("EE & Forums Staff", (new Color(76, 161, 175), new Color(166, 209, 215)))
+            ("Staff", (Color.DarkTeal, Color.Teal)),
+            ("EE Staff", (new Color(76, 161, 175), new Color(166, 209, 215)))
         };
 
         private static Color GetGradient(double step, Color from, Color target)
