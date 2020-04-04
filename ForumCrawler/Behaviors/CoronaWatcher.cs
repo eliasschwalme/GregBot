@@ -150,7 +150,7 @@ namespace ForumCrawler
 
                         .AddField("**New Infection Every**", TimeSpan.FromDays(1d / dailyCases).ToHumanReadableString(), true)
                         .AddField("**New Recovery Every**", TimeSpan.FromDays(1d / dailyRecoveries).ToHumanReadableString(), true)
-                        .AddField("**Total New Death Every**", TimeSpan.FromDays(1d / dailyDeaths).ToHumanReadableString(), true)
+                        .AddField("**New Death Every**", TimeSpan.FromDays(1d / dailyDeaths).ToHumanReadableString(), true)
 
                         .AddField("**Total Recovered**", AbsoluteChangeString(now.Recovered, today.Recovered, yesterday.Recovered), true)
                         .AddField("**Total Deaths**", AbsoluteChangeString(now.Deaths, today.Deaths, yesterday.Deaths), true)
