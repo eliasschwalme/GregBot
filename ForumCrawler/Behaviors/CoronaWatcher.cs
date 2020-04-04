@@ -126,10 +126,6 @@ namespace ForumCrawler
                     var currentGrowthFactor = GetCurrentGrowthFactor(now, today, yesterday);
                     var pastGrowthFactor = GetGrowthFactor(yesterday, twoDaysAgo);
 
-                    var dailyCases = GetCurrentChange(now.Cases, today.Cases, yesterday.Cases);
-                    var dailyRecoveries = GetCurrentChange(now.Recovered, today.Recovered, yesterday.Recovered);
-                    var dailyDeaths = GetCurrentChange(now.Deaths, today.Deaths, yesterday.Deaths);
-
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Coronavirus Pandemic Live Tracker")
                         .WithDescription("The data is updated every 2.5 minutes and compared to numbers from yesterday.")
@@ -148,9 +144,9 @@ namespace ForumCrawler
                         .AddField("**Total Serious**", AbsoluteChangeString(now.Serious, today.Serious, yesterday.Serious), true)
                         .AddField("**Total Mild**", AbsoluteChangeString(now.Mild, today.Mild, yesterday.Mild), true)
 
-                        .AddField("**New Infection Every**", TimeSpan.FromDays(1d / dailyCases).ToHumanReadableString(), true)
-                        .AddField("**New Recovery Every**", TimeSpan.FromDays(1d / dailyRecoveries).ToHumanReadableString(), true)
-                        .AddField("**New Death Every**", TimeSpan.FromDays(1d / dailyDeaths).ToHumanReadableString(), true)
+                        .AddField("**New Infection Every**", GetPerSecondGrowthString(now.Cases, today.Cases, yesterday.Cases, twoDaysAgo.Cases), true)
+                        .AddField("**New Recovery Every**", GetPerSecondGrowthString(now.Recovered, today.Recovered, yesterday.Recovered, twoDaysAgo.Recovered), true)
+                        .AddField("**New Death Every**", GetPerSecondGrowthString(now.Deaths, today.Deaths, yesterday.Deaths, twoDaysAgo.Deaths), true)
 
                         .AddField("**Total Recovered**", AbsoluteChangeString(now.Recovered, today.Recovered, yesterday.Recovered), true)
                         .AddField("**Total Deaths**", AbsoluteChangeString(now.Deaths, today.Deaths, yesterday.Deaths), true)
@@ -206,6 +202,18 @@ namespace ForumCrawler
             return moreToday ? todayChange : yesterdayChange;
         }
 
+        private static string GetPerSecondGrowthString(int now, int today, int yesterday, int twoDaysAgo)
+        {
+            const double SecondsPerDay = 24 * 60 * 60;
+            var daily = GetCurrentChange(now, today, yesterday);
+            var pastDaily = yesterday - twoDaysAgo;
+            var interval = SecondsPerDay / daily;
+            var pastInterval = SecondsPerDay / pastDaily;
+            var change = interval - pastInterval;
+            var emojiStr = GetEmojiString(change, 0.1);
+            return $"{emojiStr}{interval:0.0} seconds{change: (+#,0.0); (-#,0.0);#}";
+        }
+
         public static double GetCurrentGrowthFactor(ICoronaEntry now, ICoronaEntry today, ICoronaEntry yesterday)
         {
             var todayGrowth = GetGrowthFactor(now, today);
@@ -217,7 +225,7 @@ namespace ForumCrawler
         public static double GetGrowthFactor(ICoronaEntry current, ICoronaEntry past)
         {
             var res = (double)current.CaseIncrease / past.CaseIncrease;
-            if (Double.IsNaN(res))
+            if (double.IsNaN(res))
                 return 0;
             return res;
         }
@@ -229,25 +237,25 @@ namespace ForumCrawler
             nfi.NumberGroupSeparator = " ";
 
             var change = GetCurrentChange(now, today, yesterday);
-            var emojiStr = GetEmojiString(change);
+            var emojiStr = GetEmojiString(change, 1);
             return $"{emojiStr}{now.ToString("N", nfi)}{change.ToString(" (+#,#); (-#,#);#", nfi)}";
         }
 
         public static string AbsoluteFactorChangeString(double current, double past)
         {
             var change = current - past;
-            var emojiStr = GetEmojiString(change);
+            var emojiStr = GetEmojiString(change, 0.01);
 
             if (Double.IsInfinity(change)) change = 0;
             var inf = Double.IsPositiveInfinity(current) ? "N/A" : current.ToString("0.00x");
             return $"{emojiStr}{inf}{change: (+#,0.00); (-#,0.00);#}";
         }
 
-        private static string GetEmojiString(double change)
+        private static string GetEmojiString(double change, double accuracy)
         {
-            return change > 0
+            return change > accuracy / 2 
                 ? "<:u:688860234449813591>"
-                : change < 0
+                : change < -accuracy / 2
                     ? "<:d:688860234474979334>"
                     : "<:n:688859293205921857>";
         }
@@ -255,7 +263,7 @@ namespace ForumCrawler
         public static string AbsolutePercentageChangeString(double now, double today, double past)
         {
             var change = GetCurrentChange(now, today, past);
-            var emojiStr = GetEmojiString(change);
+            var emojiStr = GetEmojiString(change, 0.001);
             return $"{emojiStr}{now:0.0%}{change: (+0.0%); (-0.0%);#}";
         }
 
