@@ -45,7 +45,6 @@ namespace ForumCrawler
         public int Mild => this.Active - this.Serious;
 
         public int RegionsActive => this.Entries.Values.Count(e => e.Active > 0);
-        public int RegionsRecovered => this.Entries.Values.Count(e => e.Active == 0);
 
         public double DeathRate => (double)this.Deaths / (this.Recovered + this.Deaths);
 
@@ -127,6 +126,10 @@ namespace ForumCrawler
                     var currentGrowthFactor = GetCurrentGrowthFactor(now, today, yesterday);
                     var pastGrowthFactor = GetGrowthFactor(yesterday, twoDaysAgo);
 
+                    var dailyCases = GetCurrentChange(now.Cases, today.Cases, yesterday.Cases);
+                    var dailyRecoveries = GetCurrentChange(now.Recovered, today.Recovered, yesterday.Recovered);
+                    var dailyDeaths = GetCurrentChange(now.Deaths, today.Deaths, yesterday.Deaths);
+
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle("COVID-19 Coronavirus Pandemic Live Tracker")
                         .WithDescription("The data is updated every 2.5 minutes and compared to numbers from yesterday.")
@@ -144,6 +147,10 @@ namespace ForumCrawler
                         .AddField("**Total Infected**", AbsoluteChangeString(now.Active, today.Active, yesterday.Active), true)
                         .AddField("**Total Serious**", AbsoluteChangeString(now.Serious, today.Serious, yesterday.Serious), true)
                         .AddField("**Total Mild**", AbsoluteChangeString(now.Mild, today.Mild, yesterday.Mild), true)
+
+                        .AddField("**New Infection Every**", TimeSpan.FromDays(1d / dailyCases).ToHumanReadableString(), true)
+                        .AddField("**New Recovery Every**", TimeSpan.FromDays(1d / dailyRecoveries).ToHumanReadableString(), true)
+                        .AddField("**Total New Death Every**", TimeSpan.FromDays(1d / dailyDeaths).ToHumanReadableString(), true)
 
                         .AddField("**Total Recovered**", AbsoluteChangeString(now.Recovered, today.Recovered, yesterday.Recovered), true)
                         .AddField("**Total Deaths**", AbsoluteChangeString(now.Deaths, today.Deaths, yesterday.Deaths), true)
@@ -305,6 +312,8 @@ namespace ForumCrawler
                 entry.Deaths = (int)ParseDouble(cells[3]);
                 entry.Recovered = (int)ParseDouble(cells[5]);
                 entry.Serious = (int)ParseDouble(cells[7]);
+
+                if (entry.Name == "World") continue;
                 result.Entries.Add(entry.Name, entry);
             }
             return result;
