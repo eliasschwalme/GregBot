@@ -162,7 +162,6 @@ namespace ForumCrawler
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    throw;
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(2.5));
