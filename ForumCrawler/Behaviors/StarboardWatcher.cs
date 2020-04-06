@@ -3,48 +3,100 @@ using Discord.WebSocket;
 
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    public static class StarboardWatcher
+    /// <summary>
+    /// Represents criteria that may or may not make a channel eligible for starboarding.
+    /// </summary>
+    /// <param name="channel">The channel in question to determine if it is qualified
+    /// to be pinned to the designated starboard.</param>
+    public delegate bool ChannelQualifier(ISocketMessageChannel channel);
+
+    /// <summary>
+    /// Determines if an emote is qualified to represent the action of starboarding
+    /// a given post.
+    /// </summary>
+    /// <param name="emote">The emote in question.</param>
+    public delegate bool EmoteQualifier(IEmote emote);
+
+    public class StarboardWatcher
     {
-        public static void Bind(DiscordSocketClient client)
+        private readonly DiscordSocketClient _client;
+        private readonly SocketGuild _guild;
+        private readonly SocketGuildChannel _starboard;
+        private readonly ChannelQualifier _channelQualifier;
+        private readonly EmoteQualifier _emoteQualifier;
+
+        public StarboardWatcher
+        (
+            DiscordSocketClient client,
+            SocketGuild guild,
+            SocketTextChannel starboard,
+            ChannelQualifier channelQualifier,
+            EmoteQualifier emoteQualifier
+        )
         {
-            client.ReactionAdded += Client_ReactionAdded;
-            client.ReactionRemoved += Client_ReactionRemoved;
+            _client = client;
+            _guild = guild;
+            _starboard = starboard;
+            _channelQualifier = channelQualifier;
+            _emoteQualifier = emoteQualifier;
         }
 
-        private static bool IsWootReaction(IEmote emote) => emote.Name == "woot";
-
-        private static IEnumerable<SocketCategoryChannel> GetAllowedCategoryChannels(SocketGuild guild)
+        /// <summary>
+        /// Attaches event handlers to the client.
+        /// </summary>
+        public void Bind()
         {
-            yield return guild.GetCategoryChannel(360825166437285891); // text channels
+            _client.ReactionAdded += OnReactionAdded;
         }
 
-        private static bool ChannelAllowed(SocketGuildChannel socketGuildChannel)
+        private Task OnReactionAdded
+        (
+            Cacheable<IUserMessage, ulong> message,
+            ISocketMessageChannel channel,
+            SocketReaction reaction
+        )
         {
-            foreach (var allowed in GetAllowedCategoryChannels(socketGuildChannel.Guild))
+            var isStarboardEmote = _emoteQualifier(reaction.Emote);
+            
+            if (!isStarboardEmote)
             {
-                if (allowed.Channels.Any(channel => channel.Id == socketGuildChannel.Id))
-                {
-                    return true;
-                }
+                return Task.CompletedTask;
             }
 
-            return false;
+            var isStarboardableChannel = _channelQualifier(channel);
+
+            if (!isStarboardableChannel)
+            {
+                return Task.CompletedTask;
+            }
+
+            return OnReactionAddedImpl(message, channel, reaction);
         }
 
-        private static async Task HandleReaction(SocketReaction reaction)
+        private async Task OnReactionAddedImpl
+        (
+            Cacheable<IUserMessage, ulong> message,
+            ISocketMessageChannel channel,
+            SocketReaction reaction
+        )
         {
-            if (!IsWootReaction(reaction.Emote)
-                || !(reaction.Channel is SocketGuildChannel socketGuildChannel)
-                || !ChannelAllowed(socketGuildChannel))
+            var reactionMessage = await message.GetOrDownloadAsync();
+            
+            if (!(reactionMessage.Author is IGuildUser user))
             {
+                Console.WriteLine("Handle reaction - user author not guild user");
                 return;
             }
-
+        }
+        /*
+        private static async Task HandleReaction(SocketReaction reaction)
+        {
             var reactionMessage = await reaction.Channel.GetMessageAsync(reaction.MessageId);
 
             if (!(reactionMessage is IUserMessage userMessage))
@@ -144,6 +196,6 @@ namespace ForumCrawler
             ISocketMessageChannel channel,
             SocketReaction reaction
         )
-            => HandleReaction(reaction);
+            => HandleReaction(reaction);*/
     }
 }

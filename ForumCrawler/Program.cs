@@ -1,6 +1,7 @@
 ﻿using DiscordSocialScore;
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ForumCrawler
@@ -29,7 +30,18 @@ namespace ForumCrawler
             VoiceChat.Bind(client);
             GovernanceVoteWatcher.Bind(client);
             EditWatcher.Bind(client);
-            StarboardWatcher.Bind(client);
+
+            var guild = client.GetGuild(DiscordSettings.GuildId);
+            var textChannels = guild.GetCategoryChannel(360825166437285891);
+            var generalStarboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(DiscordSettings.StarboardChannel),
+                channel => textChannels.Channels.Any(textChannel => channel.Id == textChannel.Id),
+                emote => emote.Name == "woot"
+            );
+            generalStarboard.Bind();
 
             await Task.WhenAll
             (
