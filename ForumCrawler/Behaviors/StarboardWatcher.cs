@@ -26,7 +26,7 @@ namespace ForumCrawler
     public class StarboardWatcher
     {
         private static bool IsAdminNoVisibilityEmote(IEmote emote)
-            => emote.Name == "no_entry_sign";
+            => emote.Name == "🚫"; // no_entry_sign
 
         private readonly DiscordSocketClient _client;
         private readonly SocketGuild _guild;
@@ -34,6 +34,7 @@ namespace ForumCrawler
         private readonly ChannelQualifier _channelQualifier;
         private readonly EmoteQualifier _emoteQualifier;
         private readonly EmoteQualifier _adminQualifier;
+        private readonly int _configuredWoots;
 
         public StarboardWatcher
         (
@@ -41,7 +42,8 @@ namespace ForumCrawler
             SocketGuild guild,
             SocketTextChannel starboard,
             ChannelQualifier channelQualifier,
-            EmoteQualifier emoteQualifier
+            EmoteQualifier emoteQualifier,
+            int configuredWoots
         )
         {
             _client = client;
@@ -50,6 +52,7 @@ namespace ForumCrawler
             _channelQualifier = channelQualifier;
             _emoteQualifier = emoteQualifier;
             _adminQualifier = IsAdminNoVisibilityEmote;
+            _configuredWoots = configuredWoots;
         }
 
         /// <summary>
@@ -84,13 +87,48 @@ namespace ForumCrawler
 
                 if (isAdminEmote)
                 {
-                    // TODO: implement
+                    return OnStaffVisibility(message, channel, reaction, added);
                 }
 
                 return Task.CompletedTask;
             }
 
             return OnReactionAddedImpl(message, channel, reaction, added);
+        }
+
+        private async Task OnStaffVisibility
+        (
+            Cacheable<IUserMessage, ulong> message,
+            ISocketMessageChannel channel,
+            SocketReaction reaction,
+            bool added
+        )
+        {
+            using (var ctx = new DatabaseContext())
+            {
+                var post = await ctx.RevisedStarboardPosts.SingleOrDefaultAsync(loadingPost => loadingPost.MessageId == (long)message.Id
+                    && loadingPost.StarboardChannelId == (long)_starboard.Id);
+
+                if (post == default)
+                {
+                    // a post doesn't exist to censor - let's make one
+                    ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
+                    {
+                        MessageId = (long)message.Id,
+                        StaffToggledVisibility = added,
+                        StarboardChannelId = (long)_starboard.Id,
+                        StarboardMessageId = 0
+                    });
+                }
+                else
+                {
+                    post.StaffToggledVisibility = added;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+
+            await UpdateStarboardPost(await message.GetOrDownloadAsync());
         }
 
         private async Task OnReactionAddedImpl
@@ -114,7 +152,7 @@ namespace ForumCrawler
             {
                 var reactionPost = await ctx.StarboardGazers.SingleOrDefaultAsync(gazer => gazer.MessageId == (long)message.Id
                     && gazer.StarboardChannelId == (long)_starboard.Id
-                    && gazer.StargazerId == (long)user.Id);
+                    && gazer.StargazerId == (long)reaction.UserId);
 
                 var reactionExists = reactionPost != default;
 
@@ -124,7 +162,7 @@ namespace ForumCrawler
                     {
                         MessageId = (long)message.Id,
                         StarboardChannelId = (long)_starboard.Id,
-                        StargazerId = (long)user.Id
+                        StargazerId = (long)reaction.UserId
                     });
 
                     await ctx.SaveChangesAsync();
@@ -148,13 +186,10 @@ namespace ForumCrawler
         {
             using (var ctx = new DatabaseContext())
             {
-                var postTask = ctx.RevisedStarboardPosts.SingleOrDefaultAsync(loadingPost => loadingPost.MessageId == (long)message.Id
+                var post = await ctx.RevisedStarboardPosts.SingleOrDefaultAsync(loadingPost => loadingPost.MessageId == (long)message.Id
                     && loadingPost.StarboardChannelId == (long)_starboard.Id);
-                var reactionsTask = ctx.StarboardGazers.CountAsync(reaction => reaction.MessageId == (long)message.Id
+                var reactions = await ctx.StarboardGazers.CountAsync(reaction => reaction.MessageId == (long)message.Id
                     && reaction.StarboardChannelId == (long)_starboard.Id);
-
-                var post = await postTask;
-                var reactions = await reactionsTask;
 
                 var postExists = post != default;
 
@@ -189,14 +224,17 @@ namespace ForumCrawler
                 }
                 else
                 {
-                    var starboardMessage = await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
-                    ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
+                    if (reactions < _configuredWoots)
                     {
-                        MessageId = (long)message.Id,
-                        StaffToggledVisibility = false,
-                        StarboardChannelId = (long)_starboard.Id,
-                        StarboardMessageId = (long)starboardMessage.Id
-                    });
+                        var starboardMessage = await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
+                        ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
+                        {
+                            MessageId = (long)message.Id,
+                            StaffToggledVisibility = false,
+                            StarboardChannelId = (long)_starboard.Id,
+                            StarboardMessageId = (long)starboardMessage.Id
+                        });
+                    }
                 }
 
                 await ctx.SaveChangesAsync();
@@ -205,111 +243,7 @@ namespace ForumCrawler
 
         private Embed GetMessageEmbed(IUserMessage message, int woots)
         {
-            return DiscordFormatting.BuildStarboardEmbed((IGuildUser)message.Author, message, woots).Build();
+            return DiscordFormatting.BuildStarboardEmbed((IGuildUser)message.Author, message, woots, woots >= _configuredWoots).Build();
         }
-
-        /*
-        private static async Task HandleReaction(SocketReaction reaction)
-        {
-            var reactionMessage = await reaction.Channel.GetMessageAsync(reaction.MessageId);
-
-            if (!(reactionMessage is IUserMessage userMessage))
-            {
-                Console.WriteLine("Handle reaction - reaction message not user message");
-                return;
-            }
-
-            if (!(userMessage.Author is IGuildUser user))
-            {
-                Console.WriteLine("Handle reaction - user author not guild user");
-                return;
-            }
-
-            var gazers = (await userMessage.GetReactionUsersAsync(reaction.Emote, 1000).ToList())
-                .SelectMany(page => page)
-                .Where(u => u != null)
-                .ToList();
-
-            var shouldBeOnStarboard = gazers.Count >= DiscordSettings.MinStarboardReactions;
-            var messageId = reaction.MessageId;
-
-            var starboardInformation = await Database.GetStarboardInformation(reaction.MessageId);
-
-            var currentlyOnStarboard = starboardInformation.OnStarboard;
-            var starboardMessageId = starboardInformation.StarboardMessageId;
-
-            // don't do anything in these circumstances
-            if ((currentlyOnStarboard && shouldBeOnStarboard)
-                || (!currentlyOnStarboard && !shouldBeOnStarboard))
-            {
-                // if we shouldn't be on starboard, don't update anything
-                if (!shouldBeOnStarboard)
-                {
-                    return;
-                }
-
-                var starboardMessage = await GetStarboardMessage(starboardMessageId);
-
-                // just update the message to reflect the current value
-                var message = await reaction.Channel.GetMessageAsync(reaction.MessageId);
-
-                var embed = DiscordFormatting.BuildStarboardEmbed(user, message, gazers.Count)
-                    .Build();
-
-                await starboardMessage.ModifyAsync(properties => properties.Embed = embed);
-            }
-            else if (currentlyOnStarboard && !shouldBeOnStarboard)
-            {
-                // get off the board
-
-                var starboardMessage = await GetStarboardMessage(starboardMessageId);
-                await starboardMessage.DeleteAsync();
-                await Database.DeleteStarboardEntry(messageId);
-            }
-            else if (!currentlyOnStarboard && shouldBeOnStarboard)
-            {
-                // get on the board
-
-                var message = await reaction.Channel.GetMessageAsync(reaction.MessageId);
-                var embed = DiscordFormatting.BuildStarboardEmbed(user, message, gazers.Count)
-                    .Build();
-
-                var starboardMessage = await GetStarboardChannel()
-                    .SendMessageAsync(embed: embed)
-                    ;
-
-                await Database.CreateStarboardEntry(messageId, starboardMessage.Id);
-            }
-
-            return;
-
-            async Task<IUserMessage> GetStarboardMessage(ulong starboardMessageId2)
-            {
-                return (IUserMessage)(await GetStarboardChannel()
-                    .GetMessageAsync(starboardMessageId2));
-            }
-
-            SocketTextChannel GetStarboardChannel()
-            {
-                return socketGuildChannel.Guild
-                    .GetTextChannel(DiscordSettings.StarboardChannel);
-            }
-        }
-
-        private static Task Client_ReactionRemoved
-        (
-            Cacheable<IUserMessage, ulong> cachableMessage,
-            ISocketMessageChannel socketChannel,
-            SocketReaction reaction
-        )
-            => HandleReaction(reaction);
-
-        private static Task Client_ReactionAdded
-        (
-            Cacheable<IUserMessage, ulong> message,
-            ISocketMessageChannel channel,
-            SocketReaction reaction
-        )
-            => HandleReaction(reaction);*/
     }
 }

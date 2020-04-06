@@ -1,6 +1,9 @@
-﻿using DiscordSocialScore;
+﻿using Discord;
+using Discord.WebSocket;
+using DiscordSocialScore;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -31,36 +34,15 @@ namespace ForumCrawler
             GovernanceVoteWatcher.Bind(client);
             EditWatcher.Bind(client);
 
-            var guild = client.GetGuild(DiscordSettings.GuildId);
-
-            /*
-            var textChannels = guild.GetCategoryChannel(360825166437285891);
-            var generalStarboard = new StarboardWatcher
-            (
-                client,
-                client.GetGuild(DiscordSettings.GuildId),
-                guild.GetTextChannel(DiscordSettings.StarboardChannel),
-                channel => textChannels.Channels.Any(textChannel => channel.Id == textChannel.Id),
-                emote => emote.Name == "woot"
-            );
-            generalStarboard.Bind();
-            */
-
-            var staffChannels = guild.GetCategoryChannel(360824776635318284);
-            var staffStarboard = new StarboardWatcher
-            (
-                client,
-                client.GetGuild(DiscordSettings.GuildId),
-                guild.GetTextChannel(DiscordSettings.StarboardChannel),
-                channel => staffChannels.Channels.Any(staffChannel => channel.Id == staffChannel.Id),
-                emote => emote.Name == "woot"
-            );
-            staffStarboard.Bind();
-
             await Task.WhenAll
             (
                 QuickReportWatcher.BindAsync(client, tcs.Task)
             );
+
+            var guild = client.GetGuild(DiscordSettings.GuildId);
+
+            var generalStarboard = StarboardWatcherConfigurator.GeneralStarboard(client, guild);
+            var staffStarboard = StarboardWatcherConfigurator.StaffStarboard(client, guild);
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
@@ -68,5 +50,47 @@ namespace ForumCrawler
             await Task.WhenAny(Task.Delay(TimeSpan.FromDays(2)), crawler.StartAsync());
             throw new Exception("Restart me!");
         }
+    }
+
+    public static class StarboardWatcherConfigurator
+    {
+        public static StarboardWatcher GeneralStarboard(DiscordSocketClient client, SocketGuild guild)
+        {
+            var starboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(DiscordSettings.StarboardChannel),
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
+                WootQualifier,
+                10
+            );
+
+            starboard.Bind();
+
+            return starboard;
+        }
+        public static StarboardWatcher StaffStarboard(DiscordSocketClient client, SocketGuild guild)
+        {
+            var starboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(696765428784955392),
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360824776635318284)), // text channels
+                WootQualifier,
+                2
+            );
+
+            starboard.Bind();
+
+            return starboard;
+        }
+
+        private static bool WootQualifier(IEmote emote)
+             => emote.Name == "woot";
+
+        private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
+            => channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);
     }
 }

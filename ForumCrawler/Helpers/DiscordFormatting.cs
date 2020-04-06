@@ -12,14 +12,13 @@ namespace ForumCrawler
 {
     public static class DiscordFormatting
     {
-        public static EmbedBuilder BuildStarboardEmbed(IGuildUser author, IMessage message, int gazers)
+        public static EmbedBuilder BuildStarboardEmbed(IGuildUser author, IMessage message, int gazers, bool makeRed)
         {
             var builder = new EmbedBuilder()
-                .WithAuthor(author.Nickname, author.GetAvatarUrl(size: 20))
+                .WithAuthor(author.Nickname ?? author.Username, author.GetAvatarUrl(size: 20))
                 .WithDescription(message.Content)
                 .WithFooter("In #" + message.Channel.Name)
                 .WithTimestamp(message.CreatedAt)
-                .WithColor(12345678)
 
                 .WithFields
                 (
@@ -33,6 +32,15 @@ namespace ForumCrawler
                         .WithName("Score:")
                         .WithValue(gazers + " :fire:")
                 ); // :)
+
+            if (makeRed)
+            {
+                builder.WithColor(12345678u);
+            }
+            else
+            {
+                builder.WithColor(Color.DarkGrey);
+            }
 
             foreach (var attach in message.Attachments)
             {
