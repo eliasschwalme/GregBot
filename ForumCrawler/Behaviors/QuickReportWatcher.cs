@@ -14,9 +14,10 @@ namespace ForumCrawler
 
         private static event Func<ulong, IUser, Report.ReportStatus, Task> OnResponse;
 
-        public static void Bind(DiscordSocketClient client)
+        public static async Task BindAsync(DiscordSocketClient client, Task clientReady)
         {
-            client.Ready += () => Client_Ready(client);
+            await clientReady;
+            await Client_Ready(client);
         }
 
         private static async Task Client_Ready(DiscordSocketClient client)

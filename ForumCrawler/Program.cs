@@ -17,13 +17,24 @@ namespace ForumCrawler
 
             services.GetService(typeof(Engine));
 
+            var tcs = new TaskCompletionSource<bool>();
+            client.Ready += () =>
+            {
+                tcs.TrySetResult(true);
+                return Task.CompletedTask;
+            };
+
             CoronaWatcher.Bind(client);
-            QuickReportWatcher.Bind(client);
             MuteWatcher.Bind(client);
             VoiceChat.Bind(client);
             GovernanceVoteWatcher.Bind(client);
             EditWatcher.Bind(client);
             StarboardWatcher.Bind(client);
+
+            await Task.WhenAll
+            (
+                QuickReportWatcher.BindAsync(client, tcs.Task)
+            );
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
