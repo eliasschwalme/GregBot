@@ -27,8 +27,8 @@ namespace ForumCrawler.Models
         public long StarboardMessageId { get; set; }
 
         /// <summary>
-        /// Determines if staff have modified the post to explicitly be shown or
-        /// not on the starboard.
+        /// Determines if staff have modified the post to explicitly hidden from
+        /// the starboard. If this is <c>true</c>, the post is to not be shown.
         /// </summary>
         public bool StaffToggledVisibility { get; set; }
     }
