@@ -104,7 +104,10 @@ namespace ForumCrawler
 
             if (report.ReportsMessageId is ulong reportsMessageId)
             {
-                var reportMessage = (IUserMessage)(await report.Channel.GetMessageAsync(reportsMessageId));
+                var reportMessage = (IUserMessage)(await client.GetGuild(DiscordSettings.GuildId)
+                    .GetTextChannel(DiscordSettings.ReportsChannel)
+                    .GetMessageAsync(reportsMessageId));
+
                 await reportMessage.ModifyAsync(m => m.Embed = embed);
             }
             else
