@@ -332,7 +332,12 @@
     <Compile Include="Migrations\202002120200151_ExemptUser.Designer.cs">
       <DependentUpon>202002120200151_ExemptUser.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202004061630355_UtilizeStarboardReaction.cs" />
+    <Compile Include="Migrations\202004061630355_UtilizeStarboardReaction.Designer.cs">
+      <DependentUpon>202004061630355_UtilizeStarboardReaction.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ReportModel.cs" />
+    <Compile Include="Models\RevisedStarboardPost.cs" />
     <Compile Include="Models\StarboardInformation.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.Designer.cs">
@@ -484,6 +489,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202002120200151_ExemptUser.resx">
       <DependentUpon>202002120200151_ExemptUser.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202004061630355_UtilizeStarboardReaction.resx">
+      <DependentUpon>202004061630355_UtilizeStarboardReaction.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>

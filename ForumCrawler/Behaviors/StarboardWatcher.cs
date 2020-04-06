@@ -93,7 +93,30 @@ namespace ForumCrawler
                 Console.WriteLine("Handle reaction - user author not guild user");
                 return;
             }
+
+            // we only want to add a reaction to the DB if one doesn't exist
+            using (var ctx = new DatabaseContext())
+            {
+                var reactionExists = await ctx.StarboardGazers.AnyAsync(gazer => gazer.MessageId == (long)message.Id
+                    && gazer.StarboardChannelId == (long)_starboard.Id
+                    && gazer.StargazerId == (long)user.Id);
+
+                if (!reactionExists)
+                {
+                    ctx.StarboardGazers.Add(new StarReaction
+                    {
+                        MessageId = (long)message.Id,
+                        StarboardChannelId = (long)_starboard.Id,
+                        StargazerId = (long)user.Id
+                    });
+
+                    await ctx.SaveChangesAsync();
+                }
+            }
+
+            // 
         }
+
         /*
         private static async Task HandleReaction(SocketReaction reaction)
         {

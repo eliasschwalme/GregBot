@@ -32,6 +32,8 @@ namespace ForumCrawler
             EditWatcher.Bind(client);
 
             var guild = client.GetGuild(DiscordSettings.GuildId);
+
+            /*
             var textChannels = guild.GetCategoryChannel(360825166437285891);
             var generalStarboard = new StarboardWatcher
             (
@@ -42,6 +44,18 @@ namespace ForumCrawler
                 emote => emote.Name == "woot"
             );
             generalStarboard.Bind();
+            */
+
+            var staffChannels = guild.GetCategoryChannel(360824776635318284);
+            var staffStarboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(DiscordSettings.StarboardChannel),
+                channel => staffChannels.Channels.Any(staffChannel => channel.Id == staffChannel.Id),
+                emote => emote.Name == "woot"
+            );
+            staffStarboard.Bind();
 
             await Task.WhenAll
             (
