@@ -42,7 +42,7 @@ namespace ForumCrawler
             var guild = client.GetGuild(DiscordSettings.GuildId);
 
             var generalStarboard = StarboardWatcherConfigurator.GeneralStarboard(client, guild);
-            var staffStarboard = StarboardWatcherConfigurator.StaffStarboard(client, guild);
+            var voteStarboard = StarboardWatcherConfigurator.StaffVoteStarboard(client, guild);
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
@@ -71,16 +71,16 @@ namespace ForumCrawler
             return starboard;
         }
 
-        public static StarboardWatcher StaffStarboard(DiscordSocketClient client, SocketGuild guild)
+        public static StarboardWatcher StaffVoteStarboard(DiscordSocketClient client, SocketGuild guild)
         {
             var starboard = new StarboardWatcher
             (
                 client,
                 client.GetGuild(DiscordSettings.GuildId),
-                guild.GetTextChannel(696765428784955392),
-                ChannelCategoryQualifier(guild.GetCategoryChannel(360824776635318284)), // staff channels
-                WootQualifier,
-                2
+                guild.GetTextChannel(696982537972744252), // #vote-board
+                channel => channel.Id == 329340169092333590, // #staff
+                VoteQualifier,
+                1
             );
 
             starboard.Bind();
@@ -90,6 +90,9 @@ namespace ForumCrawler
 
         private static bool WootQualifier(IEmote emote)
              => emote.Name == "woot";
+
+        private static bool VoteQualifier(IEmote emote)
+            => emote.Name == "👍" || emote.Name == "👎";
 
         private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
             => channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);

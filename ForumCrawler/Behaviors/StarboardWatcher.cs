@@ -104,19 +104,7 @@ namespace ForumCrawler
             IUserMessage message
         )
         {
-            IEmote emote = default;
-
-            foreach (var reaction in message.Reactions.Keys)
-            {
-                if (_emoteQualifier(reaction))
-                {
-                    // use this emote
-                    emote = reaction;
-                    break;
-                }
-            }
-
-            var reactors = await message.GetReactionUsersAsync(emote, 1000).FlattenAsync();
+            var reactors = await GetReactionUsers(message);
 
             List<StarReaction> gazers;
 
@@ -312,6 +300,34 @@ namespace ForumCrawler
         private Embed GetMessageEmbed(IUserMessage message, int woots)
         {
             return DiscordFormatting.BuildStarboardEmbed((IGuildUser)message.Author, message, woots, woots >= _configuredWoots).Build();
+        }
+
+        /// <summary>
+        /// Gets every unique user who has reacted to the message, based upon every
+        /// reaction added that qualifies.
+        /// </summary>
+        private async Task<IEnumerable<IUser>> GetReactionUsers(IUserMessage message)
+        {
+            IEnumerable<IUser> allUsers = Array.Empty<IUser>();
+
+            foreach (var reaction in message.Reactions.Keys)
+            {
+                if (!_emoteQualifier(reaction))
+                {
+                    continue;
+                }
+
+                allUsers = allUsers
+                    .Concat(await message.GetReactionUsersAsync(reaction, 1000).FlattenAsync());
+            }
+
+            return allUsers.Distinct(new UserIdEqualityComparer());
+        }
+
+        private class UserIdEqualityComparer : IEqualityComparer<IUser>
+        {
+            public bool Equals(IUser x, IUser y) => x?.Id == y?.Id;
+            public int GetHashCode(IUser obj) => obj == null ? default : obj.Id.GetHashCode();
         }
     }
 }
