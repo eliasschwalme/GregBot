@@ -43,6 +43,7 @@ namespace ForumCrawler
 
             var generalStarboard = StarboardWatcherConfigurator.GeneralStarboard(client, guild);
             var staffStarboard = StarboardWatcherConfigurator.StaffStarboard(client, guild);
+            var temp = StarboardWatcherConfigurator.TempStarboard(client, guild);
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
@@ -70,6 +71,7 @@ namespace ForumCrawler
 
             return starboard;
         }
+
         public static StarboardWatcher StaffStarboard(DiscordSocketClient client, SocketGuild guild)
         {
             var starboard = new StarboardWatcher
@@ -77,7 +79,24 @@ namespace ForumCrawler
                 client,
                 client.GetGuild(DiscordSettings.GuildId),
                 guild.GetTextChannel(696765428784955392),
-                ChannelCategoryQualifier(guild.GetCategoryChannel(360824776635318284)), // text channels
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360824776635318284)), // staff channels
+                WootQualifier,
+                2
+            );
+
+            starboard.Bind();
+
+            return starboard;
+        }
+
+        public static StarboardWatcher TempStarboard(DiscordSocketClient client, SocketGuild guild)
+        {
+            var starboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(696975128117903361),
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
                 WootQualifier,
                 2
             );

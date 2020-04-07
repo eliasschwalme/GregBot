@@ -87,20 +87,78 @@ namespace ForumCrawler
 
                 if (isAdminEmote)
                 {
-                    return OnStaffVisibility(message, channel, reaction, added);
+                    return OnStaffVisibility(message, added);
                 }
 
                 return Task.CompletedTask;
             }
 
-            return OnReactionAddedImpl(message, channel, reaction, added);
+            return OnReactionChangedImpl(message);
+        }
+
+        private async Task OnReactionChangedImpl(Cacheable<IUserMessage, ulong> message)
+            => await OnUpdateAllReactions(await message.GetOrDownloadAsync());
+
+        private async Task OnUpdateAllReactions
+        (
+            IUserMessage message
+        )
+        {
+            IEmote emote = default;
+
+            foreach (var reaction in message.Reactions.Keys)
+            {
+                if (_emoteQualifier(reaction))
+                {
+                    // use this emote
+                    emote = reaction;
+                    break;
+                }
+            }
+
+            var reactors = await message.GetReactionUsersAsync(emote, 1000).FlattenAsync();
+
+            List<StarReaction> gazers;
+
+            // 0 reactors - kill anyone who is currently reacted to it
+            using (var ctx = new DatabaseContext())
+            {
+                gazers = await ctx.StarboardGazers
+                    .Where(gazer => gazer.StarboardChannelId == (long)_starboard.Id
+                        && gazer.MessageId == (long)message.Id)
+                    .ToListAsync();
+
+                // for every user that has reacted that *isn't* a gazer, we will add them
+                foreach (var user in reactors)
+                {
+                    // if there's not a gazer in the DB with the user reacting
+                    if (!gazers.Any(gazer => gazer.StargazerId == (long)user.Id))
+                    {
+                        // add them
+                        await OnReactionAddedImpl(ctx, message, user.Id, true);
+                    }
+                }
+
+                // for every user that *hasn't* reacted that *is* a gazer, we will remove them
+                foreach (var gazer in gazers)
+                {
+                    // if there's a reactor not in the DB with a gazer entry
+                    if (!reactors.Any(user => user.Id == (ulong)gazer.StargazerId))
+                    {
+                        // remove them
+                        await OnReactionAddedImpl(ctx, message, (ulong)gazer.StargazerId, false);
+                    }
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+
+            await UpdateStarboardPost(message);
         }
 
         private async Task OnStaffVisibility
         (
             Cacheable<IUserMessage, ulong> message,
-            ISocketMessageChannel channel,
-            SocketReaction reaction,
             bool added
         )
         {
@@ -133,14 +191,14 @@ namespace ForumCrawler
 
         private async Task OnReactionAddedImpl
         (
-            Cacheable<IUserMessage, ulong> message,
-            ISocketMessageChannel channel,
-            SocketReaction reaction,
+            DatabaseContext ctx,
+            IUserMessage reactionMessage,
+            ulong reactorUserId,
             bool added
         )
         {
-            var reactionMessage = await message.GetOrDownloadAsync();
-            
+            // we don't save changes async - we expect the caller to do that
+
             if (!(reactionMessage.Author is IGuildUser user))
             {
                 Console.WriteLine("Handle reaction - user author not guild user");
@@ -148,34 +206,26 @@ namespace ForumCrawler
             }
 
             // we only want to add a reaction to the DB if one doesn't exist
-            using (var ctx = new DatabaseContext())
+
+            var reactionPost = await ctx.StarboardGazers.SingleOrDefaultAsync(gazer => gazer.MessageId == (long)reactionMessage.Id
+                && gazer.StarboardChannelId == (long)_starboard.Id
+                && gazer.StargazerId == (long)reactorUserId);
+
+            var reactionExists = reactionPost != default;
+
+            if (!reactionExists && added)
             {
-                var reactionPost = await ctx.StarboardGazers.SingleOrDefaultAsync(gazer => gazer.MessageId == (long)message.Id
-                    && gazer.StarboardChannelId == (long)_starboard.Id
-                    && gazer.StargazerId == (long)reaction.UserId);
-
-                var reactionExists = reactionPost != default;
-
-                if (!reactionExists && added)
+                ctx.StarboardGazers.Add(new StarReaction
                 {
-                    ctx.StarboardGazers.Add(new StarReaction
-                    {
-                        MessageId = (long)message.Id,
-                        StarboardChannelId = (long)_starboard.Id,
-                        StargazerId = (long)reaction.UserId
-                    });
-
-                    await ctx.SaveChangesAsync();
-                }
-                else if (reactionExists && !added)
-                {
-                    ctx.StarboardGazers.Remove(reactionPost);
-
-                    await ctx.SaveChangesAsync();
-                }
+                    MessageId = (long)reactionMessage.Id,
+                    StarboardChannelId = (long)_starboard.Id,
+                    StargazerId = (long)reactorUserId
+                });
             }
-
-            await UpdateStarboardPost(reactionMessage);
+            else if (reactionExists && !added)
+            {
+                ctx.StarboardGazers.Remove(reactionPost);
+            }
         }
 
         /// <summary>
@@ -193,6 +243,7 @@ namespace ForumCrawler
 
                 var postExists = post != default;
 
+                REDO_ALL_OF_THIS_LOGIC:
                 if (postExists)
                 {
                     // if this is true, we do not want the post to show up on starboard
@@ -215,6 +266,15 @@ namespace ForumCrawler
                         else
                         {
                             var starboardMessage = (IUserMessage)(await _starboard.GetMessageAsync((ulong)post.StarboardMessageId));
+
+                            // if we couldn't get the message, we need to create it
+                            if (starboardMessage == null)
+                            {
+                                post.StarboardMessageId = 0;
+                                postExists = false;
+                                goto REDO_ALL_OF_THIS_LOGIC;
+                            }
+
                             await starboardMessage.ModifyAsync(edit =>
                             {
                                 edit.Embed = GetMessageEmbed(message, reactions);
@@ -227,13 +287,21 @@ namespace ForumCrawler
                     if (reactions >= _configuredWoots)
                     {
                         var starboardMessage = await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
-                        ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
+
+                        if (post == default)
                         {
-                            MessageId = (long)message.Id,
-                            StaffToggledVisibility = false,
-                            StarboardChannelId = (long)_starboard.Id,
-                            StarboardMessageId = (long)starboardMessage.Id
-                        });
+                            ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
+                            {
+                                MessageId = (long)message.Id,
+                                StaffToggledVisibility = false,
+                                StarboardChannelId = (long)_starboard.Id,
+                                StarboardMessageId = (long)starboardMessage.Id
+                            });
+                        }
+                        else
+                        {
+                            post.StarboardMessageId = (long)starboardMessage.Id;
+                        }
                     }
                 }
 
