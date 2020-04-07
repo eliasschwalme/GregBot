@@ -224,7 +224,7 @@ namespace ForumCrawler
                 }
                 else
                 {
-                    if (reactions < _configuredWoots)
+                    if (reactions >= _configuredWoots)
                     {
                         var starboardMessage = await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
                         ctx.RevisedStarboardPosts.Add(new Models.RevisedStarboardPost
