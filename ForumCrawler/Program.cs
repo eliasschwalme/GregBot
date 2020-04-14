@@ -11,8 +11,6 @@ namespace ForumCrawler
 {
     public static class Program
     {
-        public static string DatabasePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\greg_alts.db";
-
         private static async Task Main()
         {
             var client = await DiscordSettings.GetClient();

@@ -286,7 +286,7 @@ namespace ForumCrawler
 
             var lastUpdate = DateTimeOffset.Parse(
                 coronaStats.DocumentNode.SelectNodes("//div")
-                .First(e => e.GetAttributeValue("style", "") == "font-size:13px; color:#999; text-align:center")
+                .First(e => e.GetAttributeValue("style", "") == "font-size:13px; color:#999; margin-top:5px; text-align:center")
                 .InnerText.Substring("Last updated: ".Length)).UtcDateTime;
 
             var lastReset = DateTime.Parse(Regex.Match(
@@ -306,7 +306,8 @@ namespace ForumCrawler
         private static CoronaData GetFromTable(HtmlDocument coronaStats, string time)
         {
             var result = new CoronaData();
-            var countries = coronaStats.DocumentNode.SelectNodes($"//*[@id=\"main_table_countries_{time}\"]/tbody[1]/tr");
+            var countries = coronaStats.DocumentNode.SelectNodes($"//*[@id=\"main_table_countries_{time}\"]/tbody[1]/tr")
+                .Where(t => !t.GetAttributeValue("class", "").Contains("total_row_world"));
 
             foreach (var country in countries)
             {
@@ -320,7 +321,6 @@ namespace ForumCrawler
                 entry.Recovered = (int)ParseDouble(cells[5]);
                 entry.Serious = (int)ParseDouble(cells[7]);
 
-                if (entry.Name == "World") continue;
                 result.Entries.Add(entry.Name, entry);
             }
             return result;
