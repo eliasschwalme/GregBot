@@ -24,29 +24,22 @@ namespace ForumCrawler
             var reports = await Database.PullReports(client);
 
             client.ReactionAdded += Client_ReactionAdded;
-            OnReport += async (a, b, c, d, e, f) =>
-            {
-                await QuickReportWatcher_OnReport(client, reports, a, b, c, d, e, f);
-                await SaveReportToDatabase(client, reports, a, b, c, d, e, f);
-            };
 
-            OnResponse += async (a, b, c) =>
-            {
-                await QuickReportWatcher_OnResponse(client, reports, a, b, c);
-                await UpdateReportInDatabase(client, reports, a, b, c);
-            };
+            OnReport += (a, b, c, d, e, f) => QuickReportWatcher_OnReport(client, reports, a, b, c, d, e, f);
+            OnResponse += (a, b, c) => QuickReportWatcher_OnResponse(client, reports, a, b, c);
         }
 
-        private static Task SaveReportToDatabase(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong reportId, IUser reporter, IUser suspect, IMessageChannel channel, IUserMessage message, string reason)
+        private static Task SaveReportToDatabase(Dictionary<ulong, Report> reports, ulong reportId)
         {
             // we expect QuickReportWatcher_OnReport to have executed first
             return Database.AddReport(reports[reportId]);
         }
 
-        private static Task UpdateReportInDatabase(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
+        private static Task UpdateReportInDatabase(Dictionary<ulong, Report> reports, ulong msgId)
         {
             // we expect QuickReportWatcher_OnResponse to have executed first
-            return Database.UpdateReport(client, reports, msgId, moderator, status);
+            var report = reports[msgId];
+            return Database.UpdateReport(msgId, report.Moderator, report.Status);
         }
 
         private static async Task QuickReportWatcher_OnResponse(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
@@ -60,6 +53,8 @@ namespace ForumCrawler
 
             report.Moderator = moderator;
             report.Status = status;
+            await UpdateReportInDatabase(reports, msgId);
+
             await Task.WhenAll(report.Reporters.Keys.Select(u =>
                 client.GetUser(u).SendMessageAsync("Your report was updated.", embed: GetReportEmbed(client, report, u))));
             await SendOrUpdateReport(client, report);
@@ -89,6 +84,7 @@ namespace ForumCrawler
             report.Suspect = suspect ?? report.Suspect;
             report.Channel = channel ?? report.Channel;
             report.MessageId = message?.Id ?? report.MessageId;
+            await SaveReportToDatabase(reports, reportId);
 
             var embed = GetReportHeaderEmbed(report);
             if (report.Reporters[reporter.Id] != null)

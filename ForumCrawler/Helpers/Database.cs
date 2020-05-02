@@ -99,14 +99,11 @@ namespace ForumCrawler
             }
         }
 
-        internal static async Task UpdateReport(DiscordSocketClient client, Dictionary<ulong, QuickReportWatcher.Report> reports, ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
+        internal static async Task UpdateReport(ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
         {
             using (var ctx = new DatabaseContext())
             {
                 var msgIdLong = msgId.ToLong();
-#if DEBUG
-                var arr = ctx.Reports.ToArray();
-#endif
                 var gregReportMessage = await ctx.Reports.FirstAsync(report => report._reportsMessage == msgIdLong);
 
                 gregReportMessage.ModeratorId = moderator.Id;
