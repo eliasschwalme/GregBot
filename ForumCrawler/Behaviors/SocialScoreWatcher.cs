@@ -84,7 +84,7 @@ namespace DiscordSocialScore
                 {
                     try
                     {
-                        await UpdateUserAsync(user, scoreData);
+                        await UpdateUserAsync(client, user, scoreData);
                     }
                     catch { }
                 }
@@ -116,7 +116,7 @@ namespace DiscordSocialScore
             IgnoreUsers.TryGetValue(newUser.Id, out var lastCall);
             if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
 
-            await UpdateUserAsync(newUser, await Score.GetScoreDataAsync(client, newUser.Id));
+            await UpdateUserAsync(client, newUser, await Score.GetScoreDataAsync(client, newUser.Id));
         }
 
         private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
@@ -138,11 +138,11 @@ namespace DiscordSocialScore
             foreach (var guild in client.Guilds)
             {
                 var user = guild.GetUser(guildUser.Id);
-                await UpdateUserAsync(user, scoreData);
+                await UpdateUserAsync(client, user, scoreData);
             }
         }
 
-        private static async Task UpdateUserAsync(SocketGuildUser user, ScoreData scoreData)
+        private static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData)
         {
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
@@ -151,7 +151,7 @@ namespace DiscordSocialScore
             var cache = CacheProvider.Get(user.Guild);
 
             var muted = (await Database.GetMute(user.Id)) != null;
-            var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(cache, user, scoreData) };
+            var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData) };
             if (!muted) roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
 
             var toDelete = user.Roles.GetBotRoles().Where(r => roles.All(r2 => r.Id != r2.Id)).ToList();
