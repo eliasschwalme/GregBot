@@ -56,7 +56,7 @@ namespace ForumCrawler
             if (report.Status == status) return;
 
             var guildUserMod = (IGuildUser)moderator;
-            if (!guildUserMod.RoleIds.Contains(DiscordSettings.DiscordStaff)) return;
+            if (!guildUserMod.IsStaff()) return;
 
             report.Moderator = moderator;
             report.Status = status;
