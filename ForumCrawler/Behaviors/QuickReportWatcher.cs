@@ -40,11 +40,12 @@ namespace ForumCrawler
 
             report.Moderator = moderator;
             report.Status = status;
-            await Database.UpdateReport(msgId, moderator, status);
 
             await Task.WhenAll(report.Reporters.Keys.Select(u =>
                 client.GetUser(u).SendMessageAsync("Your report was updated.", embed: GetReportEmbed(client, report, u))));
             await SendOrUpdateReport(client, report);
+
+            await Database.UpdateReport(msgId, moderator, status);
         }
 
         private static async Task QuickReportWatcher_OnReport(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong reportId, IUser reporter, IUser suspect, IMessageChannel channel, IUserMessage message, string reason)
@@ -71,13 +72,14 @@ namespace ForumCrawler
             report.Suspect = suspect ?? report.Suspect;
             report.Channel = channel ?? report.Channel;
             report.MessageId = message?.Id ?? report.MessageId;
-            await Database.AddReport(report);
 
             var embed = GetReportHeaderEmbed(report);
             if (report.Reporters[reporter.Id] != null)
                 embed.AddField("Reason", report.Reporters[reporter.Id]);
             await SendOrUpdateReport(client, report);
             await reporter?.SendMessageAsync($"You {(update ? "updated" : "sent")} a report.", embed: embed.Build());
+
+            await Database.AddReport(report);
         }
 
         private static async Task SendOrUpdateReport(DiscordSocketClient client, Report report)
