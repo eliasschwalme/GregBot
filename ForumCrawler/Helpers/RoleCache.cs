@@ -64,7 +64,7 @@ namespace DiscordSocialScore
 
                     if (res == null)
                     {
-                        res = cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted);
+                        res = cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted, null);
                     }
                 }
             }
