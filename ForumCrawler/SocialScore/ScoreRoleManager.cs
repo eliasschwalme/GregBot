@@ -33,9 +33,12 @@ namespace DiscordSocialScore
             return new Color(rAverage, gAverage, bAverage);
         }
 
-        public static async Task<IRole> GetScoreRoleForUserAsync(RoleCache cache, SocketGuildUser user, ScoreData scoreData)
+        public static async Task<IRole> GetScoreRoleForUserAsync(DiscordSocketClient client, RoleCache cache, ulong userId, ScoreData scoreData)
         {
-            var specialRole = SpecialRoles.Find(kv => user.Roles.Any(r => r.Name == kv.Item1));
+            var mainGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
+            if (mainGuildUser == null) return await GetScoreRole(cache, scoreData);
+
+            var specialRole = SpecialRoles.Find(kv => mainGuildUser.Roles.Any(r => r.Name == kv.Item1));
             return specialRole.Item1 == null
                 ? await GetScoreRole(cache, scoreData)
                 : await GetSpecialScoreRole(cache, specialRole.Item1, specialRole.Item2, scoreData);
