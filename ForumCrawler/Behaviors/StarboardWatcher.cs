@@ -64,9 +64,8 @@ namespace ForumCrawler
         {
             client.AddOnFirstReady(() =>
             {
-                var guild = client.GetGuild(DiscordSettings.GuildId);
-                var generalStarboard = StarboardWatcherConfigurator.GeneralStarboard(client, guild);
-                var voteStarboard = StarboardWatcherConfigurator.StaffVoteStarboard(client, guild);
+                StarboardWatcherConfigurator.GeneralStarboard(client);
+                StarboardWatcherConfigurator.StaffVoteStarboard(client);
                 return Task.CompletedTask;
             });
         }
@@ -342,12 +341,13 @@ namespace ForumCrawler
 
     public static class StarboardWatcherConfigurator
     {
-        public static StarboardWatcher GeneralStarboard(DiscordSocketClient client, SocketGuild guild)
+        public static StarboardWatcher GeneralStarboard(DiscordSocketClient client)
         {
+            var guild = client.GetGuild(DiscordSettings.GuildId);
             var starboard = new StarboardWatcher
             (
                 client,
-                client.GetGuild(DiscordSettings.GuildId),
+                guild,
                 guild.GetTextChannel(DiscordSettings.StarboardChannel),
                 ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
                 WootQualifier,
@@ -357,12 +357,13 @@ namespace ForumCrawler
             return starboard;
         }
 
-        public static StarboardWatcher StaffVoteStarboard(DiscordSocketClient client, SocketGuild guild)
+        public static StarboardWatcher StaffVoteStarboard(DiscordSocketClient client)
         {
+            var guild = client.GetGuild(DiscordSettings.DSGuildId);
             var starboard = new StarboardWatcher
             (
                 client,
-                client.GetGuild(DiscordSettings.DSGuildId),
+                guild,
                 guild.GetTextChannel(DiscordSettings.DSVoteboardChannel), // #vote-board
                 channel => channel.Id == DiscordSettings.DSModerationChannel, // #staff
                 VoteQualifier,
