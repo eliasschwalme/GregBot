@@ -29,19 +29,6 @@ namespace ForumCrawler
             OnResponse += (a, b, c) => QuickReportWatcher_OnResponse(client, reports, a, b, c);
         }
 
-        private static Task SaveReportToDatabase(Dictionary<ulong, Report> reports, ulong reportId)
-        {
-            // we expect QuickReportWatcher_OnReport to have executed first
-            return Database.AddReport(reports[reportId]);
-        }
-
-        private static Task UpdateReportInDatabase(Dictionary<ulong, Report> reports, ulong msgId)
-        {
-            // we expect QuickReportWatcher_OnResponse to have executed first
-            var report = reports[msgId];
-            return Database.UpdateReport(msgId, report.Moderator, report.Status);
-        }
-
         private static async Task QuickReportWatcher_OnResponse(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong msgId, IUser moderator, Report.ReportStatus status)
         {
             var report = reports.SingleOrDefault(x => x.Value.ReportsMessageId == msgId).Value;
@@ -53,7 +40,7 @@ namespace ForumCrawler
 
             report.Moderator = moderator;
             report.Status = status;
-            await UpdateReportInDatabase(reports, msgId);
+            await Database.UpdateReport(msgId, moderator, status);
 
             await Task.WhenAll(report.Reporters.Keys.Select(u =>
                 client.GetUser(u).SendMessageAsync("Your report was updated.", embed: GetReportEmbed(client, report, u))));
@@ -84,7 +71,7 @@ namespace ForumCrawler
             report.Suspect = suspect ?? report.Suspect;
             report.Channel = channel ?? report.Channel;
             report.MessageId = message?.Id ?? report.MessageId;
-            await SaveReportToDatabase(reports, reportId);
+            await Database.AddReport(report);
 
             var embed = GetReportHeaderEmbed(report);
             if (report.Reporters[reporter.Id] != null)
