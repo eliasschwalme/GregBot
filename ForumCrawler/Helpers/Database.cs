@@ -1,4 +1,4 @@
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 
 using EntityFramework.Extensions;
@@ -44,8 +44,8 @@ namespace ForumCrawler
                 var reports = await ctx.Reports.ToListAsync();
 
                 var dict = new Dictionary<ulong, QuickReportWatcher.Report>();
-                var guild = client.GetGuild(DiscordSettings.GuildId);
-                var reportChannel = guild.GetTextChannel(DiscordSettings.ReportsChannel);
+                var guild = client.GetGuild(DiscordSettings.DSGuildId);
+                var reportChannel = guild.GetTextChannel(DiscordSettings.DSReportsChannel);
 
                 foreach (var report in reports)
                 {

@@ -104,8 +104,8 @@ namespace ForumCrawler
 
             if (report.ReportsMessageId is ulong reportsMessageId)
             {
-                var reportMessage = (IUserMessage)(await client.GetGuild(DiscordSettings.GuildId)
-                    .GetTextChannel(DiscordSettings.ReportsChannel)
+                var reportMessage = (IUserMessage)(await client.GetGuild(DiscordSettings.DSGuildId)
+                    .GetTextChannel(DiscordSettings.DSReportsChannel)
                     .GetMessageAsync(reportsMessageId));
 
                 await reportMessage.ModifyAsync(m => m.Embed = embed);
@@ -113,8 +113,8 @@ namespace ForumCrawler
             else
             {
                 var reportsMessage = await client
-                    .GetGuild(DiscordSettings.GuildId)
-                    .GetTextChannel(DiscordSettings.ReportsChannel)
+                    .GetGuild(DiscordSettings.DSGuildId)
+                    .GetTextChannel(DiscordSettings.DSReportsChannel)
 #if DEBUG
                     .SendMessageAsync("@<debug> A report has been sent in!", embed: embed);
 #else
@@ -188,12 +188,12 @@ namespace ForumCrawler
                 if (msg == null || !reaction.User.IsSpecified) return;
                 await FileReport(msg.Id, reaction.User.Value, msg.Author, channel, msg, null);
             }
-            else if (channel.Id == DiscordSettings.ReportsChannel && reaction.Emote.Name == "✅")
+            else if (channel.Id == DiscordSettings.DSReportsChannel && reaction.Emote.Name == "✅")
             {
                 if (!reaction.User.IsSpecified) return;
                 await FileResponse(msgCache.Id, reaction.User.Value, Report.ReportStatus.Accepted);
             }
-            else if (channel.Id == DiscordSettings.ReportsChannel && reaction.Emote.Name == "❌")
+            else if (channel.Id == DiscordSettings.DSReportsChannel && reaction.Emote.Name == "❌")
             {
                 if (!reaction.User.IsSpecified) return;
                 await FileResponse(msgCache.Id, reaction.User.Value, Report.ReportStatus.Rejected);
