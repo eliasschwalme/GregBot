@@ -21,7 +21,7 @@ namespace DiscordSocialScore
         public static void Bind(DiscordSocketClient client)
         {
             CacheProvider = new RoleCacheProvider(client);
-            client.MessageReceived += Client_MessageReceived;
+            client.MessageReceived += (a) => Client_MessageReceived(client, a);
             client.GuildMemberUpdated += Client_GuildMemberUpdated;
             client.UserUpdated += (a, b) => Client_UserUpdated(client, a, b);
             client.RoleUpdated += Client_RoleUpdated;
@@ -43,31 +43,34 @@ namespace DiscordSocialScore
 
             if (oldUser.Username != newUser.Username)
             {
-                var guild = client.GetGuild(DiscordSettings.GuildId);
-                var guildUser = guild.GetUser(oldUser.Id);
-                if (guildUser == null) return;
-
-                var scoreData = await Score.GetScoreDataAsync(guildUser);
-
-                var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
-                if (noNick)
+                foreach (var guild in client.Guilds)
                 {
-                    var targetNick = GetTargetNick(newUser.Username, null, scoreData);
-                    await guildUser.ModifyAsync(x =>
+                    var guildUser = guild.GetUser(oldUser.Id);
+                    if (guildUser == null) continue;
+                    var scoreData = await Score.GetScoreDataAsync(guildUser);
+
+                    var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
+                    if (noNick)
                     {
-                        x.Nickname = targetNick;
-                    });
+                        var targetNick = GetTargetNick(newUser.Username, null, scoreData);
+                        await guildUser.ModifyAsync(x =>
+                        {
+                            x.Nickname = targetNick;
+                        });
+                    }
                 }
             }
         }
 
         private static async void OnHour(DiscordSocketClient client)
         {
+            var mainGuild = client.GetGuild(DiscordSettings.GuildId);
+            await Score.UpdateDecays((a, b) => OnScoreChangeAsync(client, a, b), userId => mainGuild.GetUser(userId));
+
             foreach (var guild in client.Guilds)
             {
                 var cache = CacheProvider.Get(guild);
                 await ScoreRoleManager.DeleteRolesAsync(cache);
-                await Score.UpdateDecays((a, b) => OnScoreChangeAsync(client, a, b), userId => guild.GetUser(userId));
             }
         }
 
@@ -82,7 +85,7 @@ namespace DiscordSocialScore
                 {
                     try
                     {
-                        await UpdateUsernameAsync(user, scoreData);
+                        await UpdateUserAsync(user, scoreData);
                     }
                     catch { }
                 }
@@ -101,23 +104,23 @@ namespace DiscordSocialScore
         {
             if (newUser == null)
             {
-                Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null newUser");
+                Console.WriteLine("Client_GuildMemberUpdated in SocialScoreWatcher.cs has a null newUser");
                 return;
             }
 
             if (oldUser == null)
             {
-                Console.WriteLine("Client_GuildMemberUpdated in Engine.cs has a null oldUser");
+                Console.WriteLine("Client_GuildMemberUpdated in SocialScoreWatcher.cs has a null oldUser");
                 return;
             }
 
             IgnoreUsers.TryGetValue(newUser.Id, out var lastCall);
             if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
 
-            await UpdateUsernameAsync(newUser, await Score.GetScoreDataAsync(newUser));
+            await UpdateUserAsync(newUser, await Score.GetScoreDataAsync(newUser));
         }
 
-        private static async Task Client_MessageReceived(SocketMessage message)
+        private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
         {
             if (message.Author.IsBot) return;
             if (!(message.Author is SocketGuildUser guildUser)) return;
@@ -129,11 +132,17 @@ namespace DiscordSocialScore
                 return;
             }
 
-            var scoreData = await Score.CreditActivityScoreAsync(guildUser);
-            await UpdateUsernameAsync(guildUser, scoreData);
+            var mainGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(guildUser.Id);
+            var scoreData = await Score.CreditActivityScoreAsync(mainGuildUser);
+
+            foreach (var guild in client.Guilds)
+            {
+                var user = guild.GetUser(guildUser.Id);
+                await UpdateUserAsync(user, scoreData);
+            }
         }
 
-        private static async Task UpdateUsernameAsync(SocketGuildUser user, ScoreData scoreData)
+        private static async Task UpdateUserAsync(SocketGuildUser user, ScoreData scoreData)
         {
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
