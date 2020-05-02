@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-
+using ForumCrawler.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -53,15 +53,22 @@ namespace ForumCrawler
             _emoteQualifier = emoteQualifier;
             _adminQualifier = IsAdminNoVisibilityEmote;
             _configuredWoots = configuredWoots;
+            _client.ReactionAdded += (a, b, c) => OnReactionChanged(a, b, c, true);
+            _client.ReactionRemoved += (a, b, c) => OnReactionChanged(a, b, c, false);
         }
 
         /// <summary>
         /// Attaches event handlers to the client.
         /// </summary>
-        public void Bind()
+        public static void Bind(DiscordSocketClient client)
         {
-            _client.ReactionAdded += (a, b, c) => OnReactionChanged(a, b, c, true);
-            _client.ReactionRemoved += (a, b, c) => OnReactionChanged(a, b, c, false);
+            client.AddOnFirstReady(() =>
+            {
+                var guild = client.GetGuild(DiscordSettings.GuildId);
+                var generalStarboard = StarboardWatcherConfigurator.GeneralStarboard(client, guild);
+                var voteStarboard = StarboardWatcherConfigurator.StaffVoteStarboard(client, guild);
+                return Task.CompletedTask;
+            });
         }
 
         private Task OnReactionChanged
@@ -329,5 +336,49 @@ namespace ForumCrawler
             public bool Equals(IUser x, IUser y) => x?.Id == y?.Id;
             public int GetHashCode(IUser obj) => obj == null ? default : obj.Id.GetHashCode();
         }
+    }
+
+
+
+    public static class StarboardWatcherConfigurator
+    {
+        public static StarboardWatcher GeneralStarboard(DiscordSocketClient client, SocketGuild guild)
+        {
+            var starboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.GuildId),
+                guild.GetTextChannel(DiscordSettings.StarboardChannel),
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
+                WootQualifier,
+                10
+            );
+
+            return starboard;
+        }
+
+        public static StarboardWatcher StaffVoteStarboard(DiscordSocketClient client, SocketGuild guild)
+        {
+            var starboard = new StarboardWatcher
+            (
+                client,
+                client.GetGuild(DiscordSettings.DSGuildId),
+                guild.GetTextChannel(DiscordSettings.DSVoteboardChannel), // #vote-board
+                channel => channel.Id == DiscordSettings.DSModerationChannel, // #staff
+                VoteQualifier,
+                1
+            );
+
+            return starboard;
+        }
+
+        private static bool WootQualifier(IEmote emote)
+             => emote.Name == "woot";
+
+        private static bool VoteQualifier(IEmote emote)
+            => emote.Name == "👍" || emote.Name == "👎";
+
+        private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
+            => channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);
     }
 }

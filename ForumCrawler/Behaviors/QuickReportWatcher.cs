@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-
+using ForumCrawler.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +14,9 @@ namespace ForumCrawler
 
         private static event Func<ulong, IUser, Report.ReportStatus, Task> OnResponse;
 
-        public static async Task BindAsync(DiscordSocketClient client, Task clientReady)
+        public static void Bind(DiscordSocketClient client)
         {
-            await clientReady;
-            await Client_Ready(client);
+            client.AddOnFirstReady(() => Client_Ready(client));
         }
 
         private static async Task Client_Ready(DiscordSocketClient client)

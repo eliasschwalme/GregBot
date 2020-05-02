@@ -145,10 +145,10 @@ namespace ForumCrawler
             }
         }
 
-        [Command("approve"), Alias("pass"), Summary("Approves an ammendment."), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
+        [Command("approve"), Alias("pass"), Summary("Approves an ammendment."), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
         public async Task Approve() => await Archive("approved", Color.Green);
 
-        [Command("reject"), Alias("veto"), Summary("Rejects an ammendment"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
+        [Command("reject"), Alias("veto"), Summary("Rejects an ammendment"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
         public async Task Reject() => await Archive("rejected", Color.Red);
 
         private async Task CreateSuggestionChannel(string shortName, IUser owner, Func<IMessageChannel, Task<IUserMessage>> messageGenerator)

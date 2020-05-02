@@ -140,7 +140,7 @@ namespace DiscordSocialScore
                 $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
         }
 
-        [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
+        [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetScore(IUser user, double value)
         {
             if (user == null)
@@ -152,7 +152,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
         }
 
-        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
+        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetExempt(IGuildUser user, bool value = true)
         {
             if (user == null)
@@ -167,7 +167,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} is now{(value ? " " : " not ")}exempt from the 72 hour g!up wait period.");
         }
 
-        [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
+        [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetEnergy(IGuildUser user, double value)
         {
             if (user == null)
@@ -179,7 +179,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s energy to {energy}.");
         }
 
-        [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
+        [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetInertia(IUser user, double value)
         {
             if (user == null)

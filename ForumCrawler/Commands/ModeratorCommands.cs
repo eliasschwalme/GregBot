@@ -275,10 +275,10 @@ namespace ForumCrawler.Commands
             await ReplyAsync(embed: embed);
         }
 
-        [Command("force remove"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
+        [Command("force remove"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
         public async Task ForceRemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, true);
 
-        [Command("remove"), RequireRole(DiscordSettings.DiscordStaff, DiscordSettings.DSDiscordStaff), Priority(1)]
+        [Command("remove"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
         public async Task RemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, false);
 
         [Command("force edit"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]

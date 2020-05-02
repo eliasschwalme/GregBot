@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 
 using ForumCrawler;
-
+using ForumCrawler.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,31 +15,29 @@ namespace DiscordSocialScore
     public class Engine
     {
         private static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
-        private readonly DiscordSocketClient client;
         private readonly RoleCacheProvider cacheProvider;
         private readonly Dictionary<ulong, DateTimeOffset> ignoreUsers = new Dictionary<ulong, DateTimeOffset>();
 
         public Engine(DiscordSocketClient client, RoleCacheProvider cacheProvider)
         {
-            this.client = client;
             this.cacheProvider = cacheProvider;
             client.MessageReceived += Client_MessageReceived;
             client.GuildMemberUpdated += Client_GuildMemberUpdated;
-            client.UserUpdated += Client_UserUpdated;
+            client.UserUpdated += (a, b) => Client_UserUpdated(client, a, b);
             client.RoleUpdated += Client_RoleUpdated;
-            client.Ready += Client_Ready;
-            Score.OnUpdate += Score_OnUpdate;
+            client.AddOnFirstReady(() => Client_Ready(client));
+            Score.OnUpdate += (a, b) => Score_OnUpdate(client, a, b);
         }
 
-        private Task Client_Ready()
+        private Task Client_Ready(DiscordSocketClient client)
         {
             var timer = new Timer(TimeSpan.FromHours(1).TotalMilliseconds);
-            timer.Elapsed += (o, e) => OnHour();
+            timer.Elapsed += (o, e) => OnHour(client);
             timer.Start();
             return Task.CompletedTask;
         }
 
-        private async Task Client_UserUpdated(SocketUser oldUser, SocketUser newUser)
+        private async Task Client_UserUpdated(DiscordSocketClient client, SocketUser oldUser, SocketUser newUser)
         {
             if (newUser.IsBot) return;
 
@@ -64,19 +62,19 @@ namespace DiscordSocialScore
             }
         }
 
-        private async void OnHour()
+        private async void OnHour(DiscordSocketClient client)
         {
             foreach (var guild in client.Guilds)
             {
                 var cache = cacheProvider.Get(guild);
                 await ScoreRoleManager.DeleteRolesAsync(cache);
-                await Score.UpdateDecays(OnScoreChangeAsync, userId => guild.GetUser(userId));
+                await Score.UpdateDecays((a, b) => OnScoreChangeAsync(client, a, b), userId => guild.GetUser(userId));
             }
         }
 
-        private async void Score_OnUpdate(ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(userId, scoreData);
+        private async void Score_OnUpdate(DiscordSocketClient client, ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(client, userId, scoreData);
 
-        private async Task OnScoreChangeAsync(ulong userId, ScoreData scoreData)
+        private async Task OnScoreChangeAsync(DiscordSocketClient client, ulong userId, ScoreData scoreData)
         {
             foreach (var guild in client.Guilds)
             {

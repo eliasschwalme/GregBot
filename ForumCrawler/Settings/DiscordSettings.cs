@@ -4,7 +4,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 
 using DiscordSocialScore;
-
+using ForumCrawler.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 using System;
@@ -27,6 +27,7 @@ namespace ForumCrawler
 
         public const ulong GuildId = 329335303963803649;
         public const ulong BotCommandsChannel = 329634826061742081;
+        public const ulong StaffCommandsChannel = 569634941252534302;
         public const ulong LogsChannel = 330328534780346378;
         public const ulong ForumChannel = 329855149549813760;
         public const ulong DiscordStaffConsultant = 529386148682924036;
@@ -39,9 +40,9 @@ namespace ForumCrawler
 
         public const ulong DSGuildId = 705927053874167909;
         public const ulong DSVoteboardChannel = 705937336055365734;
+        public const ulong DSModerationChannel = 705974945817034773;
         public const ulong DSDiscordStaffConsultant = 705928172641714227;
         public const ulong DSDiscordStaff = 705932947294781510;
-        public const ulong DSDiscordServerOwner = 705928497851531325;
         public const ulong DSStaffCommandsChannel = 705936434489589822;
         public const ulong DSReportsChannel = 705933908008763503;
 
@@ -72,7 +73,7 @@ namespace ForumCrawler
                 AlwaysDownloadUsers = true
             });
             client.Log += Log;
-            client.Ready += () => Ready(client);
+            client.AddOnFirstReady(() => Ready(client));
 
             await client.LoginAsync(TokenType.Bot, Passwords.DiscordToken);
             await client.StartAsync();

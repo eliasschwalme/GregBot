@@ -306,6 +306,7 @@
     <Compile Include="Commands\ReportCommand.cs" />
     <Compile Include="Helpers\Crawler.cs" />
     <Compile Include="Helpers\AsyncEnumerableExtensions.cs" />
+    <Compile Include="Helpers\DiscordSocketClientExtensions.cs" />
     <Compile Include="Helpers\DMP\Diff.cs" />
     <Compile Include="Helpers\DMP\CompatibilityExtensions.cs" />
     <Compile Include="Helpers\DMP\diff_match_patch.cs" />

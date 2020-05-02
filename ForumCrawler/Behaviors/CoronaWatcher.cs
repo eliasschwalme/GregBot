@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ForumCrawler.Helpers;
 using HtmlAgilityPack;
 
 using System;
@@ -75,9 +76,11 @@ namespace ForumCrawler
 
         public static void Bind(DiscordSocketClient client)
         {
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-            client.Ready += async () => Client_Ready(client);
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+            client.AddOnFirstReady(() =>
+            {
+                Client_Ready(client);
+                return Task.CompletedTask;
+            });
 
         }
         private static async void Client_Ready(DiscordSocketClient client)

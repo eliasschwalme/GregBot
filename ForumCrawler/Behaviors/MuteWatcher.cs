@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-
+using ForumCrawler.Helpers;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +18,7 @@ namespace ForumCrawler
         {
             OnMute += (a, b) => MuteWatcher_OnMute(client, a, b);
             OnUnmute += mute => MuteWatcher_OnUnmute(client, mute);
-            client.Ready += () => Client_Ready(client);
+            client.AddOnFirstReady(() => Client_Ready(client));
             client.UserJoined += VerifyMute;
             client.GuildMemberUpdated += (oldUser, newUser) => Client_GuildMemberUpdated(client, oldUser, newUser);
         }
