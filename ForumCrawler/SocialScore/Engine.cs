@@ -120,14 +120,14 @@ namespace DiscordSocialScore
         private static async Task Client_MessageReceived(SocketMessage message)
         {
             if (message.Author.IsBot) return;
-            if (message.Channel.Id == 329634826061742081 || // bot-commands
+            if (!(message.Author is SocketGuildUser guildUser)) return;
+            if (guildUser.Guild.Id != DiscordSettings.GuildId) return;
+            if (message.Channel.Id == 329634826061742081 || // bot-spam
                 message.Channel.Id == 329339732662419457 || // funposting
-                message.Channel.Id == 596114917380325387) // other-languages
+                message.Channel.Id == 596114917380325387)  // other-languages
             {
                 return;
             }
-
-            if (!(message.Author is SocketGuildUser guildUser)) return;
 
             var scoreData = await Score.CreditActivityScoreAsync(guildUser);
             await UpdateUsernameAsync(guildUser, scoreData);
