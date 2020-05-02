@@ -76,7 +76,7 @@ namespace ForumCrawler.Commands
             var mute = await Database.GetMute(user.Id);
             if (mute != null)
                 throw new Exception("User is already muted.");
-            if (user.RoleIds.Contains(DiscordSettings.DiscordStaff))
+            if (user.IsStaff())
                 throw new Exception("User is staff.");
 
             var res = await MuteUser(Context.User, user, DateTimeOffset.UtcNow + duration, reason, false, false);
@@ -290,7 +290,7 @@ namespace ForumCrawler.Commands
         [Command, RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
         public async Task Warn(IGuildUser user, [Remainder] string reason)
         {
-            if (user.RoleIds.Contains(DiscordSettings.DiscordStaff))
+            if (user.IsStaff())
                 throw new Exception("User is staff.");
 
             var history = await Database.GetWarningsAsync(user.Id);
