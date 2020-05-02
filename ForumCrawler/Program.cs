@@ -74,8 +74,8 @@ namespace ForumCrawler
             var starboard = new StarboardWatcher
             (
                 client,
-                client.GetGuild(DiscordSettings.GuildId),
-                guild.GetTextChannel(696982537972744252), // #vote-board
+                client.GetGuild(DiscordSettings.DSGuildId),
+                guild.GetTextChannel(DiscordSettings.DSVoteboardChannel), // #vote-board
                 channel => channel.Id == 329340169092333590, // #staff
                 VoteQualifier,
                 1

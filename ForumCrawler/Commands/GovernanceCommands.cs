@@ -200,7 +200,11 @@ namespace ForumCrawler
             });
 
             var perms = channel.GetPermissionOverwrite(guild.EveryoneRole) ?? new OverwritePermissions();
-            await channel.AddPermissionOverwriteAsync(guild.EveryoneRole, perms.Modify(viewChannel: PermValue.Allow));
+            var targetPerms = new OverwritePermissions(
+                (perms.AllowValue | config.EveryonePermissionsAfterSubmission.AllowValue) & (~config.EveryonePermissionsAfterSubmission.DenyValue),
+                (perms.DenyValue | config.EveryonePermissionsAfterSubmission.DenyValue) & (~config.EveryonePermissionsAfterSubmission.AllowValue)
+            );
+            await channel.AddPermissionOverwriteAsync(guild.EveryoneRole, targetPerms);
         }
 
         private async Task<IUserMessage> GetSuggestionFromUserAsync(IMessageChannel channel, IUser user)

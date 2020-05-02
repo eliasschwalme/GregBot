@@ -10,7 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Security;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 
 namespace ForumCrawler
 {
@@ -37,27 +39,28 @@ namespace ForumCrawler
         public const ulong BannedEmote = 614156104682962954;
 
         public const ulong DSGuildId = 705927053874167909;
+        public const ulong DSVoteboardChannel = 705937336055365734;
         public const ulong DSDiscordStaffConsultant = 705928172641714227;
         public const ulong DSDiscordStaff = 705932947294781510;
         public const ulong DSDiscordServerOwner = 705928497851531325;
         public const ulong DSStaffCommandsChannel = 705936434489589822;
 
         public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig> {
-            { GuildId, new GovernanceConfig(549399741994237984, 549402714103087144) },
-            { DSGuildId, new GovernanceConfig(705937563021737985, 705940856099569714) } 
+            { GuildId, new GovernanceConfig(549399741994237984, 549402714103087144, new OverwritePermissions(viewChannel: PermValue.Allow)) },
+            { DSGuildId, new GovernanceConfig(705937563021737985, 705940856099569714, new OverwritePermissions(sendMessages: PermValue.Allow)) } 
         };
-
-        public const int MinStarboardReactions = 10;
 
         public class GovernanceConfig
         {
             public ulong Category { get; }
             public ulong ChangelogChannel { get; }
+            public OverwritePermissions EveryonePermissionsAfterSubmission { get; }
 
-            public GovernanceConfig(ulong category, ulong changelogChannel)
+            public GovernanceConfig(ulong category, ulong changelogChannel, OverwritePermissions everyonePermissionsAfterSubmission)
             {
                 Category = category;
                 ChangelogChannel = changelogChannel;
+                EveryonePermissionsAfterSubmission = everyonePermissionsAfterSubmission;
             }
         }
 
