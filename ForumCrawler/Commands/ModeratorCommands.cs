@@ -29,7 +29,7 @@ namespace ForumCrawler.Commands
     {
         private string GetUnmentionedUser(ulong userId)
         {
-            var user = Context.Guild.GetUser(userId);
+            var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
@@ -214,7 +214,7 @@ namespace ForumCrawler.Commands
 
         private string GetUnmentionedUser(ulong userId)
         {
-            var user = Context.Guild.GetUser(userId);
+            var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
@@ -275,10 +275,10 @@ namespace ForumCrawler.Commands
             await ReplyAsync(embed: embed);
         }
 
-        [Command("force remove"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
+        [Command("force remove"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
         public async Task ForceRemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, true);
 
-        [Command("remove"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
+        [Command("remove"), RequireRole(DiscordSettings.DiscordStaff, DiscordSettings.DSDiscordStaff), Priority(1)]
         public async Task RemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, false);
 
         [Command("force edit"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
@@ -356,14 +356,14 @@ namespace ForumCrawler.Commands
                 await MuteWatcher.MuteUser(new Mute
                 {
                     UserId = user.Id,
-                    IssuerId = Context.Guild.CurrentUser.Id,
+                    IssuerId = Context.Client.GetGuild(DiscordSettings.GuildId).CurrentUser.Id,
                     IssueDate = DateTime.UtcNow,
                     ExpiryDate = state.MutedUntil.Value.UtcDateTime
                 }, "You got a strike!", true, true);
             }
             else
             {
-                await MuteWatcher.UnmuteUser(user.Id, Context.Guild.CurrentUser.Id);
+                await MuteWatcher.UnmuteUser(user.Id, Context.Client.GetGuild(DiscordSettings.GuildId).CurrentUser.Id);
             }
 
             return state;

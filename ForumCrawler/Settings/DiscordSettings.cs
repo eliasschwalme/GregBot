@@ -8,12 +8,13 @@ using DiscordSocialScore;
 using Microsoft.Extensions.DependencyInjection;
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
-    internal static class DiscordSettings
+    public static class DiscordSettings
     {
 #if DEBUG
         public const string CommandPrefix = "dbg!";
@@ -24,21 +25,41 @@ namespace ForumCrawler
 
         public const ulong GuildId = 329335303963803649;
         public const ulong BotCommandsChannel = 329634826061742081;
-        public const ulong ChangelogChannel = 549402714103087144;
         public const ulong LogsChannel = 330328534780346378;
         public const ulong ForumChannel = 329855149549813760;
         public const ulong DiscordStaffConsultant = 529386148682924036;
         public const ulong DiscordStaff = 329400136021049348;
         public const ulong DiscordServerOwner = 395419811372597249;
-        public const ulong GovernanceArea = 549399741994237984;
-        public const ulong StaffCommandsChannel = 569634941252534302;
         public const ulong MutedRole = 333618650634387458;
         public const ulong EighteenRole = 407999201830764544;
         public const ulong ReportsChannel = 538738875229667329;
         public const ulong StarboardChannel = 589926820825006120;
         public const ulong BannedEmote = 614156104682962954;
 
+        public const ulong DSGuildId = 705927053874167909;
+        public const ulong DSDiscordStaffConsultant = 705928172641714227;
+        public const ulong DSDiscordStaff = 705932947294781510;
+        public const ulong DSDiscordServerOwner = 705928497851531325;
+        public const ulong DSStaffCommandsChannel = 705936434489589822;
+
+        public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig> {
+            { GuildId, new GovernanceConfig(549399741994237984, 549402714103087144) },
+            { DSGuildId, new GovernanceConfig(705937563021737985, 705940856099569714) } 
+        };
+
         public const int MinStarboardReactions = 10;
+
+        public class GovernanceConfig
+        {
+            public ulong Category { get; }
+            public ulong ChangelogChannel { get; }
+
+            public GovernanceConfig(ulong category, ulong changelogChannel)
+            {
+                Category = category;
+                ChangelogChannel = changelogChannel;
+            }
+        }
 
         public static async Task<DiscordSocketClient> GetClient()
         {

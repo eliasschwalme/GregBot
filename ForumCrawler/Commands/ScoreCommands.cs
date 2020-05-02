@@ -62,7 +62,7 @@ namespace DiscordSocialScore
         [Command("boosting"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(2)]
         public async Task GetUsersUserIsBoosting()
         {
-            var boosting = await Score.GetUsersUserHasBoosted(Context.Guild, Context.User);
+            var boosting = await Score.GetUsersUserHasBoosted(Context.Client.GetGuild(DiscordSettings.GuildId), Context.User);
 
             switch (boosting.Count)
             {
@@ -140,7 +140,7 @@ namespace DiscordSocialScore
                 $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
         }
 
-        [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
         public async Task SetScore(IUser user, double value)
         {
             if (user == null)
@@ -152,7 +152,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
         }
 
-        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
         public async Task SetExempt(IGuildUser user, bool value = true)
         {
             if (user == null)
@@ -167,7 +167,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} is now{(value ? " " : " not ")}exempt from the 72 hour g!up wait period.");
         }
 
-        [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
         public async Task SetEnergy(IGuildUser user, double value)
         {
             if (user == null)
@@ -179,7 +179,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s energy to {energy}.");
         }
 
-        [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner)]
         public async Task SetInertia(IUser user, double value)
         {
             if (user == null)
@@ -187,7 +187,7 @@ namespace DiscordSocialScore
                 throw new Exception("Invalid user specified!");
             }
 
-            var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Guild.GetUser(user.Id), value / 100) * 100);
+            var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Id), value / 100) * 100);
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s inertia to {inertia}%.");
         }
 
@@ -236,16 +236,16 @@ namespace DiscordSocialScore
                 "```");
         }
 
-        private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Guild.GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
+        private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
 
-        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Guild.GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
+        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
 
         private string GetLeaderboardPlayerString(ScoreUser scoreUser, int position)
         {
-            var user = Context.Guild.GetUser(scoreUser.UserId);
+            var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(scoreUser.UserId);
             var username = user?.GetBaseNick() ?? $"<{scoreUser.UserId}>";
             var positionStr = position == 0 ? "" : position.ToString();
-            return $"{positionStr.PadRight(3)}  {username.PadRight(32)}  {scoreUser.Score:F3}";
+            return $"{positionStr,3}  {username,32}  {scoreUser.Score:F3}";
         }
     }
 }

@@ -57,7 +57,6 @@ namespace ForumCrawler
             if (channel.IsSuggestionChannelFinalized()) throw new Exception("Finalized suggestions cannot be finalized.");
 
             var user = (IGuildUser)Context.User;
-            var guild = Context.Guild;
             var vote = await Database.GetGovernanceVoteAsync(channel.Id);
             var age = DateTimeOffset.UtcNow - channel.CreatedAt;
             var ageInDays = age.TotalDays;
@@ -92,7 +91,6 @@ namespace ForumCrawler
             if (channel.IsSuggestionChannelFinalized()) throw new Exception("Finalized suggestions cannot be renamed.");
 
             var user = (IGuildUser)Context.User;
-            var guild = Context.Guild;
             var vote = await Database.GetGovernanceVoteAsync(channel.Id);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner can rename suggestions.");
@@ -123,7 +121,6 @@ namespace ForumCrawler
             if (channel.IsSuggestionChannelFinalized()) throw new Exception("Finalized suggestions cannot be edited.");
 
             var user = (IGuildUser)Context.User;
-            var guild = Context.Guild;
             var vote = await Database.GetGovernanceVoteAsync(channel.Id);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner can edit suggestions.");
@@ -148,10 +145,10 @@ namespace ForumCrawler
             }
         }
 
-        [Command("approve"), Alias("pass"), Summary("Approves an ammendment."), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
+        [Command("approve"), Alias("pass"), Summary("Approves an ammendment."), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
         public async Task Approve() => await Archive("approved", Color.Green);
 
-        [Command("reject"), Alias("veto"), Summary("Rejects an ammendment"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
+        [Command("reject"), Alias("veto"), Summary("Rejects an ammendment"), RequireRole(DiscordSettings.DiscordServerOwner, DiscordSettings.DSDiscordServerOwner), Priority(1)]
         public async Task Reject() => await Archive("rejected", Color.Red);
 
         private async Task CreateSuggestionChannel(string shortName, IUser owner, Func<IMessageChannel, Task<IUserMessage>> messageGenerator)
@@ -163,12 +160,13 @@ namespace ForumCrawler
             if (!guildUser.IsStaffOrConsultant()) throw new Exception("Only staff can suggest new features.");
 
             var guild = Context.Guild;
+            var config = guild.GetGovernanceConfig();
 
-            var channels = guild.CategoryChannels.First(c => c.Id == DiscordSettings.GovernanceArea).Channels.OrderBy(c => c.Position).ToList();
+            var channels = guild.CategoryChannels.First(c => c.Id == config.Category).Channels.OrderBy(c => c.Position).ToList();
             await guild.ReorderChannelsAsync(channels.Select((c, i) => new ReorderChannelProperties(c.Id, i)));
             var channel = await guild.CreateTextChannelAsync("_" + shortName, props =>
             {
-                props.CategoryId = DiscordSettings.GovernanceArea;
+                props.CategoryId = config.Category;
             });
             await ReorderChannels();
 
@@ -264,8 +262,10 @@ namespace ForumCrawler
             await ArchiveChannel(channel, async (text, message) =>
             {
                 var stream = GenerateStreamFromString(text);
-                var baseEmbed = await AddVotesAsync(Context.Guild, message.Embeds.FirstOrDefault()?.ToEmbedBuilder() ?? new EmbedBuilder(), message);
-                await Context.Guild.GetTextChannel(DiscordSettings.ChangelogChannel).SendFileAsync(stream, $"log_{channel.Name}.txt",
+                var guild = Context.Guild;
+                var config = guild.GetGovernanceConfig();
+                var baseEmbed = await AddVotesAsync(guild, message.Embeds.FirstOrDefault()?.ToEmbedBuilder() ?? new EmbedBuilder(), message);
+                await guild.GetTextChannel(config.ChangelogChannel).SendFileAsync(stream, $"log_{channel.Name}.txt",
                     $"\"{channel.Name}\" was {status} by {MentionUtils.MentionUser(Context.User.Id)}.",
                     embed: baseEmbed
                     .WithColor(color)
@@ -279,7 +279,8 @@ namespace ForumCrawler
         public async Task ReorderChannels()
         {
             var guild = Context.Guild;
-            var channels = guild.CategoryChannels.First(c => c.Id == DiscordSettings.GovernanceArea).Channels.OrderByDescending(c => c.Id).ToList();
+            var config = guild.GetGovernanceConfig();
+            var channels = guild.CategoryChannels.First(c => c.Id == config.Category).Channels.OrderByDescending(c => c.Id).ToList();
             var normal = channels.Where(c => !c.IsSuggestionChannelByName()).Reverse();
             var vote = channels.Where(c => c.Name.StartsWith("vote_"));
             var draft = channels.Where(c => c.Name.StartsWith("_"));
@@ -389,15 +390,24 @@ namespace ForumCrawler
 
 public static class UserExtensions
 {
-    public static bool IsStaff(this IGuildUser guildUser) => guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff);
+    public static bool IsStaff(this IGuildUser guildUser)
+    {
+        return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
+            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff);
+
+    }
 
     public static bool IsStaffOrConsultant(this IGuildUser guildUser)
     {
         return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
-            guildUser.RoleIds.Contains(DiscordSettings.DiscordStaffConsultant);
+            guildUser.RoleIds.Contains(DiscordSettings.DiscordStaffConsultant) ||
+            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) ||
+            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaffConsultant);
     }
 
     public static bool IsSuggestionChannelByName(this IChannel channel) => channel.Name.StartsWith("_") || channel.Name.StartsWith("vote_");
 
     public static bool IsSuggestionChannelFinalized(this IChannel channel) => channel.Name.StartsWith("vote_");
+
+    public static DiscordSettings.GovernanceConfig GetGovernanceConfig(this IGuild guild) => DiscordSettings.GovernanceConfigs[guild.Id];
 }
