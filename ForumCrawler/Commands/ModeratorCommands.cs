@@ -18,7 +18,7 @@ namespace ForumCrawler.Commands
         public async Task ChangeNickname([Remainder] string nick)
         {
             var user = (IGuildUser)Context.User;
-            var score = await Score.GetScoreDataAsync(user);
+            var score = await Score.GetScoreDataAsync(Context.Client, user.Id);
             if (score.ScoreLevel < 4) throw new Exception("You must be a class of 4 or higher to change your nick.");
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");

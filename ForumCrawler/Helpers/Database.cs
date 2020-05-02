@@ -181,15 +181,14 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task WithAllScoreUsersAsync(Func<ulong, IGuildUser> userFactory, Action<IEnumerable<ScoreUser>> callback)
+        public static async Task WithAllScoreUsersAsync(DiscordSocketClient client, Action<IEnumerable<ScoreUser>> callback)
         {
             using (var context = new DatabaseContext())
             {
                 callback((await context.ScoreUsers.ToListAsync()).Select(
                     (scoreUser) =>
                     {
-                        var user = userFactory(scoreUser.UserId);
-                        if (user != null) scoreUser.Update(user);
+                        scoreUser.Update(client, scoreUser.UserId);
                         return scoreUser;
                     }));
                 await context.SaveChangesAsync();
@@ -204,33 +203,33 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreUser, int)> GetOrCreateScoreUserAndLeaderboardPositionAsync(IGuildUser user)
+        public static async Task<(ScoreUser, int)> GetOrCreateScoreUserAndLeaderboardPositionAsync(DiscordSocketClient client, ulong userId)
         {
-            var myScoreUser = await GetOrCreateScoreUserAsync(user);
+            var myScoreUser = await GetOrCreateScoreUserAsync(client, userId);
             using (var context = new DatabaseContext())
             {
                 return (myScoreUser, 1 + await context.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
             }
         }
 
-        public static async Task<bool> IsScoreUserExempt(IGuildUser guildUser)
+        public static async Task<bool> IsScoreUserExempt(DiscordSocketClient client, ulong userId)
         {
-            var user = await GetOrCreateScoreUserAsync(guildUser);
-            return user.EarlyUserExempt;
+            var scoreUser = await GetOrCreateScoreUserAsync(client, userId);
+            return scoreUser.EarlyUserExempt;
         }
 
-        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(IGuildUser user)
+        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DiscordSocketClient client, ulong userId)
         {
             using (var context = new DatabaseContext())
             {
-                var res = await context.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)user.Id);
+                var res = await context.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
                 if (res == null)
                 {
-                    res = new ScoreUser { UserId = user.Id };
+                    res = new ScoreUser { UserId = userId };
                     context.ScoreUsers.AddOrUpdate(res);
                     await context.SaveChangesAsync();
                 }
-                res.Update(user);
+                res.Update(client, userId);
                 return res;
             }
         }

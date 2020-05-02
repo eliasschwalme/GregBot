@@ -1,5 +1,5 @@
 ﻿using Discord;
-
+using Discord.WebSocket;
 using Newtonsoft.Json;
 
 using System;
@@ -186,9 +186,15 @@ namespace ForumCrawler
             }
         }
 
-        public void Update(IGuildUser user)
+        public void Update(DiscordSocketClient client, ulong userId)
         {
-            IsPremium = user.PremiumSince.HasValue;
+            var guild = client.GetGuild(DiscordSettings.GuildId);
+            var guildUser = guild.GetUser(userId);
+            if (guildUser != null)
+            {
+                IsPremium = guildUser.PremiumSince.HasValue;
+            }
+
             UpdateDecay();
             UpdateEnergy();
         }

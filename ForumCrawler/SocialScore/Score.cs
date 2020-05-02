@@ -1,5 +1,5 @@
 ﻿using Discord;
-
+using Discord.WebSocket;
 using ForumCrawler;
 
 using System;
@@ -15,14 +15,9 @@ namespace DiscordSocialScore
 
         public static event Action<ulong, ScoreData> OnUpdate;
 
-        private static async Task<T> WithUserAsync<T>(IGuildUser user, Func<ScoreUser, Task<T>> callback)
+        private static async Task<T> WithUserAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<T>> callback)
         {
-            if (user == null)
-            {
-                throw new Exception("WithUserAsync<T> called with a null guild user.");
-            }
-
-            return await WithUserUpdateAsync(user, async u => (false, await callback(u)));
+            return await WithUserUpdateAsync(client, userId, async u => (false, await callback(u)));
         }
 
         // can't do an IAsyncEnumerable because old :v
@@ -47,14 +42,9 @@ namespace DiscordSocialScore
             return guildUsers;
         }
 
-        private static async Task<T> WithUserUpdateAsync<T>(IGuildUser user, Func<ScoreUser, Task<(bool, T)>> callback)
+        private static async Task<T> WithUserUpdateAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<(bool, T)>> callback)
         {
-            if (user == null)
-            {
-                throw new Exception("WithUserUpdateAsync<T> called with a null guild user.");
-            }
-
-            var userObj = await Database.GetOrCreateScoreUserAsync(user);
+            var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
             var (shouldUpdate, res) = await callback(userObj);
             if (shouldUpdate)
             {
@@ -64,9 +54,9 @@ namespace DiscordSocialScore
             return res;
         }
 
-        private static async Task<(ScoreData, T)> WithWootAsync<T>(IGuildUser targetUser, IGuildUser voterUser, Func<ScoreUser, ScoreUser, T> callback)
+        private static async Task<(ScoreData, T)> WithWootAsync<T>(DiscordSocketClient client, ulong targetUserId, ulong voterUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
-            return await WithUserUpdateAsync(targetUser, async target => (true, await WithUserUpdateAsync(voterUser, voter =>
+            return await WithUserUpdateAsync(client, targetUserId, async target => (true, await WithUserUpdateAsync(client, voterUserId, voter =>
             {
                 if (target == voter) return Task.FromResult((false, (target.ScoreData, default(T))));
 
@@ -77,11 +67,11 @@ namespace DiscordSocialScore
             })));
         }
 
-        public static async Task<(ScoreData, double)> UpvoteAsync(IGuildUser targetUser, IGuildUser upvoterUser)
+        public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong upvoterUserId)
         {
-            if (targetUser.Id == upvoterUser.Id) throw new Exception($"Sorry, upvoting yourself is not allowed!");
+            if (targetUserId == upvoterUserId) throw new Exception($"Sorry, upvoting yourself is not allowed!");
 
-            return await WithWootAsync(targetUser, upvoterUser, (target, upvoter) =>
+            return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
             {
                 if (target.Score < 1.0995 || upvoter.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send or receive upvotes.");
                 if (Math.Abs(target.Score - upvoter.Score) > 1) throw new Exception("The score difference between upvoters cannot be over 1.0.");
@@ -108,19 +98,14 @@ namespace DiscordSocialScore
             });
         }
 
-        public static async Task<ScoreData> GetScoreDataAsync(IGuildUser user)
+        public static async Task<ScoreData> GetScoreDataAsync(DiscordSocketClient client, ulong userId)
         {
-            if (user == null)
-            {
-                throw new Exception("GetScoreDataAsync<T> called with a null guild user.");
-            }
-
-            return await WithUserAsync(user, u => Task.FromResult(u.ScoreData));
+            return await WithUserAsync(client, userId, u => Task.FromResult(u.ScoreData));
         }
 
-        public static async Task<List<(ulong Key, DateTime LastBoost)>> GetHistoryAsync(IGuildUser user)
+        public static async Task<List<(ulong Key, DateTime LastBoost)>> GetHistoryAsync(DiscordSocketClient client, ulong userId)
         {
-            return await WithUserAsync(user, u => Task.FromResult(u.Boosts
+            return await WithUserAsync(client, userId, u => Task.FromResult(u.Boosts
                 .Where(kv => (DateTime.UtcNow - kv.Value).TotalDays < 7)
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
@@ -128,58 +113,58 @@ namespace DiscordSocialScore
             ));
         }
 
-        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostsAsync(IGuildUser user)
+        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostsAsync(DiscordSocketClient client, ulong userId)
         {
-            return await WithUserAsync(user, u => Task.FromResult(u.GetBoostsLeft()
+            return await WithUserAsync(client, userId, u => Task.FromResult(u.GetBoostsLeft()
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
                 .ToList()
             ));
         }
 
-        public static async Task<double> SetScoreAsync(IGuildUser user, double score)
+        public static async Task<double> SetScoreAsync(DiscordSocketClient client, ulong userId, double score)
         {
-            return await WithUserUpdateAsync(user, u =>
+            return await WithUserUpdateAsync(client, userId, u =>
             {
                 u.Score = Math.Max(-10, Math.Min(5, score));
                 return Task.FromResult((true, u.Score));
             });
         }
 
-        public static async Task<double> SetEnergyAsync(IGuildUser user, double energy)
+        public static async Task<double> SetEnergyAsync(DiscordSocketClient client, ulong userId, double energy)
         {
-            return await WithUserUpdateAsync(user, u =>
+            return await WithUserUpdateAsync(client, userId, u =>
             {
                 u.Energy = Math.Max(0, energy);
                 return Task.FromResult((true, u.Energy));
             });
         }
 
-        public static async Task<double> SetInertiaAsync(IGuildUser user, double inertia)
+        public static async Task<double> SetInertiaAsync(DiscordSocketClient client, ulong userId, double inertia)
         {
-            return await WithUserUpdateAsync(user, u =>
+            return await WithUserUpdateAsync(client, userId, u =>
             {
                 u.Inertia = Math.Max(0, Math.Min(1, inertia));
                 return Task.FromResult((true, u.Inertia));
             });
         }
 
-        public static async Task UpdateUserVisibilityAsync(IGuildUser user, bool showInUsername)
+        public static async Task UpdateUserVisibilityAsync(DiscordSocketClient client, ulong userId, bool showInUsername)
         {
-            await WithUserUpdateAsync(user, u =>
+            await WithUserUpdateAsync(client, userId, u =>
             {
                 u.ShowInUsername = showInUsername;
                 return Task.FromResult((true, true));
             });
         }
 
-        public static async Task<ScoreData> CreditActivityScoreAsync(IGuildUser activityUser)
+        public static async Task<ScoreData> CreditActivityScoreAsync(DiscordSocketClient client, ulong activityUserId)
         {
 #if DEBUG
 #pragma warning disable CS0162 // Unreachable code detected
-            return await GetScoreDataAsync(activityUser);
+            return await GetScoreDataAsync(client, activityUserId);
 #endif
-            return await WithUserUpdateAsync(activityUser, async user =>
+            return await WithUserUpdateAsync(client, activityUserId, async user =>
             {
                 // null ref somewhere i guess? the fudge
 
@@ -189,7 +174,7 @@ namespace DiscordSocialScore
                     var scoredataNull = user.ScoreData == null;
 
                     Console.WriteLine($"user or user.ScoreData is null - this must be looked into later. user null: {userNull}, scoredataNull: {scoredataNull}");
-                    return (false, await GetScoreDataAsync(activityUser));
+                    return (false, await GetScoreDataAsync(client, activityUserId));
                 }
 
                 if (user.LastActivity.HasValue
@@ -206,9 +191,9 @@ namespace DiscordSocialScore
             });
         }
 
-        public static async Task UpdateDecays(Func<ulong, ScoreData, Task> callback, Func<ulong, IGuildUser> userFactory)
+        public static async Task UpdateDecays(DiscordSocketClient client, Func<ulong, ScoreData, Task> callback)
         {
-            await Database.WithAllScoreUsersAsync(userFactory, async scoreUsers =>
+            await Database.WithAllScoreUsersAsync(client, async scoreUsers =>
             {
                 foreach (var user in scoreUsers)
                 {

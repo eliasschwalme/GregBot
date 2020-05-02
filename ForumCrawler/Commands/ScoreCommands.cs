@@ -26,12 +26,7 @@ namespace DiscordSocialScore
         [Command("history"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
         public async Task GetHistory(IGuildUser user)
         {
-            if (user == null)
-            {
-                throw new Exception("GetHistory GuildUser is null.");
-            }
-
-            var history = await Score.GetHistoryAsync(user);
+            var history = await Score.GetHistoryAsync(Context.Client, user.Id);
             var historyString = history.Count == 0
                 ? " nobody."
                 : history.Count == 1
@@ -48,7 +43,7 @@ namespace DiscordSocialScore
         [Command("boosts"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
         public async Task GetBoosts(IGuildUser user)
         {
-            var boosts = await Score.GetBoostsAsync(user);
+            var boosts = await Score.GetBoostsAsync(Context.Client, user.Id);
             var boostString = boosts.Count == 0
                 ? " nobody."
                 : boosts.Count == 1
@@ -102,24 +97,14 @@ namespace DiscordSocialScore
         [Command("score show"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task ShowUsername()
         {
-            if (!(Context.User is IGuildUser guildUser))
-            {
-                throw new Exception("You're not a guild user!");
-            }
-
-            await Score.UpdateUserVisibilityAsync(guildUser, true);
+            await Score.UpdateUserVisibilityAsync(Context.Client, Context.User.Id, true);
             await ReplyAsync("Your score is now shown in your nickname.");
         }
 
         [Command("score hide"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task HideUsername()
         {
-            if (!(Context.User is IGuildUser guildUser))
-            {
-                throw new Exception("You're not a guild user!");
-            }
-
-            await Score.UpdateUserVisibilityAsync(guildUser, false);
+            await Score.UpdateUserVisibilityAsync(Context.Client, Context.User.Id, false);
             await ReplyAsync("Your score is now hidden in your nickname.");
         }
 
@@ -131,7 +116,7 @@ namespace DiscordSocialScore
         {
             var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userObj.Id);
             const string WootString = "<:woot:329697747701727235>";
-            var hs = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(user);
+            var hs = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, user.Id);
             var score = hs.Item1;
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetBaseNick()}**'s stats:", embed: new EmbedBuilder().WithDescription(
@@ -148,19 +133,14 @@ namespace DiscordSocialScore
                 throw new Exception("Invalid user specified!");
             }
 
-            var score = await Score.SetScoreAsync(Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Id), value);
+            var score = await Score.SetScoreAsync(Context.Client, user.Id, value);
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
         }
 
         [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetExempt(IGuildUser user, bool value = true)
+        public async Task SetExempt(IUser user, bool value = true)
         {
-            if (user == null)
-            {
-                throw new Exception("Invalid user specified!");
-            }
-
-            var scoreUser = await Database.GetOrCreateScoreUserAsync(user);
+            var scoreUser = await Database.GetOrCreateScoreUserAsync(Context.Client, user.Id);
             scoreUser.EarlyUserExempt = value;
             await Database.AddOrUpdateScoreUserAsync(scoreUser);
 
@@ -168,14 +148,14 @@ namespace DiscordSocialScore
         }
 
         [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetEnergy(IGuildUser user, double value)
+        public async Task SetEnergy(IUser user, double value)
         {
             if (user == null)
             {
                 throw new Exception("Invalid user specified!");
             }
 
-            var energy = Math.Floor(await Score.SetEnergyAsync(user, value));
+            var energy = Math.Floor(await Score.SetEnergyAsync(Context.Client, user.Id, value));
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s energy to {energy}.");
         }
 
@@ -187,14 +167,14 @@ namespace DiscordSocialScore
                 throw new Exception("Invalid user specified!");
             }
 
-            var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Id), value / 100) * 100);
+            var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Client, user.Id, value / 100) * 100);
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s inertia to {inertia}%.");
         }
 
         [Command("up")]
-        public async Task UpUser(IGuildUser user)
+        public async Task UpUser(IGuildUser targetUser)
         {
-            if (user == null)
+            if (targetUser == null)
             {
                 throw new Exception("Invalid user specified!");
             }
@@ -204,17 +184,17 @@ namespace DiscordSocialScore
                 throw new Exception("You aren't a guild user!");
             }
 
-            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(guildUser))) throw new Exception("You have recently joined this server and may not g!up other users yet!");
-            if ((DateTimeOffset.UtcNow - user.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(user))) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
+            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(Context.Client, guildUser.Id))) throw new Exception("You have recently joined this server and may not g!up other users yet!");
+            if ((DateTimeOffset.UtcNow - targetUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(Context.Client, targetUser.Id))) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
 
-            var oldScoreData = await Score.GetScoreDataAsync(user);
-            var (scoreData, efficiency) = await Score.UpvoteAsync(user, guildUser);
+            var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
+            var (scoreData, efficiency) = await Score.UpvoteAsync(Context.Client, targetUser.Id, guildUser.Id);
 
-            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(user.Id)} a boost. Their score increased by {scoreData.Score - oldScoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
+            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a boost. Their score increased by {scoreData.Score - oldScoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
 
             if (scoreData.BonusScore != oldScoreData.BonusScore)
             {
-                await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score and +{scoreData.BonusEnergy} bonus max energy.");
+                await ReplyAsync($"{MentionUtils.MentionUser(targetUser.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score and +{scoreData.BonusEnergy} bonus max energy.");
             }
         }
 
@@ -222,7 +202,7 @@ namespace DiscordSocialScore
         public async Task Top(int page = 1)
         {
             var topPlayers = await Database.GetScoreUsersByLeaderboardPositionAsync(page - 1);
-            var myPlayer = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.User as IGuildUser);
+            var myPlayer = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, Context.User.Id);
 
             var topPlayerStrings = topPlayers.Select(t => GetLeaderboardPlayerString(t, (10 * (page - 1)) + 1 + topPlayers.Count(t2 => t2.Score > t.Score)));
             var myPlayerString = GetLeaderboardPlayerString(myPlayer.Item1, myPlayer.Item2);

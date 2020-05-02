@@ -22,7 +22,7 @@ namespace DiscordSocialScore
         {
             CacheProvider = new RoleCacheProvider(client);
             client.MessageReceived += (a) => Client_MessageReceived(client, a);
-            client.GuildMemberUpdated += Client_GuildMemberUpdated;
+            client.GuildMemberUpdated += (a, b) => Client_GuildMemberUpdated(client, a, b);
             client.UserUpdated += (a, b) => Client_UserUpdated(client, a, b);
             client.RoleUpdated += Client_RoleUpdated;
             client.AddOnFirstReady(() => Client_Ready(client));
@@ -47,7 +47,7 @@ namespace DiscordSocialScore
                 {
                     var guildUser = guild.GetUser(oldUser.Id);
                     if (guildUser == null) continue;
-                    var scoreData = await Score.GetScoreDataAsync(guildUser);
+                    var scoreData = await Score.GetScoreDataAsync(client, guildUser.Id);
 
                     var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
                     if (noNick)
@@ -64,8 +64,7 @@ namespace DiscordSocialScore
 
         private static async void OnHour(DiscordSocketClient client)
         {
-            var mainGuild = client.GetGuild(DiscordSettings.GuildId);
-            await Score.UpdateDecays((a, b) => OnScoreChangeAsync(client, a, b), userId => mainGuild.GetUser(userId));
+            await Score.UpdateDecays(client, (a, b) => OnScoreChangeAsync(client, a, b));
 
             foreach (var guild in client.Guilds)
             {
@@ -100,7 +99,7 @@ namespace DiscordSocialScore
             }
         }
 
-        private static async Task Client_GuildMemberUpdated(SocketGuildUser oldUser, SocketGuildUser newUser)
+        private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser, SocketGuildUser newUser)
         {
             if (newUser == null)
             {
@@ -117,23 +116,24 @@ namespace DiscordSocialScore
             IgnoreUsers.TryGetValue(newUser.Id, out var lastCall);
             if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
 
-            await UpdateUserAsync(newUser, await Score.GetScoreDataAsync(newUser));
+            await UpdateUserAsync(newUser, await Score.GetScoreDataAsync(client, newUser.Id));
         }
 
         private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
         {
+            ScoreData scoreData;
             if (message.Author.IsBot) return;
             if (!(message.Author is SocketGuildUser guildUser)) return;
-            if (guildUser.Guild.Id != DiscordSettings.GuildId) return;
-            if (message.Channel.Id == 329634826061742081 || // bot-spam
-                message.Channel.Id == 329339732662419457 || // funposting
-                message.Channel.Id == 596114917380325387)  // other-languages
+            if (guildUser.Guild.Id == DiscordSettings.GuildId &&
+                message.Channel.Id != 329634826061742081 && // bot-spam
+                message.Channel.Id != 329339732662419457 && // funposting
+                message.Channel.Id != 596114917380325387)  // other-languages
             {
-                return;
+                scoreData = await Score.CreditActivityScoreAsync(client, guildUser.Id);
+            } else
+            {
+                scoreData = await Score.GetScoreDataAsync(client, guildUser.Id); 
             }
-
-            var mainGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(guildUser.Id);
-            var scoreData = await Score.CreditActivityScoreAsync(mainGuildUser);
 
             foreach (var guild in client.Guilds)
             {
