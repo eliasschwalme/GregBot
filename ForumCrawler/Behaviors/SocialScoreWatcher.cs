@@ -138,6 +138,7 @@ namespace DiscordSocialScore
             foreach (var guild in client.Guilds)
             {
                 var user = guild.GetUser(guildUser.Id);
+                if (user == null) continue;
                 await UpdateUserAsync(client, user, scoreData);
             }
         }
