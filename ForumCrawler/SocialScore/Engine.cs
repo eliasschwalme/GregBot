@@ -12,15 +12,15 @@ using System.Timers;
 
 namespace DiscordSocialScore
 {
-    public class Engine
+    public static class Engine
     {
         private static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
-        private readonly RoleCacheProvider cacheProvider;
-        private readonly Dictionary<ulong, DateTimeOffset> ignoreUsers = new Dictionary<ulong, DateTimeOffset>();
+        private static RoleCacheProvider CacheProvider;
+        private static readonly Dictionary<ulong, DateTimeOffset> IgnoreUsers = new Dictionary<ulong, DateTimeOffset>();
 
-        public Engine(DiscordSocketClient client, RoleCacheProvider cacheProvider)
+        public static void Bind(DiscordSocketClient client)
         {
-            this.cacheProvider = cacheProvider;
+            CacheProvider = new RoleCacheProvider(client);
             client.MessageReceived += Client_MessageReceived;
             client.GuildMemberUpdated += Client_GuildMemberUpdated;
             client.UserUpdated += (a, b) => Client_UserUpdated(client, a, b);
@@ -29,7 +29,7 @@ namespace DiscordSocialScore
             Score.OnUpdate += (a, b) => Score_OnUpdate(client, a, b);
         }
 
-        private Task Client_Ready(DiscordSocketClient client)
+        private static Task Client_Ready(DiscordSocketClient client)
         {
             var timer = new Timer(TimeSpan.FromHours(1).TotalMilliseconds);
             timer.Elapsed += (o, e) => OnHour(client);
@@ -37,44 +37,43 @@ namespace DiscordSocialScore
             return Task.CompletedTask;
         }
 
-        private async Task Client_UserUpdated(DiscordSocketClient client, SocketUser oldUser, SocketUser newUser)
+        private static async Task Client_UserUpdated(DiscordSocketClient client, SocketUser oldUser, SocketUser newUser)
         {
             if (newUser.IsBot) return;
 
             if (oldUser.Username != newUser.Username)
             {
-                foreach (var guild in client.Guilds)
-                {
-                    var guildUser = guild.GetUser(oldUser.Id);
-                    if (guildUser == null) continue;
-                    var scoreData = await Score.GetScoreDataAsync(guildUser);
+                var guild = client.GetGuild(DiscordSettings.GuildId);
+                var guildUser = guild.GetUser(oldUser.Id);
+                if (guildUser == null) return;
 
-                    var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
-                    if (noNick)
+                var scoreData = await Score.GetScoreDataAsync(guildUser);
+
+                var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
+                if (noNick)
+                {
+                    var targetNick = GetTargetNick(newUser.Username, null, scoreData);
+                    await guildUser.ModifyAsync(x =>
                     {
-                        var targetNick = GetTargetNick(newUser.Username, null, scoreData);
-                        await guildUser.ModifyAsync(x =>
-                        {
-                            x.Nickname = targetNick;
-                        });
-                    }
+                        x.Nickname = targetNick;
+                    });
                 }
             }
         }
 
-        private async void OnHour(DiscordSocketClient client)
+        private static async void OnHour(DiscordSocketClient client)
         {
             foreach (var guild in client.Guilds)
             {
-                var cache = cacheProvider.Get(guild);
+                var cache = CacheProvider.Get(guild);
                 await ScoreRoleManager.DeleteRolesAsync(cache);
                 await Score.UpdateDecays((a, b) => OnScoreChangeAsync(client, a, b), userId => guild.GetUser(userId));
             }
         }
 
-        private async void Score_OnUpdate(DiscordSocketClient client, ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(client, userId, scoreData);
+        private static async void Score_OnUpdate(DiscordSocketClient client, ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(client, userId, scoreData);
 
-        private async Task OnScoreChangeAsync(DiscordSocketClient client, ulong userId, ScoreData scoreData)
+        private static async Task OnScoreChangeAsync(DiscordSocketClient client, ulong userId, ScoreData scoreData)
         {
             foreach (var guild in client.Guilds)
             {
@@ -90,7 +89,7 @@ namespace DiscordSocialScore
             }
         }
 
-        private async Task Client_RoleUpdated(SocketRole arg1, SocketRole arg2)
+        private static async Task Client_RoleUpdated(SocketRole arg1, SocketRole arg2)
         {
             if (arg1.Name != arg2.Name)
             {
@@ -98,7 +97,7 @@ namespace DiscordSocialScore
             }
         }
 
-        private async Task Client_GuildMemberUpdated(SocketGuildUser oldUser, SocketGuildUser newUser)
+        private static async Task Client_GuildMemberUpdated(SocketGuildUser oldUser, SocketGuildUser newUser)
         {
             if (newUser == null)
             {
@@ -112,13 +111,13 @@ namespace DiscordSocialScore
                 return;
             }
 
-            ignoreUsers.TryGetValue(newUser.Id, out var lastCall);
+            IgnoreUsers.TryGetValue(newUser.Id, out var lastCall);
             if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
 
             await UpdateUsernameAsync(newUser, await Score.GetScoreDataAsync(newUser));
         }
 
-        private async Task Client_MessageReceived(SocketMessage message)
+        private static async Task Client_MessageReceived(SocketMessage message)
         {
             if (message.Author.IsBot) return;
             if (message.Channel.Id == 329634826061742081 || // bot-commands
@@ -134,13 +133,13 @@ namespace DiscordSocialScore
             await UpdateUsernameAsync(guildUser, scoreData);
         }
 
-        private async Task UpdateUsernameAsync(SocketGuildUser user, ScoreData scoreData)
+        private static async Task UpdateUsernameAsync(SocketGuildUser user, ScoreData scoreData)
         {
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
             var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
 
-            var cache = cacheProvider.Get(user.Guild);
+            var cache = CacheProvider.Get(user.Guild);
 
             var muted = (await Database.GetMute(user.Id)) != null;
             var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(cache, user, scoreData) };
@@ -151,7 +150,7 @@ namespace DiscordSocialScore
 
             if (user.Nickname != targetNick || toAdd.Any() || toDelete.Any())
             {
-                ignoreUsers[user.Id] = DateTimeOffset.UtcNow;
+                IgnoreUsers[user.Id] = DateTimeOffset.UtcNow;
 
                 Console.WriteLine("Updated username " + user.Nickname + " to " + targetNick);
 

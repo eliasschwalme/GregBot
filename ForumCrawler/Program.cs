@@ -17,8 +17,8 @@ namespace ForumCrawler
 
             var services = DiscordSettings.ConfigureServices(client);
             await DiscordSettings.InstallCommands(client, services);
-            services.GetService(typeof(Engine));
 
+            Engine.Bind(client);
             CoronaWatcher.Bind(client);
             MuteWatcher.Bind(client);
             VoiceChat.Bind(client);

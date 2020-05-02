@@ -106,9 +106,7 @@ namespace ForumCrawler
         {
             var services = new ServiceCollection()
                 .AddSingleton(client)
-                .AddSingleton<InteractiveService>()
-                .AddSingleton(new RoleCacheProvider(client))
-                .AddSingleton<Engine>();
+                .AddSingleton<InteractiveService>();
             var provider = services.BuildServiceProvider();
             return provider;
         }
