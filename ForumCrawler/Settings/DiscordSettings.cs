@@ -98,7 +98,6 @@ namespace ForumCrawler
             client.MessageReceived += msg => HandleCommand(client, services, commands, msg);
             // Discover all of the commands in this assembly and load them.
             await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
-            await commands.AddModulesAsync(Assembly.GetAssembly(typeof(Engine)), services);
             return commands;
         }
 

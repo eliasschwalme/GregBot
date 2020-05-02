@@ -430,7 +430,7 @@
     <Compile Include="Helpers\WebClientEx.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SocialScore\Engine.cs" />
+    <Compile Include="Behaviors\SocialScoreWatcher.cs" />
     <Compile Include="Helpers\RoleCache.cs" />
     <Compile Include="SocialScore\ScoreRoleManager.cs" />
     <Compile Include="SocialScore\Score.cs" />

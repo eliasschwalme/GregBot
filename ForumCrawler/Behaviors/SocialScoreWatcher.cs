@@ -12,7 +12,7 @@ using System.Timers;
 
 namespace DiscordSocialScore
 {
-    public static class Engine
+    public static class SocialScoreWatcher
     {
         private static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
         private static RoleCacheProvider CacheProvider;
