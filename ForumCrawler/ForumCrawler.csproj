@@ -324,6 +324,7 @@
     <Compile Include="Helpers\DiscordAvatar.cs" />
     <Compile Include="Commands\Helpers\IgnoreCaseEnumTypeReader.cs" />
     <Compile Include="Helpers\UlongLongExtensions.cs" />
+    <Compile Include="Helpers\MainGuildUserTypeReader.cs" />
     <Compile Include="Migrations\201912250844104_Remove-Messages.cs" />
     <Compile Include="Migrations\201912250844104_Remove-Messages.Designer.cs">
       <DependentUpon>201912250844104_Remove-Messages.cs</DependentUpon>

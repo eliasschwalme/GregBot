@@ -97,6 +97,8 @@ namespace ForumCrawler
             commands.Log += Log;
             client.MessageReceived += msg => HandleCommand(client, services, commands, msg);
             // Discover all of the commands in this assembly and load them.
+            commands.AddTypeReader(typeof(IUser), new MainGuildUserTypeReader<IUser>());
+            commands.AddTypeReader(typeof(IGuildUser), new MainGuildUserTypeReader<IGuildUser>());
             await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
             return commands;
         }
