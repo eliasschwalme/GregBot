@@ -119,35 +119,11 @@ namespace ForumCrawler
             Task.Run(async () =>
             {
                 var argPos = 0;
-
-                // add ability to run report command via d!report
-                // lol this is so bad
-                if (message.HasStringPrefix("d!", ref argPos))
-                {
-                    var argPosCopy = argPos;
-                    if (message.HasStringPrefix("d!report", ref argPosCopy))
-                    {
-                        var context = new SocketCommandContext(client, message);
-
-                        await context.Message.Channel.SendMessageAsync($":slight_frown: | [Warning] {message.Author.Mention} - d!report is obsolete! Please use g!report.")
-                            ;
-
-                        var result = await commands.ExecuteAsync(context, argPos, services);
-
-                        if (!result.IsSuccess)
-                        {
-                            await context.Message.Channel.SendErrorAsync(result.ErrorReason);
-                        }
-                    }
-
-                    return;
-                }
-
                 if (!(message.HasStringPrefix(CommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
 
                 {
                     var context = new SocketCommandContext(client, message);
-                    var result = await commands.ExecuteAsync(context, argPos, services);
+                    var result = await commands.ExecuteAsync(context, argPos, services, MultiMatchHandling.Best);
                     if (!result.IsSuccess)
                     {
                         await context.Message.Channel.SendErrorAsync(result.ErrorReason);
