@@ -21,7 +21,7 @@ namespace ForumCrawler.Helpers
         public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             var results = new Dictionary<ulong, TypeReaderValue>();
-            var mainGuild = await context.Client.GetGuildAsync(DiscordSettings.DiscordStaff, CacheMode.CacheOnly).ConfigureAwait(false);
+            var mainGuild = await context.Client.GetGuildAsync(DiscordSettings.GuildId, CacheMode.CacheOnly).ConfigureAwait(false);
             IAsyncEnumerable<IUser> channelUsers = context.Channel.GetUsersAsync(CacheMode.CacheOnly).Flatten(); // it's better
             IReadOnlyCollection<IGuildUser> mainGuildUsers = await mainGuild.GetUsersAsync(CacheMode.CacheOnly).ConfigureAwait(false);
 
@@ -90,11 +90,11 @@ namespace ForumCrawler.Helpers
             //By StartsWith Nickname (0.3-0.45)
             {
                 await channelUsers
-                    .Where(x => (x as IGuildUser)?.Nickname.StartsWith(input, StringComparison.OrdinalIgnoreCase) ?? false)
+                    .Where(x => (x as IGuildUser)?.Nickname?.StartsWith(input, StringComparison.OrdinalIgnoreCase) ?? false)
                     .ForEachAsync(channelUser => AddResult(results, channelUser as T, (channelUser as IGuildUser).Nickname.StartsWith(input) ? 0.45f : 0.35f))
                     .ConfigureAwait(false);
 
-                foreach (var guildUser in mainGuildUsers.Where(x => (x as IGuildUser)?.Nickname.StartsWith(input, StringComparison.OrdinalIgnoreCase) ?? false))
+                foreach (var guildUser in mainGuildUsers.Where(x => (x as IGuildUser)?.Nickname?.StartsWith(input, StringComparison.OrdinalIgnoreCase) ?? false))
                     AddResult(results, guildUser as T, guildUser.Nickname.StartsWith(input) ? 0.40f : 0.30f);
             }
 
