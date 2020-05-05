@@ -28,13 +28,13 @@ namespace ForumCrawler.Helpers
             //By Mention (1.0)
             if (MentionUtils.TryParseUser(input, out var id))
             {
-                AddResult(results, await context.Guild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T, 1.00f);
+                AddResult(results, await mainGuild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T, 1.00f);
             }
 
             //By Id (0.9)
             if (ulong.TryParse(input, NumberStyles.None, CultureInfo.InvariantCulture, out id))
             {
-                AddResult(results, await context.Guild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T, 0.90f);
+                AddResult(results, await mainGuild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T, 0.90f);
             }
 
             //By Username + Discriminator (0.7-0.85)
@@ -98,16 +98,17 @@ namespace ForumCrawler.Helpers
                     AddResult(results, guildUser as T, guildUser.Nickname.StartsWith(input) ? 0.40f : 0.30f);
             }
 
+            var topBracket = results.Values.GroupBy(i => i.Score).OrderByDescending(g => g.Key).FirstOrDefault();
 
-            if (results.Count > 0)
-                return TypeReaderResult.FromSuccess(results.Values.ToImmutableArray());
+            if (topBracket?.Any() == true)
+                return TypeReaderResult.FromSuccess(topBracket.ToImmutableArray());
             return TypeReaderResult.FromError(CommandError.ObjectNotFound, "User not found.");
         }
 
         private void AddResult(Dictionary<ulong, TypeReaderValue> results, T user, float score)
         {
-            if (user != null && !results.ContainsKey(user.Id))
-                results.Add(user.Id, new TypeReaderValue(user, score));
+            if (user != null && (!results.TryGetValue(user.Id, out var curr) || curr.Score < score))
+                results[user.Id] = new TypeReaderValue(user, score);
         }
     }
 }

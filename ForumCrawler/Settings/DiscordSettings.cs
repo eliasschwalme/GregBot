@@ -123,7 +123,7 @@ namespace ForumCrawler
 
                 {
                     var context = new SocketCommandContext(client, message);
-                    var result = await commands.ExecuteAsync(context, argPos, services, MultiMatchHandling.Best);
+                    var result = await commands.ExecuteAsync(context, argPos, services, MultiMatchHandling.Exception);
                     if (!result.IsSuccess)
                     {
                         await context.Message.Channel.SendErrorAsync(result.ErrorReason);
