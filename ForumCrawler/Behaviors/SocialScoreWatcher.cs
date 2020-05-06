@@ -147,6 +147,8 @@ namespace DiscordSocialScore
         {
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
+            if (user.Roles.Count == 0 && scoreData.Score == 1) return;
+
             var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
 
             var cache = CacheProvider.Get(user.Guild);
