@@ -56,7 +56,11 @@ namespace DiscordSocialScore
             return await guild.CreateOrUpdateRoleAsync($"{scoreData.ShortScoreString} ({specialRole})", permissions: new GuildPermissions(), color: color);
         }
 
-        public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData) => await guild.CreateOrUpdateRoleAsync($"Class {scoreData.Class} members", permissions: new GuildPermissions(), isHoisted: true);
+        public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData) => await guild.CreateOrUpdateRoleAsync($"Class {scoreData.Class} members", permissions: GetClassPermissions(), isHoisted: true);
+
+        public static GuildPermissions GetClassPermissions() {
+            return new GuildPermissions(viewChannel: true);
+        }
 
         public static async Task OrderRolesAsync(SocketGuild guild)
         {
