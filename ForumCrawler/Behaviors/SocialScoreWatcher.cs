@@ -145,6 +145,7 @@ namespace DiscordSocialScore
 
         public static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData, bool force = false)
         {
+            return;
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
             if (!force && user.Roles.Count == 0) return;
