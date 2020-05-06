@@ -36,6 +36,7 @@ namespace ForumCrawler
         public const ulong MutedRole = 333618650634387458;
         public const ulong EighteenRole = 407999201830764544;
         public const ulong StarboardChannel = 589926820825006120;
+        public const ulong UnverifiedChannel = 707659903355060226;
         public const ulong BannedEmote = 614156104682962954;
 
         public const ulong DSGuildId = 705927053874167909;

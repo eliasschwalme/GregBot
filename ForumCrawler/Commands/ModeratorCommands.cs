@@ -455,5 +455,11 @@ namespace ForumCrawler.Commands
                 return true;
             }
         }
+
+        [Command("confirm"), RequireChannel(DiscordSettings.UnverifiedChannel), Priority(1)]
+        public async Task Confirm() => await Confirm((SocketGuildUser)Context.User);
+
+        [Command("confirm"), RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
+        public async Task Confirm(SocketGuildUser user) => await SocialScoreWatcher.UpdateUserAsync(Context.Client, user, await Score.GetScoreDataAsync(Context.Client, user.Id), true);
     }
 }

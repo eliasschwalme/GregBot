@@ -143,11 +143,11 @@ namespace DiscordSocialScore
             }
         }
 
-        private static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData)
+        public static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData, bool force = false)
         {
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
-            if (user.Roles.Count == 0 && scoreData.Score == 1) return;
+            if (!force && user.Roles.Count == 0) return;
 
             var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
 
