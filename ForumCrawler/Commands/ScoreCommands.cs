@@ -216,6 +216,13 @@ namespace DiscordSocialScore
                 "```");
         }
 
+        [Command("confirm"), RequireChannel(DiscordSettings.UnverifiedChannel), Priority(1)]
+        public async Task Confirm() => await Confirm((SocketGuildUser)Context.User);
+
+        [Command("confirm"), RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
+        public async Task Confirm(SocketGuildUser user) => await SocialScoreWatcher.UpdateUserAsync(Context.Client, user, await Score.GetScoreDataAsync(Context.Client, user.Id), true);
+
+
         private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
 
         private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";

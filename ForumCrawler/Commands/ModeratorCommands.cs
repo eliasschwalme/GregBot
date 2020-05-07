@@ -23,6 +23,72 @@ namespace ForumCrawler.Commands
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");
         }
+
+
+
+        [Group("mod"), Summary("These are moderator-specific commands."), RequireRole(DiscordSettings.DiscordStaff)]
+        public class ModeratorCommands : ModuleBase<SocketCommandContext>
+        {
+            [Group("18+"), Alias("18+", "18"), Summary("Give 18+ role to people")]
+            public class EighteenPlusRole : ModuleBase<SocketCommandContext>
+            {
+                [Command("give")]
+                public async Task GiveRole(IGuildUser user)
+                {
+                    if (user.IsStaff())
+                    {
+                        throw new Exception("You may not give the role to staff.");
+                    }
+
+                    if (!TryGetRole(user.Guild, out var muted))
+                    {
+                        throw new Exception("Unable to get role from guild user.");
+                    }
+
+                    await user.AddRoleAsync(muted, new RequestOptions
+                    {
+                        AuditLogReason = "Manual 18+ role given by " + Context.User.Username.DiscordEscape(),
+                    });
+
+                    await Context.Message.DeleteAsync();
+                }
+
+                [Command("remove"), Alias("rm")]
+                public async Task RemoveRole(IGuildUser user)
+                {
+                    // intentionally allowing removing the muted role from staff
+
+                    if (!TryGetRole(user.Guild, out var muted))
+                    {
+                        throw new Exception("Unable to get role from guild user.");
+                    }
+
+                    await user.RemoveRoleAsync(muted, new RequestOptions
+                    {
+                        AuditLogReason = "Manual 18+ role removed by " + Context.User.Username.DiscordEscape(),
+                    });
+
+                    await Context.Message.DeleteAsync();
+                }
+
+                private static bool TryGetRole(IGuild guild, out IRole muted)
+                {
+                    var query = guild.Roles
+                        .Where(role => role.Id == DiscordSettings.EighteenRole)
+                        .ToList();
+
+                    if (query.Count == 0)
+                    {
+                        muted = default;
+                        return false;
+                    }
+
+                    muted = query[0];
+                    return true;
+                }
+            }
+
+        }
     }
 
     public class MuteCommands : ModuleBase<SocketCommandContext>
@@ -391,74 +457,5 @@ namespace ForumCrawler.Commands
                 throw new Exception("Invalid input, operation cancelled.");
             return amount;
         }
-    }
-
-    [Group("mod"), Summary("These are moderator-specific commands."), RequireRole(DiscordSettings.DiscordStaff)]
-    public class ModeratorCommands : ModuleBase<SocketCommandContext>
-    {
-        [Group("18+"), Alias("18+", "18"), Summary("Give 18+ role to people")]
-        public class EighteenPlusRole : ModuleBase<SocketCommandContext>
-        {
-            [Command("give")]
-            public async Task GiveRole(IGuildUser user)
-            {
-                if (user.IsStaff())
-                {
-                    throw new Exception("You may not give the role to staff.");
-                }
-
-                if (!TryGetRole(user.Guild, out var muted))
-                {
-                    throw new Exception("Unable to get role from guild user.");
-                }
-
-                await user.AddRoleAsync(muted, new RequestOptions
-                {
-                    AuditLogReason = "Manual 18+ role given by " + Context.User.Username.DiscordEscape(),
-                });
-
-                await Context.Message.DeleteAsync();
-            }
-
-            [Command("remove"), Alias("rm")]
-            public async Task RemoveRole(IGuildUser user)
-            {
-                // intentionally allowing removing the muted role from staff
-
-                if (!TryGetRole(user.Guild, out var muted))
-                {
-                    throw new Exception("Unable to get role from guild user.");
-                }
-
-                await user.RemoveRoleAsync(muted, new RequestOptions
-                {
-                    AuditLogReason = "Manual 18+ role removed by " + Context.User.Username.DiscordEscape(),
-                });
-
-                await Context.Message.DeleteAsync();
-            }
-
-            private static bool TryGetRole(IGuild guild, out IRole muted)
-            {
-                var query = guild.Roles
-                    .Where(role => role.Id == DiscordSettings.EighteenRole)
-                    .ToList();
-
-                if (query.Count == 0)
-                {
-                    muted = default;
-                    return false;
-                }
-
-                muted = query[0];
-                return true;
-            }
-        }
-
-        [Command("confirm"), RequireChannel(DiscordSettings.UnverifiedChannel), Priority(1)]
-        public async Task Confirm() => await Confirm((SocketGuildUser)Context.User);
-
-        [Command("confirm"), RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
-        public async Task Confirm(SocketGuildUser user) => await SocialScoreWatcher.UpdateUserAsync(Context.Client, user, await Score.GetScoreDataAsync(Context.Client, user.Id), true);
     }
 }
