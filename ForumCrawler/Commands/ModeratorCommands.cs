@@ -414,7 +414,7 @@ namespace ForumCrawler.Commands
 
                 await user.AddRoleAsync(muted, new RequestOptions
                 {
-                    AuditLogReason = "Manual Mute Role Give by " + Context.User.Username.DiscordEscape(),
+                    AuditLogReason = "Manual 18+ role given by " + Context.User.Username.DiscordEscape(),
                 });
 
                 await Context.Message.DeleteAsync();
@@ -430,10 +430,9 @@ namespace ForumCrawler.Commands
                     throw new Exception("Unable to get role from guild user.");
                 }
 
-                // TODO: moderators could accidentally cause some kind of discord formatting crud if their name is weird
                 await user.RemoveRoleAsync(muted, new RequestOptions
                 {
-                    AuditLogReason = "Manual Role Removed by " + Context.User.Username,
+                    AuditLogReason = "Manual 18+ role removed by " + Context.User.Username.DiscordEscape(),
                 });
 
                 await Context.Message.DeleteAsync();

@@ -119,7 +119,7 @@ namespace ForumCrawler
             var builder = new EmbedBuilder()
                 .WithAuthor(author => author
                     .WithIconUrl(user?.GetAvatarUrlOrDefault())
-                    .WithName(user?.Username + "#" + (user?.Discriminator ?? "@" + userId.ToString()) + " " + title + ":"))
+                    .WithName(user?.Username.DiscordEscape() + "#" + (user?.Discriminator ?? "@" + userId.ToString()) + " " + title + ":"))
                 .WithColor(color)
                 .WithDescription(diff);
             if (messageId.HasValue)

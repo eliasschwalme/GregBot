@@ -251,7 +251,7 @@ namespace ForumCrawler
             return new EmbedBuilder()
              .WithAuthor(author => author
                  .WithIconUrl(user.GetAvatarUrlOrDefault())
-                 .WithName(user.Username + "#" + user.Discriminator + " suggests:"))
+                 .WithName(user.Username.DiscordEscape() + "#" + user.Discriminator + " suggests:"))
              .WithColor(Color.Blue)
              .WithDescription(suggestion.Substring(0, Math.Min(suggestion.Length, 2048))).Build();
         }
@@ -298,7 +298,7 @@ namespace ForumCrawler
             foreach (var message in Enumerable.Reverse(messages))
             {
                 history.Append('[').Append(message.Timestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss")).Append(" UTC] ");
-                history.Append(message.Author.Username).Append('#').Append(message.Author.Discriminator ?? "@" + message.Author.Id.ToString());
+                history.Append(message.Author.Username.DiscordEscape()).Append('#').Append(message.Author.Discriminator ?? "@" + message.Author.Id.ToString());
                 history.Append(": ");
 
                 if (message is IUserMessage userMsg)
@@ -351,7 +351,7 @@ namespace ForumCrawler
             var formatting = new Func<IGuildUser, string>(user =>
             {
                 var format = user.IsStaffOrConsultant() ? "__" : "";
-                return format + user.Username + "#" + user.Discriminator + format;
+                return format + user.Username.DiscordEscape() + "#" + user.Discriminator + format;
             });
             var approvers = (await message.GetReactionUsersAsync(new Emoji("👍"), 1000).FlattenAsync())
                 .Select(user => guild.GetUserAsync(user.Id).Result)
@@ -390,28 +390,4 @@ namespace ForumCrawler
             return stream;
         }
     }
-}
-
-public static class UserExtensions
-{
-    public static bool IsStaff(this IGuildUser guildUser)
-    {
-        return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
-            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff);
-
-    }
-
-    public static bool IsStaffOrConsultant(this IGuildUser guildUser)
-    {
-        return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
-            guildUser.RoleIds.Contains(DiscordSettings.DiscordStaffConsultant) ||
-            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) ||
-            guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaffConsultant);
-    }
-
-    public static bool IsSuggestionChannelByName(this IChannel channel) => channel.Name.StartsWith("_") || channel.Name.StartsWith("vote_");
-
-    public static bool IsSuggestionChannelFinalized(this IChannel channel) => channel.Name.StartsWith("vote_");
-
-    public static DiscordSettings.GovernanceConfig GetGovernanceConfig(this IGuild guild) => DiscordSettings.GovernanceConfigs[guild.Id];
 }

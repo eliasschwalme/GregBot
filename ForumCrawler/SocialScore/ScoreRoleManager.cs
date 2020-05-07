@@ -84,8 +84,6 @@ namespace DiscordSocialScore
             }
         }
 
-        public static string GetBaseNick(this IGuildUser user) => SocialScoreWatcher.GetBaseNick(user.Username, user.Nickname);
-
         public static IEnumerable<SocketRole> GetBotRoles(this IEnumerable<SocketRole> roles) => roles.Where(r => r.Name.StartsWith(RolePrefix.ToString()));
     }
 }

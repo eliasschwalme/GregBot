@@ -34,7 +34,7 @@ namespace DiscordSocialScore
                     : ": ```yml\n" +
                         string.Join("\n", history.Select(a => $"- {GetHistoryAsync(a)}")) + "\n" +
                         "```";
-            await ReplyAsync($"{user.GetBaseNick()} has been boosted by{historyString}");
+            await ReplyAsync($"{user.GetName()} has been boosted by{historyString}");
         }
 
         [Command("boosts"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(0)]
@@ -51,7 +51,7 @@ namespace DiscordSocialScore
                     : ": ```yml\n" +
                         string.Join("\n", boosts.Select(a => $"- {GetBoostString(a)}")) + "\n" +
                         "```";
-            await ReplyAsync($"{user.GetBaseNick()} is being boosted by{boostString}");
+            await ReplyAsync($"{user.GetName()} is being boosted by{boostString}");
         }
 
         [Command("boosting"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(2)]
@@ -119,7 +119,7 @@ namespace DiscordSocialScore
             var hs = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, user.Id);
             var score = hs.Item1;
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
-            await ReplyAsync($"[#{hs.Item2}] **{user.GetBaseNick()}**'s stats:", embed: new EmbedBuilder().WithDescription(
+            await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString).ToString() + $" **Score:** {score.Score:F3}{boostStr}\n" +
                 $":zap: **Energy:** {Math.Floor(score.Energy)}/{score.MaxEnergy} (more in {score.NextEnergy:m\\:ss})\n" +
                 $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
@@ -216,14 +216,14 @@ namespace DiscordSocialScore
                 "```");
         }
 
-        private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
+        private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
 
-        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetBaseNick() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
+        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
 
         private string GetLeaderboardPlayerString(ScoreUser scoreUser, int position)
         {
             var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(scoreUser.UserId);
-            var username = user?.GetBaseNick() ?? $"<{scoreUser.UserId}>";
+            var username = user?.GetName() ?? $"<{scoreUser.UserId}>";
             var positionStr = position == 0 ? "" : position.ToString();
             return $"{positionStr,3}  {username,32}  {scoreUser.Score:F3}";
         }

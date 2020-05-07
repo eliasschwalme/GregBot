@@ -16,14 +16,12 @@ namespace DiscordSocialScore
     {
         private static readonly Regex UsernameRegex = new Regex(@"(.*) \(-?[0-9]\.[0-9]+\)$");
         private static RoleCacheProvider CacheProvider;
-        private static readonly Dictionary<ulong, DateTimeOffset> IgnoreUsers = new Dictionary<ulong, DateTimeOffset>();
 
         public static void Bind(DiscordSocketClient client)
         {
             CacheProvider = new RoleCacheProvider(client);
             client.MessageReceived += (a) => Client_MessageReceived(client, a);
             client.GuildMemberUpdated += (a, b) => Client_GuildMemberUpdated(client, a, b);
-            client.UserUpdated += (a, b) => Client_UserUpdated(client, a, b);
             client.RoleUpdated += Client_RoleUpdated;
             client.AddOnFirstReady(() => Client_Ready(client));
             Score.OnUpdate += (a, b) => Score_OnUpdate(client, a, b);
@@ -35,31 +33,6 @@ namespace DiscordSocialScore
             timer.Elapsed += (o, e) => OnHour(client);
             timer.Start();
             return Task.CompletedTask;
-        }
-
-        private static async Task Client_UserUpdated(DiscordSocketClient client, SocketUser oldUser, SocketUser newUser)
-        {
-            if (newUser.IsBot) return;
-
-            if (oldUser.Username != newUser.Username)
-            {
-                foreach (var guild in client.Guilds)
-                {
-                    var guildUser = guild.GetUser(oldUser.Id);
-                    if (guildUser == null) continue;
-                    var scoreData = await Score.GetScoreDataAsync(client, guildUser.Id);
-
-                    var noNick = GetTargetNick(oldUser.Username, null, scoreData) == guildUser.Nickname;
-                    if (noNick)
-                    {
-                        var targetNick = GetTargetNick(newUser.Username, null, scoreData);
-                        await guildUser.ModifyAsync(x =>
-                        {
-                            x.Nickname = targetNick;
-                        });
-                    }
-                }
-            }
         }
 
         private static async void OnHour(DiscordSocketClient client)
@@ -101,45 +74,19 @@ namespace DiscordSocialScore
 
         private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser, SocketGuildUser newUser)
         {
-            if (newUser == null)
-            {
-                Console.WriteLine("Client_GuildMemberUpdated in SocialScoreWatcher.cs has a null newUser");
-                return;
-            }
-
-            if (oldUser == null)
-            {
-                Console.WriteLine("Client_GuildMemberUpdated in SocialScoreWatcher.cs has a null oldUser");
-                return;
-            }
-
-            IgnoreUsers.TryGetValue(newUser.Id, out var lastCall);
-            if ((DateTimeOffset.UtcNow - lastCall).Minutes < 1) return;
-
             await UpdateUserAsync(client, newUser, await Score.GetScoreDataAsync(client, newUser.Id));
         }
 
         private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
         {
-            ScoreData scoreData;
             if (message.Author.IsBot) return;
             if (!(message.Author is SocketGuildUser guildUser)) return;
             if (guildUser.Guild.Id == DiscordSettings.GuildId &&
-                message.Channel.Id != 329634826061742081 && // bot-spam
+                message.Channel.Id != DiscordSettings.BotCommandsChannel && // bot-spam
                 message.Channel.Id != 329339732662419457 && // funposting
                 message.Channel.Id != 596114917380325387)  // other-languages
             {
-                scoreData = await Score.CreditActivityScoreAsync(client, guildUser.Id);
-            } else
-            {
-                scoreData = await Score.GetScoreDataAsync(client, guildUser.Id); 
-            }
-
-            foreach (var guild in client.Guilds)
-            {
-                var user = guild.GetUser(guildUser.Id);
-                if (user == null) continue;
-                await UpdateUserAsync(client, user, scoreData);
+                await Score.CreditActivityScoreAsync(client, guildUser.Id);
             }
         }
 
@@ -148,8 +95,6 @@ namespace DiscordSocialScore
             if (user.IsBot) return;
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
             if (!force && user.Roles.Count <= 1) return;
-
-            var targetNick = GetTargetNick(user.Username, user.Nickname, scoreData);
 
             var cache = CacheProvider.Get(user.Guild);
 
@@ -160,44 +105,13 @@ namespace DiscordSocialScore
             var toDelete = user.Roles.GetBotRoles().Where(r => roles.All(r2 => r.Id != r2.Id)).ToList();
             var toAdd = roles.Where(r => user.Roles.All(r2 => r.Id != r2.Id)).ToList();
 
-            if (user.Nickname != targetNick || toAdd.Any() || toDelete.Any())
+            if ( toAdd.Any() || toDelete.Any())
             {
-                IgnoreUsers[user.Id] = DateTimeOffset.UtcNow;
-
-                Console.WriteLine("Updated username " + user.Nickname + " to " + targetNick);
-
                 await user.ModifyAsync(x =>
                 {
-                    x.Nickname = targetNick;
                     x.Roles = Optional.Create(user.Roles.Concat(toAdd).Except(toDelete).Where(r => r != r.Guild.EveryoneRole));
                 });
             }
-        }
-
-        private static string GetTargetNick(string username, string nickname, ScoreData scoreData)
-        {
-            var baseNickname = GetBaseNick(username, nickname);
-
-            var show = scoreData.ShowInUsername;
-            if (baseNickname.Contains("(") && baseNickname.Contains(")"))
-                show = true;
-            if (!show) return baseNickname == username ? null : baseNickname;
-
-            var scoreSuffix = $" ({scoreData.ShortScoreString})";
-            baseNickname = baseNickname.Substring(0, Math.Min(baseNickname.Length, 32 - scoreSuffix.Length));
-            return baseNickname + scoreSuffix;
-        }
-
-        public static string GetBaseNick(string username, string nickname)
-        {
-            var trimmedNick = nickname?.TrimStart(ScoreRoleManager.RolePrefix);
-            var matches = UsernameRegex.Match(trimmedNick ?? "");
-            var baseNickname = trimmedNick ?? username;
-            if (matches.Success)
-            {
-                baseNickname = matches.Groups[1].Value;
-            }
-            return baseNickname;
         }
     }
 }

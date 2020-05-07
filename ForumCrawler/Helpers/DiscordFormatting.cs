@@ -15,7 +15,7 @@ namespace ForumCrawler
         public static EmbedBuilder BuildStarboardEmbed(IGuildUser author, IMessage message, int gazers, bool makeRed)
         {
             var builder = new EmbedBuilder()
-                .WithAuthor(author.Nickname ?? author.Username, author.GetAvatarUrl(size: 20))
+                .WithAuthor(author.GetName(), author.GetAvatarUrl(size: 20))
                 .WithDescription(message.Content)
                 .WithFooter("In #" + message.Channel.Name)
                 .WithTimestamp(message.CreatedAt)
