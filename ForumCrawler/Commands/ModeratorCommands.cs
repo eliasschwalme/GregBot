@@ -188,12 +188,16 @@ namespace ForumCrawler.Commands
             {
                 embed.AddField($"Strike mute penalty expires in", (state.MutedUntil.Value - DateTimeOffset.UtcNow).ToHumanReadableString());
             }
+            else if (state.LastTick > DateTimeOffset.UtcNow)
+            {
+                embed.AddField($"Probation ends in", (state.LastTick - DateTimeOffset.UtcNow).ToHumanReadableString());
+            }
             else
             {
                 var next = state.Warnings == 0 ? "strike" : "warning";
                 var duration = state.Warnings == 0
-                    ? TimeSpan.FromDays(WarningState.WarningDelayLogicV2.StrikeExpiryDays)
-                    : TimeSpan.FromDays(WarningState.WarningDelayLogicV2.WarningExpiryDays);
+                    ? TimeSpan.FromDays(WarningState.WarningDecayLogicV3.StrikeExpiryDays)
+                    : TimeSpan.FromDays(WarningState.WarningDecayLogicV3.GetWarningExpiryDays(state));
                 embed.AddField($"Next {next} expires in", (duration - (DateTimeOffset.UtcNow - state.LastTick)).ToHumanReadableString());
             }
 

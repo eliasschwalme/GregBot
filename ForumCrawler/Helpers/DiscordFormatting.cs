@@ -25,7 +25,7 @@ namespace ForumCrawler
                     new EmbedFieldBuilder()
                         .WithIsInline(true)
                         .WithName("Original:")
-                        .WithValue($"[Click here](https://discordapp.com/channels/{author.GuildId}/{message.Channel.Id}/{message.Id}/)"),
+                        .WithValue($"[Click here]({message.GetJumpUrl()}"),
 
                     new EmbedFieldBuilder()
                         .WithIsInline(true)
