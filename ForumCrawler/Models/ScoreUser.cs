@@ -15,6 +15,8 @@ namespace ForumCrawler
     {
         private const double ScorePoint_Multiplier = 0.0015;
         private const double ReserveRatio_Multiplier = 0.01;
+        private const double Score_Epsilon = 0.1;
+        private const double Max_Score = 5;
 
         [EditorBrowsable(EditorBrowsableState.Never),
             DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -161,9 +163,9 @@ namespace ForumCrawler
             return boostDate;
         }
 
-        public static double ToScorePoints(double score) => Math.Log((5 - score) / 5) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
+        public static double ToScorePoints(double score) => Math.Log((Max_Score + Score_Epsilon - score) / (Max_Score + Score_Epsilon)) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
 
-        public static double ToScore(double scorePoints) => 5 - (5 * Math.Exp(-ScorePoint_Multiplier * scorePoints)); // 5 - 5 * e^(-0.0015x)
+        public static double ToScore(double scorePoints) => Math.Min(Max_Score, (Max_Score + Score_Epsilon) - ((Max_Score + Score_Epsilon) * Math.Exp(-ScorePoint_Multiplier * scorePoints))); // 5 - 5 * e^(-0.0015x)
 
         private void AddTotalPoints(double value)
         {
