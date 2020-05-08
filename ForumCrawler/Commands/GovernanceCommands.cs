@@ -80,7 +80,11 @@ namespace ForumCrawler
             await message.AddReactionsAsync(new[] { new Emoji("👍"), new Emoji("👎") });
             await UpdateBillboardAsync(Context.Guild, message, channel, vote);
 
-            await channel.SendMessageAsync(":white_check_mark: Suggestion was finalized. You may now vote!");
+            var finalizeMsg = await channel.SendMessageAsync("", embed: new EmbedBuilder()
+                .WithTitle(":white_check_mark: Suggestion was finalized. You may now vote!")
+                .WithDescription($"[Click here to vote]({message.GetJumpUrl()})")
+                .Build());
+            await finalizeMsg.PinAsync();
         }
 
         [Command("rename"), Summary("Edits a suggestion."), Priority(1)]
