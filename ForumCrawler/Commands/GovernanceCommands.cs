@@ -391,9 +391,9 @@ namespace ForumCrawler
                 .Select(userData => new { formatted = formatting(userData.user, userData.score), userData.score })
                 .ToList();
             return builder
-                .AddField($":thumbsup: **({approvers.Sum(a => a.score.Score).ToString("F1", CultureInfo.InvariantCulture)})**", 
+                .AddField($":thumbsup: **({approvers.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**", 
                 approvers.Count == 0 ? "Nobody" : string.Join(", ", approvers.Select(a => a.formatted)))
-                .AddField($":thumbsdown: **({decliners.Sum(a => a.score.Score).ToString("F1", CultureInfo.InvariantCulture)})**", 
+                .AddField($":thumbsdown: **({decliners.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**", 
                 decliners.Count == 0 ? "Nobody" : string.Join(", ", decliners.Select(a => a.formatted)));
 
         }
