@@ -94,20 +94,6 @@ namespace DiscordSocialScore
             }
         }
 
-        [Command("score show"), RequireChannel(DiscordSettings.BotCommandsChannel)]
-        public async Task ShowUsername()
-        {
-            await Score.UpdateUserVisibilityAsync(Context.Client, Context.User.Id, true);
-            await ReplyAsync("Your score is now shown in your nickname.");
-        }
-
-        [Command("score hide"), RequireChannel(DiscordSettings.BotCommandsChannel)]
-        public async Task HideUsername()
-        {
-            await Score.UpdateUserVisibilityAsync(Context.Client, Context.User.Id, false);
-            await ReplyAsync("Your score is now hidden in your nickname.");
-        }
-
         [Command("stats"), Alias("score"), Priority(0)]
         public async Task GetMyStats() => await GetStats(Context.User);
 
@@ -135,16 +121,6 @@ namespace DiscordSocialScore
 
             var score = await Score.SetScoreAsync(Context.Client, user.Id, value);
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
-        }
-
-        [Command("exempt set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetExempt(IUser user, bool value = true)
-        {
-            var scoreUser = await Database.GetOrCreateScoreUserAsync(Context.Client, user.Id);
-            scoreUser.EarlyUserExempt = value;
-            await Database.AddOrUpdateScoreUserAsync(scoreUser);
-
-            await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} is now{(value ? " " : " not ")}exempt from the 72 hour g!up wait period.");
         }
 
         [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
@@ -184,8 +160,8 @@ namespace DiscordSocialScore
                 throw new Exception("You aren't a guild user!");
             }
 
-            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(Context.Client, guildUser.Id))) throw new Exception("You have recently joined this server and may not g!up other users yet!");
-            if ((DateTimeOffset.UtcNow - targetUser.JoinedAt)?.TotalDays < 3 && !(await Database.IsScoreUserExempt(Context.Client, targetUser.Id))) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
+            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
+            if ((DateTimeOffset.UtcNow - targetUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
 
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
             var (scoreData, efficiency) = await Score.UpvoteAsync(Context.Client, targetUser.Id, guildUser.Id);

@@ -27,14 +27,11 @@ namespace ForumCrawler
             set => Id = (long)value;
         }
 
-        public bool EarlyUserExempt { get; set; }
-
         public DateTime? LastEnergy { get; set; }
         public DateTime? LastActivity { get; set; }
         public DateTime? LastDecay { get; set; }
         public double Energy { get; set; }
         public double ReservePoints { get; set; }
-        public bool ShowInUsername { get; set; }
 
         [Index]
         public double Score { get; set; } = 1;

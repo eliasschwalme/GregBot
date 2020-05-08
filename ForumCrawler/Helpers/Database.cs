@@ -209,12 +209,6 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<bool> IsScoreUserExempt(DiscordSocketClient client, ulong userId)
-        {
-            var scoreUser = await GetOrCreateScoreUserAsync(client, userId);
-            return scoreUser.EarlyUserExempt;
-        }
-
         public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DiscordSocketClient client, ulong userId)
         {
             using (var context = new DatabaseContext())

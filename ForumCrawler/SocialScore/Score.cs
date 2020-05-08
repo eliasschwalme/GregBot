@@ -20,7 +20,6 @@ namespace DiscordSocialScore
             return await WithUserUpdateAsync(client, userId, async u => (false, await callback(u)));
         }
 
-        // can't do an IAsyncEnumerable because old :v
         public static async Task<List<(IGuildUser, ScoreUser)>> GetUsersUserHasBoosted(IGuild guild, IEntity<ulong> entityUser)
         {
             var boosting = await Database.GetScoreUsersUserIsBoosting(user => user.Id == (long)entityUser.Id);
@@ -149,31 +148,16 @@ namespace DiscordSocialScore
             });
         }
 
-        public static async Task UpdateUserVisibilityAsync(DiscordSocketClient client, ulong userId, bool showInUsername)
-        {
-            await WithUserUpdateAsync(client, userId, u =>
-            {
-                u.ShowInUsername = showInUsername;
-                return Task.FromResult((true, true));
-            });
-        }
-
         public static async Task<ScoreData> CreditActivityScoreAsync(DiscordSocketClient client, ulong activityUserId)
         {
 #if DEBUG
 #pragma warning disable CS0162 // Unreachable code detected
-            return await GetScoreDataAsync(client, activityUserId);
+            //return await GetScoreDataAsync(client, activityUserId);
 #endif
             return await WithUserUpdateAsync(client, activityUserId, async user =>
             {
-                // null ref somewhere i guess? the fudge
-
                 if (user == null || user.ScoreData == null)
                 {
-                    var userNull = user == null;
-                    var scoredataNull = user.ScoreData == null;
-
-                    Console.WriteLine($"user or user.ScoreData is null - this must be looked into later. user null: {userNull}, scoredataNull: {scoredataNull}");
                     return (false, await GetScoreDataAsync(client, activityUserId));
                 }
 
