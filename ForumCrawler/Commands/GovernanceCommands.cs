@@ -7,6 +7,7 @@ using ForumCrawler;
 using ForumCrawler.Helpers;
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -341,39 +342,60 @@ namespace ForumCrawler
         {
             var billboard = (IUserMessage)await channel.GetMessageAsync(vote.VoteBillboardId);
             if (billboard == null) return;
-            var embed = await AddVotesAsync(guild, new EmbedBuilder(), message, user => user.IsStaffOrConsultant());
+            var embed = await AddVotesAsync(guild, new EmbedBuilder(), message);
             await billboard.ModifyAsync(props =>
             {
                 props.Content = string.Empty;
                 props.Embed = embed
-                .WithTitle("Staff votes").Build();
+                .WithTitle("Votes").Build();
             });
         }
 
-        private static async Task<EmbedBuilder> AddVotesAsync(IGuild guild, EmbedBuilder builder, IUserMessage message, Func<IGuildUser, bool> filter = null)
+        private static async Task<EmbedBuilder> AddVotesAsync(IGuild guild, EmbedBuilder builder, IUserMessage message)
         {
-            var formatting = new Func<IGuildUser, string>(user =>
+            var approverUsers = (await message.GetReactionUsersAsync(new Emoji("👍"), 1000).FlattenAsync())
+                .Select(user => guild.GetUserAsync(user.Id).Result)
+                .Where(user => user != null)
+                .Where(user => !user.IsBot);
+            var declinerUsers = (await message.GetReactionUsersAsync(new Emoji("👎"), 1000).FlattenAsync())
+                .Select(user => guild.GetUserAsync(user.Id).Result)
+                .Where(user => user != null)
+                .Where(user => !user.IsBot);
+            var users = await Database.GetScoreUsers(approverUsers.Concat(declinerUsers).Select(a => a.Id));
+            var usersDict = users.ToDictionary(u => u.UserId, u => u);
+
+            var getScore = new Func<IGuildUser, ScoreData>((user) =>
+            {
+                if (usersDict.TryGetValue(user.Id, out var value)) return value.ScoreData;
+                return new ScoreData();
+            });
+
+            var formatting = new Func<IGuildUser, ScoreData, string>((user, score) =>
             {
                 var format = user.IsStaffOrConsultant() ? "__" : "";
-                return format + user.Username.DiscordEscape() + "#" + user.Discriminator + format;
+                return format + user.Username.DiscordEscape() + "#" + user.Discriminator + format + " (" + score.ShortBaseScoreString + ")";
             });
-            var approvers = (await message.GetReactionUsersAsync(new Emoji("👍"), 1000).FlattenAsync())
-                .Select(user => guild.GetUserAsync(user.Id).Result)
-                .Where(user => user != null)
-                .OrderByDescending(user => user.IsStaffOrConsultant())
-                .Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
-                .Select(user => formatting(user))
+
+            var approvers = approverUsers
+                .Select(user => new { user, score = getScore(user) })
+                .OrderByDescending(userData => userData.score.BaseScoreLevel)
+                .ThenByDescending(userData => userData.user.IsStaffOrConsultant())
+                .ThenBy(userData => userData.user.Username)
+                .Select(userData => new { formatted = formatting(userData.user, userData.score), userData.score })
                 .ToList();
-            var decliners = (await message.GetReactionUsersAsync(new Emoji("👎"), 1000).FlattenAsync())
-                .Select(user => guild.GetUserAsync(user.Id).Result)
-                .Where(user => user != null)
-                .OrderByDescending(user => user.IsStaffOrConsultant())
-                .Where(user => (filter?.Invoke(user) ?? true) && !user.IsBot)
-                .Select(user => formatting(user))
+            var decliners = declinerUsers
+                .Select(user => new { user, score = getScore(user) })
+                .OrderByDescending(userData => userData.score.BaseScoreLevel)
+                .ThenByDescending(userData => userData.user.IsStaffOrConsultant())
+                .ThenBy(userData => userData.user.Username)
+                .Select(userData => new { formatted = formatting(userData.user, userData.score), userData.score })
                 .ToList();
             return builder
-                .AddField($":thumbsup: ({approvers.Count})", approvers.Count == 0 ? "Nobody" : string.Join(", ", approvers))
-                .AddField($":thumbsdown: ({decliners.Count})", decliners.Count == 0 ? "Nobody" : string.Join(", ", decliners));
+                .AddField($":thumbsup: **({approvers.Sum(a => a.score.Score).ToString("F1", CultureInfo.InvariantCulture)})**", 
+                approvers.Count == 0 ? "Nobody" : string.Join(", ", approvers.Select(a => a.formatted)))
+                .AddField($":thumbsdown: **({decliners.Sum(a => a.score.Score).ToString("F1", CultureInfo.InvariantCulture)})**", 
+                decliners.Count == 0 ? "Nobody" : string.Join(", ", decliners.Select(a => a.formatted)));
+
         }
 
         private Criteria<SocketMessage> GetCriteria(IMessageChannel channel)

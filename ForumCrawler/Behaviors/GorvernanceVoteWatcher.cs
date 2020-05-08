@@ -42,10 +42,7 @@ namespace ForumCrawler
             if (governanceVote == null) return;
             if (governanceVote.MessageId != message.Id) return;
 
-            if (guildUser.IsStaffOrConsultant())
-            {
-                await GovernanceCommands.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote);
-            }
+            await GovernanceCommands.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote);
         }
     }
 }

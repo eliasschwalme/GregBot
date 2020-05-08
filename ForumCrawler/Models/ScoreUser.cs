@@ -118,8 +118,7 @@ namespace ForumCrawler
                     Score = Score,
                     BoostLevel = GetBoostLevel(),
                     BonusScore = BonusScore,
-                    BonusEnergy = BonusEnergy,
-                    ShowInUsername = ShowInUsername
+                    BonusEnergy = BonusEnergy
                 };
             }
         }
@@ -241,16 +240,19 @@ namespace ForumCrawler
 
     public class ScoreData
     {
-        public double Score { get; set; }
+        public double Score { get; set; } = 1;
         public double BoostLevel { get; set; }
         public double BonusScore { get; set; }
         public int BonusEnergy { get; set; }
-        public bool ShowInUsername { get; set; }
         public double ScoreAfterBoost => Score + BonusScore;
 
         public string Class => ToRoman((int)Math.Truncate(ScoreLevel));
 
         public double ScoreLevel => Math.Truncate(Math.Round(ScoreAfterBoost * 1000) / 100) / 10;
+
+        public double BaseScoreLevel => Math.Truncate(Math.Round(Score * 1000) / 100) / 10;
+
+        public string ShortBaseScoreString => string.Format(CultureInfo.InvariantCulture, "{0:F1}", BaseScoreLevel);
 
         public string ShortScoreString => string.Format(CultureInfo.InvariantCulture, "{0:F1}", ScoreLevel);
 

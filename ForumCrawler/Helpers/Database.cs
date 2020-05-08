@@ -230,6 +230,16 @@ namespace ForumCrawler
                 return res;
             }
         }
+        public static async Task<ScoreUser[]> GetScoreUsers(IEnumerable<ulong> userIds)
+        {
+            var userIdsLong = userIds.Select(u => (long)u).ToArray();
+            using (var context = new DatabaseContext())
+            {
+                var res = await context.ScoreUsers.Where(m => userIdsLong.Contains(m.Id)).ToArrayAsync();
+                
+                return res;
+            }
+        }
 
         public static async Task AddOrUpdateScoreUserAsync(ScoreUser scoreUser)
         {

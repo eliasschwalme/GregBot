@@ -105,7 +105,7 @@ namespace DiscordSocialScore
             var toDelete = user.Roles.GetBotRoles().Where(r => roles.All(r2 => r.Id != r2.Id)).ToList();
             var toAdd = roles.Where(r => user.Roles.All(r2 => r.Id != r2.Id)).ToList();
 
-            if ( toAdd.Any() || toDelete.Any())
+            if (toAdd.Any() || toDelete.Any())
             {
                 await user.ModifyAsync(x =>
                 {
