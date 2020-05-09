@@ -162,7 +162,7 @@ namespace ForumCrawler
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner can rename suggestions.");
 
-            var submissionOld = channel.Name;
+            var submissionOld = channel.GetSuggestionChannelName();
             var submissionNew = shortName;
             var editEmbed = EditWatcher.GetEditEmbed(user, "renamed the suggestion", submissionOld, submissionNew);
             if (editEmbed != null)
