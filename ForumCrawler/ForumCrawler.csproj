@@ -312,7 +312,7 @@
     <Compile Include="Commands\Helpers\RequireEitherRoleAttribute.cs" />
     <Compile Include="Commands\Helpers\RequireRoleAttribute.cs" />
     <Compile Include="Commands\Helpers\RequireRoleParameterAttribute.cs" />
-    <Compile Include="Commands\GovernanceCommands.cs" />
+    <Compile Include="Commands\GovernanceCommandsBase.cs" />
     <Compile Include="Commands\Helpers\RequireBotCommandsAttribute.cs" />
     <Compile Include="Commands\ModeratorCommands.cs" />
     <Compile Include="Commands\ReportCommand.cs" />

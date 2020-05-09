@@ -99,12 +99,12 @@ namespace ForumCrawler
             diffMatchPatch.diff_cleanupSemantic(diffs);
 
             var md = ToMarkdown(diffs);
-            return GetEmbed(title, new Color(0xF0E68C), author.Id, author, null, md, null, null);
+            return GetEmbed(title, new Color(0xF0E68C), author, null, md, null, null);
         }
 
         private static async Task PostEmbedAsync(DiscordSocketClient client, string title, Color color, ulong userId, IUser user, IMessageChannel channel, string diff, string attachment, ulong messageId)
         {
-            var embed = GetEmbed(title, color, userId, user, channel, diff, attachment, messageId);
+            var embed = GetEmbed(title, color, user, channel, diff, attachment, messageId);
 
             await client
                 .GetGuild(DiscordSettings.GuildId)
@@ -112,14 +112,14 @@ namespace ForumCrawler
                 .SendMessageAsync(string.Empty, embed: embed);
         }
 
-        private static Embed GetEmbed(string title, Color color, ulong userId, IUser user, IMessageChannel channel, string diff, string attachment, ulong? messageId)
+        private static Embed GetEmbed(string title, Color color, IUser user, IMessageChannel channel, string diff, string attachment, ulong? messageId)
         {
             var addId = messageId == null ? "" : " (" + messageId + ")";
 
             var builder = new EmbedBuilder()
                 .WithAuthor(author => author
                     .WithIconUrl(user?.GetAvatarUrlOrDefault())
-                    .WithName(user?.Username.DiscordEscape() + "#" + (user?.Discriminator ?? "@" + userId.ToString()) + " " + title + ":"))
+                    .WithName(user?.Username.DiscordEscape() + "#" + (user?.Discriminator ?? "@" + user.Id.ToString()) + " " + title + ":"))
                 .WithColor(color)
                 .WithDescription(diff);
             if (messageId.HasValue)

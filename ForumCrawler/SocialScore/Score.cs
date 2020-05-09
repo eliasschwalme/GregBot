@@ -67,8 +67,6 @@ namespace DiscordSocialScore
 
         public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong upvoterUserId)
         {
-            if (targetUserId == upvoterUserId) throw new Exception($"Sorry, upvoting yourself is not allowed!");
-
             return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
             {
                 return upvoter.Upvote(target);

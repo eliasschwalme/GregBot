@@ -25,7 +25,7 @@ namespace ForumCrawler
                     new EmbedFieldBuilder()
                         .WithIsInline(true)
                         .WithName("Original:")
-                        .WithValue($"[Click here]({message.GetJumpUrl()}"),
+                        .WithValue($"[Click here]({message.GetJumpUrl()})"),
 
                     new EmbedFieldBuilder()
                         .WithIsInline(true)

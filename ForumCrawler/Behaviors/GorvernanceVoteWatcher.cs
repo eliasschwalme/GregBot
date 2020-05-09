@@ -32,7 +32,7 @@ namespace ForumCrawler
             if (!(reaction.User.GetValueOrDefault() is IGuildUser guildUser)) return;
 
             var msg = await message.GetOrDownloadAsync();
-            if (!channel.IsSuggestionChannelFinalized() && msg.Author.IsBot && !guildUser.IsBot)
+            if (channel.GetSuggestionChannelType() != SuggestionType.Vote && msg.Author.IsBot && !guildUser.IsBot)
             {
                 await msg.RemoveAllReactionsAsync();
                 return;
@@ -42,7 +42,7 @@ namespace ForumCrawler
             if (governanceVote == null) return;
             if (governanceVote.MessageId != message.Id) return;
 
-            await GovernanceCommands.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote);
+            await GovernanceCommandsBase.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote, channel.GetSuggestionChannelType());
         }
     }
 }

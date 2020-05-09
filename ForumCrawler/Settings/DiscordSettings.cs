@@ -44,6 +44,7 @@ namespace ForumCrawler
         public const ulong DSModerationChannel = 705974945817034773;
         public const ulong DSDiscordStaffConsultant = 705928172641714227;
         public const ulong DSDiscordStaff = 705932947294781510;
+        public const ulong DSDiscordServerOwner = 705928497851531325;
         public const ulong DSStaffCommandsChannel = 705936434489589822;
         public const ulong DSReportsChannel = 705933908008763503;
 
