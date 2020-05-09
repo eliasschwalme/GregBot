@@ -354,6 +354,10 @@
     <Compile Include="Migrations\202004061705548_RevisedStarboardPostForNewStarboard.Designer.cs">
       <DependentUpon>202004061705548_RevisedStarboardPostForNewStarboard.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202005091205228_RemoveExemptAndShowScore.cs" />
+    <Compile Include="Migrations\202005091205228_RemoveExemptAndShowScore.Designer.cs">
+      <DependentUpon>202005091205228_RemoveExemptAndShowScore.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RevisedStarboardPost.cs" />
     <Compile Include="Models\StarboardInformation.cs" />
@@ -513,6 +517,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202004061705548_RevisedStarboardPostForNewStarboard.resx">
       <DependentUpon>202004061705548_RevisedStarboardPostForNewStarboard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202005091205228_RemoveExemptAndShowScore.resx">
+      <DependentUpon>202005091205228_RemoveExemptAndShowScore.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>
