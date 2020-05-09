@@ -11,7 +11,6 @@ namespace DiscordSocialScore
 {
     public static class Score
     {
-        private static readonly Random random = new Random();
 
         public static event Action<ulong, ScoreData> OnUpdate;
 
@@ -72,28 +71,7 @@ namespace DiscordSocialScore
 
             return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
             {
-                if (target.Score < 1.0995 || upvoter.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send or receive upvotes.");
-                if (Math.Abs(target.Score - upvoter.Score) > 1) throw new Exception("The score difference between upvoters cannot be over 1.0.");
-
-                var lastBoost = target.GetLastBoost(upvoter.UserId);
-                var boostLeft = target.GetBoostLeft(upvoter.UserId);
-                var sinceLastBoost = DateTimeOffset.UtcNow - lastBoost;
-                if (boostLeft.TotalSeconds > 0) throw new Exception($"Please wait {boostLeft.ToHumanReadableString()} before upvoting this person again.");
-
-                if (upvoter.Energy < 100) throw new Exception($"An upvote costs 100 energy! You currently have __**{Math.Floor(upvoter.Energy)}**__/{upvoter.MaxEnergy} energy.");
-                upvoter.Energy -= 100;
-
-                var randomEff = Math.Max(0.5, Math.Min(2.5, random.RandomNormal(1.5, 0.4)));
-
-                var discount = 0.25 + (0.50 * Math.Min(3, sinceLastBoost.TotalDays) / 3) + (0.25 * Math.Min(7, sinceLastBoost.TotalDays) / 7);
-                var scoreDifference = upvoter.Score - target.Score;
-                var scoreDiffModifier = Math.Sqrt(1 + Math.Max(-0.75, scoreDifference));
-
-                var efficiency = scoreDiffModifier * discount * randomEff;
-                var value = 15 * efficiency;
-                target.TotalPoints += value;
-
-                return efficiency;
+                return upvoter.Upvote(target);
             });
         }
 
@@ -151,28 +129,14 @@ namespace DiscordSocialScore
         public static async Task<ScoreData> CreditActivityScoreAsync(DiscordSocketClient client, ulong activityUserId)
         {
 #if DEBUG
-#pragma warning disable CS0162 // Unreachable code detected
-            //return await GetScoreDataAsync(client, activityUserId);
-#endif
+            return await GetScoreDataAsync(client, activityUserId);
+#else
             return await WithUserUpdateAsync(client, activityUserId, async user =>
             {
-                if (user == null || user.ScoreData == null)
-                {
-                    return (false, await GetScoreDataAsync(client, activityUserId));
-                }
-
-                if (user.LastActivity.HasValue
-                && DateTimeOffset.UtcNow.Subtract(user.LastActivity.Value).TotalMinutes < 1.5)
-                {
-                    return (false, user.ScoreData);
-                }
-
-                var increase = 3.5 - Math.Max(0.25, Math.Min(3, user.Score));
-
-                user.LastActivity = DateTime.UtcNow;
-                user.TotalPoints += increase;
-                return (true, user.ScoreData);
+                var res = user.CreditActivity();
+                return (res, user.ScoreData);
             });
+#endif
         }
 
         public static async Task UpdateDecays(DiscordSocketClient client, Func<ulong, ScoreData, Task> callback)
@@ -181,11 +145,6 @@ namespace DiscordSocialScore
             {
                 foreach (var user in scoreUsers)
                 {
-                    if (user == null || user.ScoreData == null)
-                    {
-                        continue;
-                    }
-
                     await callback(user.UserId, user.ScoreData);
                 }
             });
