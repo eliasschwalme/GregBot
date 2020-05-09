@@ -5,6 +5,12 @@ namespace ForumCrawler
 {
     public class WarningState
     {
+        private static Warning[] DefaultWarnings = new[]
+        {
+            new Warning { IssueDate = new DateTime(2020, 2, 22, 0, 0, 0) },
+            new Warning { IssueDate = new DateTime(2020, 5, 9, 0, 0, 0) }
+        };
+
         public const int WarningsInStrike = 3;
         public const int MuteDaysPerStrike = 7;
 
@@ -37,11 +43,11 @@ namespace ForumCrawler
 
         public void Update(DateTimeOffset timestamp)
         {
-            if (timestamp < new DateTimeOffset(2020, 2, 22, 0, 0, 0, TimeSpan.Zero))
+            if (timestamp <= DefaultWarnings[0].IssueDate)
             {
                 WarningDecayLogicV1.Update(this, timestamp);
             }
-            else if (timestamp < new DateTimeOffset(2020, 5, 9, 0, 0, 0, TimeSpan.Zero))
+            else if (timestamp <= DefaultWarnings[1].IssueDate)
             {
                 WarningDecayLogicV2.Update(this, timestamp);
             } 
@@ -54,7 +60,7 @@ namespace ForumCrawler
         public static WarningState FromDatabase(Warning[] warnings)
         {
             var state = new WarningState();
-            foreach (var item in warnings.Where(w => !w.RemoveDate.HasValue).OrderBy(w => w.IssueDate))
+            foreach (var item in warnings.Where(w => !w.RemoveDate.HasValue).Concat(DefaultWarnings).OrderBy(w => w.IssueDate))
             {
                 state.Add(item.Amount, item.IssueDate);
             }
