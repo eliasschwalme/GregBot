@@ -67,6 +67,24 @@ namespace DiscordSocialScore
 
         public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong upvoterUserId)
         {
+            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(upvoterUserId);
+            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
+            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
+            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
+
+            return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
+            {
+                return upvoter.Upvote(target);
+            });
+        }
+
+        public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong upvoterUserId)
+        {
+            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(upvoterUserId);
+            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
+            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!down other users yet!");
+            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!down from other users yet!");
+
             return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
             {
                 return upvoter.Upvote(target);

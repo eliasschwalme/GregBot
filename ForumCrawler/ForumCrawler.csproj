@@ -358,6 +358,10 @@
     <Compile Include="Migrations\202005091205228_RemoveExemptAndShowScore.Designer.cs">
       <DependentUpon>202005091205228_RemoveExemptAndShowScore.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202005102158383_InertiaRevamp.cs" />
+    <Compile Include="Migrations\202005102158383_InertiaRevamp.Designer.cs">
+      <DependentUpon>202005102158383_InertiaRevamp.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RevisedStarboardPost.cs" />
     <Compile Include="Models\StarboardInformation.cs" />
@@ -520,6 +524,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202005091205228_RemoveExemptAndShowScore.resx">
       <DependentUpon>202005091205228_RemoveExemptAndShowScore.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202005102158383_InertiaRevamp.resx">
+      <DependentUpon>202005102158383_InertiaRevamp.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>

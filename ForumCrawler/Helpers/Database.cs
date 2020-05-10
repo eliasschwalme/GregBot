@@ -168,11 +168,7 @@ namespace ForumCrawler
                     .ToListAsync();
 
                 var query = users
-                    .Where(u => u.Boosts.Keys.Contains(user.UserId))
-#if DEBUG
-                    .ToList()
-#endif
-                ;
+                    .Where(u => u.Boosts.Keys.Contains(user.UserId));
 
                 return query;
             }

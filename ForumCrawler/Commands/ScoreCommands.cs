@@ -150,21 +150,8 @@ namespace DiscordSocialScore
         [Command("up")]
         public async Task UpUser(IGuildUser targetUser)
         {
-            if (targetUser == null)
-            {
-                throw new Exception("Invalid user specified!");
-            }
-
-            if (!(Context.User is IGuildUser guildUser))
-            {
-                throw new Exception("You aren't a guild user!");
-            }
-
-            if ((DateTimeOffset.UtcNow - guildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
-            if ((DateTimeOffset.UtcNow - targetUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
-
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
-            var (scoreData, efficiency) = await Score.UpvoteAsync(Context.Client, targetUser.Id, guildUser.Id);
+            var (scoreData, efficiency) = await Score.UpvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
 
             await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a boost. Their score increased by {scoreData.Score - oldScoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
 
@@ -172,6 +159,15 @@ namespace DiscordSocialScore
             {
                 await ReplyAsync($"{MentionUtils.MentionUser(targetUser.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score and +{scoreData.BonusEnergy} bonus max energy.");
             }
+        }
+
+        [Command("down")]
+        public async Task DownUser(IGuildUser targetUser)
+        {
+            var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
+            var (scoreData, efficiency) = await Score.DownvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
+
+            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a downvote. Their score decreased by {oldScoreData.Score - scoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
         }
 
         [Command("top"), RequireChannel(DiscordSettings.BotCommandsChannel)]

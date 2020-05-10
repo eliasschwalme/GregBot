@@ -18,9 +18,24 @@ namespace ForumCrawler
         private static readonly Random random = new Random();
 
         private const double ScorePoint_Multiplier = 0.0015;
-        private const double ReserveRatio_Multiplier = 0.01;
+        private const double InertiaPoint_Multiplier = 0.01;
         private const double Score_Epsilon = 0.1;
+        private const double Inertia_Epsilon = 0.1;
         private const double Max_Score = 5;
+        private const double Max_Inertia = 1;
+
+        private const double ActivityResolutionInHours = 60 / 3600; // 60 seconds
+
+        private const double InertiaPointsCapacity = 239.78952728; // ln(1 - Max_Inertia / 1.1) / -0.01
+        private const double InertiaPointsPerActivityHour = InertiaPointsCapacity / 24; // 24 hours of nonstop talking with no decay fills up inertia to 100%
+        private const double InertiaPointsPerActivity = InertiaPointsPerActivityHour * ActivityResolutionInHours;
+
+        private const int Level5Decay = 32; // Math.Pow(2, 5)
+        private const double InertiaPerActivityHour = InertiaPointsPerActivityHour * InertiaPoint_Multiplier * (Max_Inertia + Inertia_Epsilon / 2); // Average the effect of the epsilon to account for the slowing slope
+        private const double InertiaDecayRatePerHour = 1.5 * InertiaPerActivityHour / 24 / Level5Decay; // 1.5h time investment / day required for a lvl 5 person to not decay
+
+        private const double ScoreBaseDecayRate = 0.001;
+        private const double ScoreInactvitiyDecayRate = 0.0001;
 
         [EditorBrowsable(EditorBrowsableState.Never),
             DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -37,7 +52,7 @@ namespace ForumCrawler
         public DateTime? LastActivity { get; set; }
         public DateTime? LastDecay { get; set; }
         public double Energy { get; set; }
-        public double ReservePoints { get; set; }
+        public double Inertia { get; set; }
 
         [Index]
         public double Score { get; set; } = 1;
@@ -49,6 +64,15 @@ namespace ForumCrawler
         {
             get => JsonConvert.SerializeObject(Boosts);
             set => Boosts = JsonConvert.DeserializeObject<Dictionary<ulong, DateTime>>(value ?? "{}");
+        }
+
+        [NotMapped]
+        public Dictionary<ulong, DateTime> DownBoosts { get; private set; } = new Dictionary<ulong, DateTime>();
+
+        public string DownBoostsAsString
+        {
+            get => JsonConvert.SerializeObject(DownBoosts);
+            set => DownBoosts = JsonConvert.DeserializeObject<Dictionary<ulong, DateTime>>(value ?? "{}");
         }
 
         [NotMapped]
@@ -74,23 +98,21 @@ namespace ForumCrawler
         [NotMapped]
         private double ScorePoints
         {
-            get => ToScorePoints(Score);
-            set => Score = ToScore(value);
+            get => ToPoints(Score, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // ln((1 - x / 5.1) / -0.0015
+            set => Score = ToValue(value, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // 5.1 * (1 * e^(-0.0015x))
         }
 
         [NotMapped]
-        public double TotalPoints
+        public double InertiaPoints
         {
-            get => ScorePoints + ReservePoints;
-            private set => AddTotalPoints(value - TotalPoints);
+            get => ToPoints(Score, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // ln(1 - x / 1.1) / -0.01
+            set => Score = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
-        [NotMapped]
-        public double Inertia
-        {
-            get => 1 - Math.Exp(-ReserveRatio_Multiplier * ReservePoints); // 1 - e ^(-0.01x))
-            set => ReservePoints = Math.Log(1 - value) / -ReserveRatio_Multiplier; // ln(1-x)/-0.01
-        }
+        private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log((1 - value / (max + epsilon)) / -multiplier); 
+        private static double ToValue(double points, double max, double epsilon, double multiplier) => Math.Max(0, Math.Min(max, (max + epsilon) * (1 - Math.Exp(-multiplier * points)))); 
+
+
 
         [NotMapped]
         public double BonusScore
@@ -150,37 +172,11 @@ namespace ForumCrawler
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
         }
 
-        public TimeSpan GetBoostLeft(ulong userId)
-        {
-            var boostDate = GetLastBoost(userId);
-            return TimeSpan.FromDays(2) - (DateTime.UtcNow - boostDate);
-        }
-
-        public DateTime GetLastBoost(ulong userId)
+        public DateTime GetLastVoteTimestamp(ulong userId)
         {
             Boosts.TryGetValue(userId, out var boostDate);
-            return boostDate;
-        }
-
-        private static double ToScorePoints(double score) => Math.Log((Max_Score + Score_Epsilon - score) / (Max_Score + Score_Epsilon)) / -ScorePoint_Multiplier; // ln((5 - x) / 5) / -0.0015
-
-        private static double ToScore(double scorePoints) => Math.Min(Max_Score, (Max_Score + Score_Epsilon) - ((Max_Score + Score_Epsilon) * Math.Exp(-ScorePoint_Multiplier * scorePoints))); // 5 - 5 * e^(-0.0015x)
-
-        private void AddTotalPoints(double value)
-        {
-            if (value > 0)
-            {
-                var p = 0.50 + (0.50 * Inertia);
-                var q = 1 - p;
-                ReservePoints += q * value;
-                ScorePoints += p * value;
-            }
-            else
-            {
-                var consumed = Math.Max(-ReservePoints, value);
-                ReservePoints += consumed;
-                ScorePoints += value - consumed;
-            }
+            DownBoosts.TryGetValue(userId, out var downVoteDate);
+            return boostDate > downVoteDate ? boostDate : downVoteDate;
         }
 
         public void Update(DiscordSocketClient client, ulong userId)
@@ -209,70 +205,102 @@ namespace ForumCrawler
             }
         }
 
+        private double SumInRange(double minEcl, double maxInc)
+        {
+           return (maxInc * (maxInc + 1) - minEcl * (minEcl + 1)) / 2;
+        }
+
         private void UpdateDecay()
         {
             var lastDecay = LastDecay ?? DateTime.UtcNow;
             var lastActivity = LastActivity ?? default;
-            var duration = DateTime.UtcNow - lastDecay;
+            var ticks = (DateTime.UtcNow - lastDecay).TotalHours;
+            var lastActivityTicks = (DateTime.UtcNow - lastActivity).TotalHours;
 
-            if (Score >= 1.0)
+            var inertiaDecayRate = InertiaDecayRatePerHour * Math.Pow(2, this.Score);
+            var inertiaDecay = inertiaDecayRate * ticks;
+            var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
+            this.Inertia -= inertiaDecay;
+
+
+            if (Score > 1.0)
             {
-                TotalPoints -= duration.TotalHours * ((Math.Pow(Score, 2) * 0.02) + (Math.Pow(Score, 6) * 0.00002));
-
-                var activityDays = (DateTime.UtcNow - lastActivity).TotalDays;
-                var durationDays = duration.TotalDays;
-                var inactivityTotal = Math.Max(0, activityDays * (activityDays - 1) / 2);
-                var inactivitySubstracted = Math.Max(0, (activityDays - durationDays) * (activityDays - durationDays - 1) / 2);
-                TotalPoints -= (inactivityTotal - inactivitySubstracted) * 5;
-
+                this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactvitiyDecayRate 
+                    + ScoreBaseDecayRate * remainderTicks;
                 if (Score < 1.0) Score = 1;
-            }
-            else
-            {
-                Score += duration.TotalHours * 0.02;
             }
 
             LastDecay = DateTime.UtcNow;
         }
 
-        public bool CreditActivity()
+        private bool TickActivity()
         {
-            if (this.LastActivity.HasValue && DateTimeOffset.UtcNow.Subtract(this.LastActivity.Value).TotalMinutes < 1.5)
+            var resolution = TimeSpan.FromHours(ActivityResolutionInHours);
+            var delta = DateTime.UtcNow.Subtract(this.LastActivity ?? DateTime.UtcNow.Subtract(resolution + resolution));
+            if (delta < resolution)
             {
                 return false;
+            } 
+            else if (delta < resolution + resolution)
+            {
+                this.LastActivity += resolution;
+            } 
+            else
+            {
+                this.LastActivity = DateTime.UtcNow;
             }
 
-            var increase = 3.5 - Math.Max(0.25, Math.Min(3, this.Score));
-
-            this.LastActivity = DateTime.UtcNow;
-            this.TotalPoints += increase;
             return true;
+        }
+
+        public bool CreditActivity()
+        {
+            if (this.TickActivity())
+            {
+                this.InertiaPoints += InertiaPointsPerActivity;
+                return true;
+            }
+            return false;
         }
 
         public double Upvote(ScoreUser target)
         {
-            if (target.UserId == UserId) throw new Exception($"Sorry, upvoting yourself is not allowed!");
-            if (target.Score < 1.0995 || this.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send or receive upvotes.");
-            if (Math.Abs(target.Score - this.Score) > 1) throw new Exception("The score difference between upvoters cannot be over 1.0.");
+            if (Math.Abs(target.Score - this.Score) > 2) throw new Exception("The score difference between upvoters cannot be over 2.0.");
 
-            var lastBoost = target.GetLastBoost(this.UserId);
-            var boostLeft = target.GetBoostLeft(this.UserId);
-            var sinceLastBoost = DateTimeOffset.UtcNow - lastBoost;
-            if (boostLeft.TotalSeconds > 0) throw new Exception($"Please wait {boostLeft.ToHumanReadableString()} before upvoting this person again.");
+            var efficiency = GetEfficiency(target);
+            if (this.Energy < 25) throw new Exception($"An upvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
+            this.Energy -= 25;            
+            target.ScorePoints += 30 * efficiency;
 
-            if (this.Energy < 100) throw new Exception($"An upvote costs 100 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
-            this.Energy -= 100;
+            return efficiency;
+        }
+
+        public double Downvote(ScoreUser target)
+        {
+            var efficiency = GetEfficiency(target);
+            if (this.Energy < 25) throw new Exception($"A downvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
+            this.Energy -= 25;
+            target.ScorePoints -= 30 * efficiency;
+
+            return efficiency;
+        }
+
+        private double GetEfficiency(ScoreUser target)
+        {
+            if (target.UserId == UserId) throw new Exception($"Sorry, voting yourself is not allowed!");
+            if (this.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send votes.");
+
+            var lastBoost = target.GetLastVoteTimestamp(this.UserId);
+            var sinceLastVote = DateTimeOffset.UtcNow - lastBoost;
+            var cooldown = sinceLastVote - TimeSpan.FromDays(0.5);
+            if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
             var randomEff = Math.Max(0.5, Math.Min(2.5, random.RandomNormal(1.5, 0.4)));
-
-            var discount = 0.25 + (0.50 * Math.Min(3, sinceLastBoost.TotalDays) / 3) + (0.25 * Math.Min(7, sinceLastBoost.TotalDays) / 7);
+            var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
             var scoreDifference = this.Score - target.Score;
-            var scoreDiffModifier = Math.Sqrt(1 + Math.Max(-0.75, scoreDifference));
+            var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);
 
-            var efficiency = scoreDiffModifier * discount * randomEff;
-            var value = 15 * efficiency;
-            target.TotalPoints += value;
-
+            var efficiency = scoreDiffModifier * discountFactor * randomEff;
             return efficiency;
         }
     }
