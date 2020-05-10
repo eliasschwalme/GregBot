@@ -251,7 +251,7 @@ namespace ForumCrawler
 
         public double Upvote(ScoreUser target)
         {
-            if (this.UserId == UserId) throw new Exception($"Sorry, upvoting yourself is not allowed!");
+            if (target.UserId == UserId) throw new Exception($"Sorry, upvoting yourself is not allowed!");
             if (target.Score < 1.0995 || this.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send or receive upvotes.");
             if (Math.Abs(target.Score - this.Score) > 1) throw new Exception("The score difference between upvoters cannot be over 1.0.");
 
