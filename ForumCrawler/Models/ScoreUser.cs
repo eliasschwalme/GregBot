@@ -106,7 +106,7 @@ namespace ForumCrawler
         public double InertiaPoints
         {
             get => ToPoints(Score, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // ln(1 - x / 1.1) / -0.01
-            set => Score = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
+            set => InertiaPoints = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
         private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log((1 - value / (max + epsilon)) / -multiplier); 
@@ -224,7 +224,7 @@ namespace ForumCrawler
 
 
             if (Score > 1.0)
-            {
+            { 
                 this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactvitiyDecayRate 
                     + ScoreBaseDecayRate * remainderTicks;
                 if (Score < 1.0) Score = 1;
