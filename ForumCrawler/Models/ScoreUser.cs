@@ -291,8 +291,8 @@ namespace ForumCrawler
             if (this.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send votes.");
 
             var lastBoost = target.GetLastVoteTimestamp(this.UserId);
-            var sinceLastVote = DateTimeOffset.UtcNow - lastBoost;
-            var cooldown = sinceLastVote - TimeSpan.FromDays(0.5);
+            var sinceLastVote = DateTime.UtcNow - lastBoost;
+            var cooldown = TimeSpan.FromDays(0.5) - sinceLastVote;
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
             var randomEff = Math.Max(0.5, Math.Min(2.5, random.RandomNormal(1.5, 0.4)));
