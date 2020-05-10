@@ -106,7 +106,7 @@ namespace ForumCrawler
         public double InertiaPoints
         {
             get => ToPoints(Score, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // ln(1 - x / 1.1) / -0.01
-            set => InertiaPoints = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
+            set => Inertia = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
         private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log((1 - value / (max + epsilon)) / -multiplier); 
