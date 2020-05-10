@@ -87,7 +87,7 @@ namespace DiscordSocialScore
 
             return await WithWootAsync(client, targetUserId, upvoterUserId, (target, upvoter) =>
             {
-                return upvoter.Upvote(target);
+                return upvoter.Downvote(target);
             });
         }
 

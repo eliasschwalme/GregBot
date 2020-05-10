@@ -24,7 +24,7 @@ namespace ForumCrawler
         private const double Max_Score = 5;
         private const double Max_Inertia = 1;
 
-        private const double ActivityResolutionInHours = 60 / 3600; // 60 seconds
+        private const double ActivityResolutionInHours = 60.0 / 3600; // 60 seconds
 
         private const double InertiaPointsCapacity = 239.78952728; // ln(1 - Max_Inertia / 1.1) / -0.01
         private const double InertiaPointsPerActivityHour = InertiaPointsCapacity / 24; // 24 hours of nonstop talking with no decay fills up inertia to 100%
@@ -109,7 +109,7 @@ namespace ForumCrawler
             set => Inertia = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
-        private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log((1 - value / (max + epsilon)) / -multiplier); 
+        private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log(1 - value / (max + epsilon)) / -multiplier; 
         private static double ToValue(double points, double max, double epsilon, double multiplier) => Math.Max(0, Math.Min(max, (max + epsilon) * (1 - Math.Exp(-multiplier * points)))); 
 
 
