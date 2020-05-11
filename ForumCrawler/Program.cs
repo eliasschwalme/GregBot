@@ -13,6 +13,7 @@ namespace ForumCrawler
     {
         private static async Task Main()
         {
+            return;
             var client = await DiscordSettings.GetClient();
 
             var services = DiscordSettings.ConfigureServices(client);
