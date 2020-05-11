@@ -295,7 +295,7 @@ namespace ForumCrawler
             var cooldown = TimeSpan.FromDays(0.5) - sinceLastVote;
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
-            var randomEff = Math.Max(0.5, Math.Min(2.5, random.RandomNormal(1.5, 0.4)));
+            var randomEff = Math.Max(0.75, Math.Min(5, random.RandomNormal(1, 0.4)));
             var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
             var scoreDifference = this.Score - target.Score;
             var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);
