@@ -265,7 +265,7 @@ namespace ForumCrawler
 
         public double Upvote(ScoreUser target)
         {
-            if (Math.Abs(target.Score - this.Score) > 2) throw new Exception("The score difference between upvoters cannot be over 2.0.");
+            if (target.Score - this.Score > 1) throw new Exception("The target's score is over the maximum allowed amount (1.0).");
 
             var efficiency = GetEfficiency(target);
             if (this.Energy < 25) throw new Exception($"An upvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
