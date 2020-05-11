@@ -269,8 +269,10 @@ namespace ForumCrawler
 
             var efficiency = GetEfficiency(target);
             if (this.Energy < 25) throw new Exception($"An upvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
-            this.Energy -= 25;            
-            target.ScorePoints += 5 * efficiency;
+            this.Energy -= 25;
+
+            var lowScoreFactor = target.Score < 2 ? 3 : 1;
+            target.ScorePoints += 5 * efficiency * lowScoreFactor;
 
             return efficiency;
         }
@@ -296,12 +298,11 @@ namespace ForumCrawler
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
             var randomEff = Math.Max(0.75, Math.Min(5, random.RandomNormal(1, 0.4)));
-            var lowScoreFactor = target.Score < 2 ? 4 : target.Score < 3 ? 2 : 1;
             var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
             var scoreDifference = this.Score - target.Score;
             var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);
 
-            var efficiency = scoreDiffModifier * discountFactor * randomEff * lowScoreFactor;
+            var efficiency = scoreDiffModifier * discountFactor * randomEff;
             return efficiency;
         }
     }
