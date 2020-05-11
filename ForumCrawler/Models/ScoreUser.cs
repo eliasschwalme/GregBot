@@ -290,7 +290,7 @@ namespace ForumCrawler
         private double GetEfficiency(ScoreUser target)
         {
             if (target.UserId == UserId) throw new Exception($"Sorry, voting yourself is not allowed!");
-            if (this.Score < 1.0995) throw new Exception("Users under 1.1 cannot not send votes.");
+            if (this.Inertia < 0.095 || target.Inertia < 0.095) throw new Exception("Users with inertia lower than 10% cannot not send or receive votes.");
 
             var lastBoost = target.GetLastVoteTimestamp(this.UserId);
             var sinceLastVote = DateTime.UtcNow - lastBoost;
