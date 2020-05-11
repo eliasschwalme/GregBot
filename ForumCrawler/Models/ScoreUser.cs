@@ -296,11 +296,12 @@ namespace ForumCrawler
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
             var randomEff = Math.Max(0.75, Math.Min(5, random.RandomNormal(1, 0.4)));
+            var lowScoreFactor = target.Score < 2 ? 4 : target.Score < 3 ? 2 : 1;
             var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
             var scoreDifference = this.Score - target.Score;
             var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);
 
-            var efficiency = scoreDiffModifier * discountFactor * randomEff;
+            var efficiency = scoreDiffModifier * discountFactor * randomEff * lowScoreFactor;
             return efficiency;
         }
     }

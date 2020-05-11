@@ -80,13 +80,7 @@ namespace DiscordSocialScore
         {
             if (message.Author.IsBot) return;
             if (!(message.Author is SocketGuildUser guildUser)) return;
-            if (guildUser.Guild.Id == DiscordSettings.GuildId &&
-                message.Channel.Id != DiscordSettings.BotCommandsChannel && // bot-spam
-                message.Channel.Id != 329339732662419457 && // funposting
-                message.Channel.Id != 596114917380325387)  // other-languages
-            {
-                await Score.CreditActivityScoreAsync(client, guildUser.Id);
-            }
+            await Score.CreditActivityScoreAsync(client, guildUser.Id);
         }
 
         public static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData, bool force = false)
