@@ -278,8 +278,8 @@ namespace ForumCrawler
         public double Downvote(ScoreUser target)
         {
             var efficiency = GetEfficiency(target);
-            if (this.Energy < 25) throw new Exception($"A downvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
-            this.Energy -= 25;
+            if (this.Energy < 25) throw new Exception($"A downvote costs 50 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
+            this.Energy -= 50;
             target.ScorePoints -= 5 * efficiency;
 
             return efficiency;
