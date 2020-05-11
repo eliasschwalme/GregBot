@@ -99,7 +99,7 @@ namespace ForumCrawler
         private double ScorePoints
         {
             get => ToPoints(Score, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // ln((1 - x / 5.1) / -0.0015
-            set => Score = ToValue(value, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // 5.1 * (1 * e^(-0.0015x))
+            set => Score = ToValue(value, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // 5.1 * (1 - e^(-0.0015x))
         }
 
         [NotMapped]
@@ -270,7 +270,7 @@ namespace ForumCrawler
             var efficiency = GetEfficiency(target);
             if (this.Energy < 25) throw new Exception($"An upvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
             this.Energy -= 25;            
-            target.ScorePoints += 30 * efficiency;
+            target.ScorePoints += 5 * efficiency;
 
             return efficiency;
         }
@@ -280,7 +280,7 @@ namespace ForumCrawler
             var efficiency = GetEfficiency(target);
             if (this.Energy < 25) throw new Exception($"A downvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
             this.Energy -= 25;
-            target.ScorePoints -= 30 * efficiency;
+            target.ScorePoints -= 5 * efficiency;
 
             return efficiency;
         }
