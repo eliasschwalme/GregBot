@@ -221,13 +221,14 @@ namespace ForumCrawler
             var inertiaDecay = inertiaDecayRate * ticks;
             var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
             this.Inertia -= inertiaDecay;
+            if (this.Inertia < 1.0) this.Inertia = 1;
 
 
             if (Score > 1.0)
             { 
                 this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactvitiyDecayRate 
                     + ScoreBaseDecayRate * remainderTicks;
-                if (Score < 1.0) Score = 1;
+                if (this.Score < 1.0) this.Score = 1;
             }
 
             LastDecay = DateTime.UtcNow;

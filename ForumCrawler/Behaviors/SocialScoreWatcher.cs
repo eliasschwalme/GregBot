@@ -73,7 +73,10 @@ namespace DiscordSocialScore
 
         private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser, SocketGuildUser newUser)
         {
-            await UpdateUserAsync(client, newUser, await Score.GetScoreDataAsync(client, newUser.Id));
+            if (!oldUser.Roles.SequenceEqual(newUser.Roles))
+            {
+                await UpdateUserAsync(client, newUser, await Score.GetScoreDataAsync(client, newUser.Id));
+            }
         }
 
         private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
