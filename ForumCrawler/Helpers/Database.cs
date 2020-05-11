@@ -15,6 +15,14 @@ namespace ForumCrawler
 {
     internal static class Database
     {
+        //static Database()
+        //{
+        //    using (var ctx = new DatabaseContext())
+        //    {
+        //        ctx.ScoreUsers.Delete();
+        //    }
+        //}
+
         public static async Task<StarboardInformation> GetStarboardInformation(ulong messageId)
         {
             using (var ctx = new DatabaseContext())
