@@ -21,7 +21,7 @@ namespace DiscordSocialScore
 
         public static async Task<List<(IGuildUser, ScoreUser)>> GetUsersUserHasBoosted(IGuild guild, IEntity<ulong> entityUser)
         {
-            var boosting = await Database.GetScoreUsersUserIsBoosting(user => user.Id == (long)entityUser.Id);
+            var boosting = await Database.UNSAFE_GetScoreUsersUserIsBoosting(user => user.Id == (long)entityUser.Id);
 
             var guildUsers = new List<(IGuildUser, ScoreUser)>();
 
@@ -42,14 +42,17 @@ namespace DiscordSocialScore
 
         private static async Task<T> WithUserUpdateAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<(bool, T)>> callback)
         {
-            var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
-            var (shouldUpdate, res) = await callback(userObj);
-            if (shouldUpdate)
+            return await Database.WithDatabaseAsync(async () =>
             {
-                await Database.AddOrUpdateScoreUserAsync(userObj);
-                OnUpdate?.Invoke(userObj.UserId, userObj.ScoreData);
-            }
-            return res;
+                var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
+                var (shouldUpdate, res) = await callback(userObj);
+                if (shouldUpdate)
+                {
+                    await Database.AddOrUpdateScoreUserAsync(userObj);
+                    OnUpdate?.Invoke(userObj.UserId, userObj.ScoreData);
+                }
+                return res;
+            });
         }
 
         private static async Task<(ScoreData, T)> WithTargetAndInvokerAsync<T>(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
@@ -151,7 +154,7 @@ namespace DiscordSocialScore
 
         public static async Task UpdateDecays(DiscordSocketClient client, Func<ulong, ScoreData, Task> callback)
         {
-            await Database.WithAllScoreUsersAsync(client, async scoreUsers =>
+            await Database.UNSAFE_WithAllScoreUsersAsync(client, async scoreUsers =>
             {
                 foreach (var user in scoreUsers)
                 {

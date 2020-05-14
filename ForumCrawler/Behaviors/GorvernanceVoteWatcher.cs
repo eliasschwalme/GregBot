@@ -38,7 +38,7 @@ namespace ForumCrawler
                 return;
             }
 
-            var governanceVote = await Database.GetGovernanceVoteAsync(channel.Id);
+            var governanceVote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
             if (governanceVote == null) return;
             if (governanceVote.MessageId != message.Id) return;
 

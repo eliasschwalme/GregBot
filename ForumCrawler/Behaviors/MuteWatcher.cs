@@ -25,7 +25,7 @@ namespace ForumCrawler
 
         private static async Task VerifyMute(SocketGuildUser user)
         {
-            var mute = await Database.GetMute(user.Id);
+            var mute = await Database.UNSAFE_GetMute(user.Id);
             if (mute != null && mute.ExpiryDate > DateTimeOffset.UtcNow)
             {
                 await OnMute(mute, "Mute retention after rejoin.");
@@ -69,18 +69,18 @@ namespace ForumCrawler
         private static async void OnUpdate(DiscordSocketClient client)
         {
             var timestamp = DateTimeOffset.UtcNow;
-            var mutes = await Database.GetAllExpiredMutes(timestamp);
+            var mutes = await Database.UNSAFE_GetAllExpiredMutes(timestamp);
             foreach (var mute in mutes)
             {
                 await OnUnmute(mute.UserId);
             }
-            await Database.RemoveAllExpiredMutes(timestamp);
+            await Database.UNSAFE_RemoveAllExpiredMutes(timestamp);
         }
 
         public static async Task<Mute> MuteUser(Mute mute, string reason, bool shorten, bool sameAuthorShorten)
         {
             if (mute.ExpiryDate <= DateTimeOffset.UtcNow) return null;
-            var lastMute = await Database.GetMute(mute.UserId);
+            var lastMute = await Database.UNSAFE_GetMute(mute.UserId);
             var shorts = mute.ExpiryDate <= lastMute?.ExpiryDate;
             var sameAuthor = lastMute?.IssuerId == mute.IssuerId;
             if ((shorts && !shorten) || (shorts && !sameAuthor && sameAuthorShorten))
@@ -88,7 +88,7 @@ namespace ForumCrawler
                 return lastMute;
             }
 
-            await Database.AddOrUpdateMuteAsync(mute);
+            await Database.UNSAFE_AddOrUpdateMuteAsync(mute);
             await OnMute(mute, reason);
             return mute;
         }
@@ -97,11 +97,11 @@ namespace ForumCrawler
         {
             if (issuerId != null)
             {
-                var lastMute = await Database.GetMute(userId);
+                var lastMute = await Database.UNSAFE_GetMute(userId);
                 if (lastMute == null || lastMute.IssuerId != issuerId) return;
             }
 
-            await Database.RemoveMute(userId);
+            await Database.UNSAFE_RemoveMute(userId);
             await OnUnmute(userId);
         }
     }

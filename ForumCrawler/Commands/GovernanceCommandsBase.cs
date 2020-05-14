@@ -53,7 +53,7 @@ namespace ForumCrawler
             if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
 
             var user = (IGuildUser)Context.User;
-            var vote = await Database.GetGovernanceVoteAsync(channel.Id);
+            var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
             var age = DateTimeOffset.UtcNow - channel.CreatedAt;
             var ageInDays = age.TotalDays;
             var ageLeft = TimeSpan.FromTicks((channel.CreatedAt.AddDays(3) - DateTimeOffset.UtcNow).Ticks);
@@ -137,7 +137,7 @@ namespace ForumCrawler
             if (!guildUser.IsServerOwner()) throw new Exception("Only server owner can convert suggestions.");
             if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
             if (type == SuggestionType.Vote) throw new Exception("Use g!suggest finalize to start a vote.");
-            var vote = await Database.GetGovernanceVoteAsync(channel.Id);
+            var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             var message = (IUserMessage)await Context.Channel.GetMessageAsync(vote.MessageId);
 
@@ -158,7 +158,7 @@ namespace ForumCrawler
             if (type == SuggestionType.Vote) throw new Exception("Finalized suggestions cannot be renamed.");
 
             var user = (IGuildUser)Context.User;
-            var vote = await Database.GetGovernanceVoteAsync(channel.Id);
+            var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner can rename suggestions.");
 
@@ -180,7 +180,7 @@ namespace ForumCrawler
             if (channel.GetSuggestionChannelType() == SuggestionType.Vote) throw new Exception("Finalized suggestions cannot be edited.");
 
             var user = (IGuildUser)Context.User;
-            var vote = await Database.GetGovernanceVoteAsync(channel.Id);
+            var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
             if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
             if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner or staff can edit suggestions.");
             var message = (IUserMessage)await channel.GetMessageAsync(vote.MessageId);
@@ -231,7 +231,7 @@ namespace ForumCrawler
             });
 
             await textChannel.DeleteAsync();
-            await Database.RemoveGovernanceVoteAsync(channel.Id);
+            await Database.UNSAFE_RemoveGovernanceVoteAsync(channel.Id);
         }
 
         private static async Task ArchiveChannel(ISocketMessageChannel channel, Func<string, IUserMessage, Task> callback)
@@ -328,7 +328,7 @@ namespace ForumCrawler
                 .Where(kv => kv.users.Any(u => u.IsBot || u.IsStaffOrConsultant()))
                 .ToDictionary(kv => kv.emoji, kv => kv.users);
 
-            var scoreUsers = (await Database.GetScoreUsers(voteUsers.Values
+            var scoreUsers = (await Database.UNSAFE_GetScoreUsers(voteUsers.Values
                 .SelectMany(x => x)
                 .Select(a => a.Id)))
                 .ToDictionary(u => u.UserId, u => u);
@@ -393,7 +393,7 @@ namespace ForumCrawler
             await message.PinAsync();
             await voteBillboardMessage.PinAsync();
 
-            await Database.AddGovernanceVoteAsync(new GovernanceVote
+            await Database.UNSAFE_AddGovernanceVoteAsync(new GovernanceVote
             {
                 UserId = owner.Id,
                 MessageId = message.Id,

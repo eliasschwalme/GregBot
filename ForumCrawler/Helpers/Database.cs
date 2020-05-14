@@ -15,6 +15,8 @@ namespace ForumCrawler
 {
     internal static class Database
     {
+        [ThreadStatic]
+        private static DatabaseContext CurrentContext;
         //static Database()
         //{
         //    using (var ctx = new DatabaseContext())
@@ -23,7 +25,31 @@ namespace ForumCrawler
         //    }
         //}
 
-        public static async Task<StarboardInformation> GetStarboardInformation(ulong messageId)
+        public static async Task WithDatabaseAsync(Func<Task> callback)
+        {
+            await WithDatabaseAsync(() =>
+            {
+                callback();
+                return Task.FromResult(true);
+            });
+        }
+
+        public static async Task<T> WithDatabaseAsync<T>(Func<Task<T>> callback)
+        {
+            try
+            {
+                using (CurrentContext = new DatabaseContext())
+                {
+                    return await callback();
+                }
+            } 
+            finally
+            {
+                CurrentContext = null;
+            }
+        }
+
+        public static async Task<StarboardInformation> UNSAFE_GetStarboardInformation(ulong messageId)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -45,7 +71,7 @@ namespace ForumCrawler
             }
         }
 
-        internal static async Task<Dictionary<ulong, QuickReportWatcher.Report>> PullReports(DiscordSocketClient client)
+        internal static async Task<Dictionary<ulong, QuickReportWatcher.Report>> UNSAFE_PullReports(DiscordSocketClient client)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -77,7 +103,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task CreateStarboardEntry(ulong messageId, ulong starboardMessageId)
+        public static async Task UNSAFE_CreateStarboardEntry(ulong messageId, ulong starboardMessageId)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -107,7 +133,7 @@ namespace ForumCrawler
             }
         }
 
-        internal static async Task UpdateReport(ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
+        internal static async Task UNSAFE_UpdateReport(ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -121,7 +147,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task AddReport(QuickReportWatcher.Report report)
+        public static async Task UNSAFE_AddReport(QuickReportWatcher.Report report)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -142,7 +168,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task DeleteStarboardEntry(ulong messageId)
+        public static async Task UNSAFE_DeleteStarboardEntry(ulong messageId)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -164,7 +190,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<IEnumerable<ScoreUser>> GetScoreUsersUserIsBoosting(Expression<Func<ScoreUser, bool>> userPredicate)
+        public static async Task<IEnumerable<ScoreUser>> UNSAFE_GetScoreUsersUserIsBoosting(Expression<Func<ScoreUser, bool>> userPredicate)
         {
             using (var context = new DatabaseContext())
             {
@@ -182,7 +208,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task WithAllScoreUsersAsync(DiscordSocketClient client, Action<IEnumerable<ScoreUser>> callback)
+        public static async Task UNSAFE_WithAllScoreUsersAsync(DiscordSocketClient client, Action<IEnumerable<ScoreUser>> callback)
         {
             using (var context = new DatabaseContext())
             {
@@ -196,7 +222,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<List<ScoreUser>> GetScoreUsersByLeaderboardPositionAsync(int page)
+        public static async Task<List<ScoreUser>> UNSAFE_GetScoreUsersByLeaderboardPositionAsync(int page)
         {
             using (var context = new DatabaseContext())
             {
@@ -204,31 +230,29 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreUser, int)> GetOrCreateScoreUserAndLeaderboardPositionAsync(DiscordSocketClient client, ulong userId)
+        public static async Task<(ScoreUser, int)> UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(DiscordSocketClient client, ulong userId)
         {
             var myScoreUser = await GetOrCreateScoreUserAsync(client, userId);
-            using (var context = new DatabaseContext())
+            return await WithDatabaseAsync(async () =>
             {
-                return (myScoreUser, 1 + await context.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
-            }
+                return (myScoreUser, 1 + await CurrentContext.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
+            });
         }
 
         public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DiscordSocketClient client, ulong userId)
         {
-            using (var context = new DatabaseContext())
+            var res = await CurrentContext.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
+            if (res == null)
             {
-                var res = await context.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
-                if (res == null)
-                {
-                    res = new ScoreUser { UserId = userId };
-                    context.ScoreUsers.AddOrUpdate(res);
-                    await context.SaveChangesAsync();
-                }
-                res.Update(client, userId);
-                return res;
+                res = new ScoreUser { UserId = userId };
+                CurrentContext.ScoreUsers.AddOrUpdate(res);
+                await CurrentContext.SaveChangesAsync();
             }
+            res.Update(client, userId);
+            return res;
         }
-        public static async Task<ScoreUser[]> GetScoreUsers(IEnumerable<ulong> userIds)
+
+        public static async Task<ScoreUser[]> UNSAFE_GetScoreUsers(IEnumerable<ulong> userIds)
         {
             var userIdsLong = userIds.Select(u => (long)u).ToArray();
             using (var context = new DatabaseContext())
@@ -241,14 +265,11 @@ namespace ForumCrawler
 
         public static async Task AddOrUpdateScoreUserAsync(ScoreUser scoreUser)
         {
-            using (var context = new DatabaseContext())
-            {
-                context.ScoreUsers.AddOrUpdate(scoreUser);
-                await context.SaveChangesAsync();
-            }
+            CurrentContext.ScoreUsers.AddOrUpdate(scoreUser);
+            await CurrentContext.SaveChangesAsync();
         }
 
-        public static async Task<Mute[]> GetAllExpiredMutes(DateTimeOffset time)
+        public static async Task<Mute[]> UNSAFE_GetAllExpiredMutes(DateTimeOffset time)
         {
             using (var context = new DatabaseContext())
             {
@@ -256,7 +277,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<Mute> GetMute(ulong id)
+        public static async Task<Mute> UNSAFE_GetMute(ulong id)
         {
             using (var context = new DatabaseContext())
             {
@@ -264,7 +285,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task RemoveMute(ulong id)
+        public static async Task UNSAFE_RemoveMute(ulong id)
         {
             using (var context = new DatabaseContext())
             {
@@ -272,7 +293,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task RemoveAllExpiredMutes(DateTimeOffset time)
+        public static async Task UNSAFE_RemoveAllExpiredMutes(DateTimeOffset time)
         {
             using (var context = new DatabaseContext())
             {
@@ -280,7 +301,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task AddOrUpdateMuteAsync(Mute mute)
+        public static async Task UNSAFE_AddOrUpdateMuteAsync(Mute mute)
         {
             using (var context = new DatabaseContext())
             {
@@ -289,7 +310,7 @@ namespace ForumCrawler
             }
         }
 
-        internal static async Task AddGovernanceVoteAsync(GovernanceVote vote)
+        internal static async Task UNSAFE_AddGovernanceVoteAsync(GovernanceVote vote)
         {
             using (var context = new DatabaseContext())
             {
@@ -298,7 +319,7 @@ namespace ForumCrawler
             }
         }
 
-        internal static async Task<GovernanceVote> GetGovernanceVoteAsync(ulong id)
+        internal static async Task<GovernanceVote> UNSAFE_GetGovernanceVoteAsync(ulong id)
         {
             using (var context = new DatabaseContext())
             {
@@ -306,7 +327,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task RemoveGovernanceVoteAsync(ulong id)
+        public static async Task UNSAFE_RemoveGovernanceVoteAsync(ulong id)
         {
             using (var context = new DatabaseContext())
             {
@@ -316,7 +337,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task RemoveWarningAsync(long id, IMessage msg, string reason)
+        public static async Task UNSAFE_RemoveWarningAsync(long id, IMessage msg, string reason)
         {
             using (var context = new DatabaseContext())
             {
@@ -330,7 +351,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<Warning> GetWarningAsync(long id)
+        public static async Task<Warning> UNSAFE_GetWarningAsync(long id)
         {
             using (var context = new DatabaseContext())
             {
@@ -338,7 +359,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<Warning[]> GetWarningsAsync(ulong id)
+        public static async Task<Warning[]> UNSAFE_GetWarningsAsync(ulong id)
         {
             using (var context = new DatabaseContext())
             {
@@ -346,7 +367,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<Warning> AddWarningAsync(Warning warning)
+        public static async Task<Warning> UNSAFE_AddWarningAsync(Warning warning)
         {
             using (var context = new DatabaseContext())
             {
@@ -356,7 +377,7 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task WithWarningsAsync(ulong id, Func<Warning[], Task> callback)
+        public static async Task UNSAFE_WithWarningsAsync(ulong id, Func<Warning[], Task> callback)
         {
             using (var context = new DatabaseContext())
             {

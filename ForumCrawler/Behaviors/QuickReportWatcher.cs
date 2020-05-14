@@ -21,7 +21,7 @@ namespace ForumCrawler
 
         private static async Task Client_Ready(DiscordSocketClient client)
         {
-            var reports = await Database.PullReports(client);
+            var reports = await Database.UNSAFE_PullReports(client);
 
             client.ReactionAdded += Client_ReactionAdded;
 
@@ -45,7 +45,7 @@ namespace ForumCrawler
                 client.GetUser(u).SendMessageAsync("Your report was updated.", embed: GetReportEmbed(client, report, u))));
             await SendOrUpdateReport(client, report);
 
-            await Database.UpdateReport(msgId, moderator, status);
+            await Database.UNSAFE_UpdateReport(msgId, moderator, status);
         }
 
         private static async Task QuickReportWatcher_OnReport(DiscordSocketClient client, Dictionary<ulong, Report> reports, ulong reportId, IUser reporter, IUser suspect, IMessageChannel channel, IUserMessage message, string reason)
@@ -79,7 +79,7 @@ namespace ForumCrawler
             await SendOrUpdateReport(client, report);
             await reporter?.SendMessageAsync($"You {(update ? "updated" : "sent")} a report.", embed: embed.Build());
 
-            await Database.AddReport(report);
+            await Database.UNSAFE_AddReport(report);
         }
 
         private static async Task SendOrUpdateReport(DiscordSocketClient client, Report report)

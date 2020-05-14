@@ -100,7 +100,7 @@ namespace DiscordSocialScore
 
             var cache = CacheProvider.Get(user.Guild);
 
-            var muted = (await Database.GetMute(user.Id)) != null;
+            var muted = (await Database.UNSAFE_GetMute(user.Id)) != null;
             var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData) };
             if (!muted) roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
 

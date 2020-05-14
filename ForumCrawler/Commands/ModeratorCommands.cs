@@ -112,12 +112,12 @@ namespace ForumCrawler.Commands
 
         public async Task UnmuteUser(IUser user, bool force)
         {
-            var mute = await Database.GetMute(user.Id);
+            var mute = await Database.UNSAFE_GetMute(user.Id);
             if (mute == null)
                 throw new Exception("User is currently not muted.");
             if (mute.IssuerId != Context.User.Id && !force)
                 throw new Exception("Mute can only be removed by its issuer, " + MentionUtils.MentionUser(mute.IssuerId) + ".");
-            var state = WarningState.FromDatabase(await Database.GetWarningsAsync(user.Id));
+            var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
             if (!state.MutedUntil.HasValue)
             {
                 await MuteWatcher.UnmuteUser(user.Id, null);
@@ -139,7 +139,7 @@ namespace ForumCrawler.Commands
         [Command("mute"), RequireRole(DiscordSettings.DiscordStaff)]
         public async Task Mute(IGuildUser user, TimeSpan duration, [Remainder] string reason)
         {
-            var mute = await Database.GetMute(user.Id);
+            var mute = await Database.UNSAFE_GetMute(user.Id);
             if (mute != null)
                 throw new Exception("User is already muted.");
             if (user.IsStaff())
@@ -159,7 +159,7 @@ namespace ForumCrawler.Commands
         public async Task MuteState(IUser user = null)
         {
             if (user == null) user = Context.User;
-            var mute = await Database.GetMute(user.Id);
+            var mute = await Database.UNSAFE_GetMute(user.Id);
             await ReplyAsync($"{GetUnmentionedUser(user.Id)} muted until {mute.ExpiryDate} UTC.");
         }
     }
@@ -225,7 +225,7 @@ namespace ForumCrawler.Commands
 
         private async Task EditWarningInternalAsync(IUser user, long id, string reason, bool force)
         {
-            await Database.WithWarningsAsync(user.Id, async history =>
+            await Database.UNSAFE_WithWarningsAsync(user.Id, async history =>
             {
                 var warning = Array.Find(history, w => w.Id == id);
                 if (warning == null)
@@ -265,16 +265,16 @@ namespace ForumCrawler.Commands
 
         private async Task RemoveWarningInternalAsync(IUser user, long id, string reason, bool force)
         {
-            var warning = await Database.GetWarningAsync(id);
+            var warning = await Database.UNSAFE_GetWarningAsync(id);
             if (warning == null)
                 throw new Exception("Invalid warning ID.");
             if (warning.UserId != user.Id) // this check exists to catch typos in warning IDs
                 throw new Exception("Warning ID does not match with user!");
             if (warning.IssuerId != Context.User.Id && !force)
                 throw new Exception("Warning can only be deleted by its issuer, " + MentionUtils.MentionUser(warning.IssuerId) + ".");
-            await Database.RemoveWarningAsync(id, Context.Message, reason);
+            await Database.UNSAFE_RemoveWarningAsync(id, Context.Message, reason);
 
-            var state = WarningState.FromDatabase(await Database.GetWarningsAsync(user.Id));
+            var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
             var embed = AddWarningsToEmbed(GetWarningEmbed(user, warning), state)
                 .WithDescription("**A warning was deleted.**")
                 .Build();
@@ -332,7 +332,7 @@ namespace ForumCrawler.Commands
         public async Task ListWarns(IUser user = null)
         {
             if (user == null) user = Context.User;
-            var warnings = await Database.GetWarningsAsync(user.Id);
+            var warnings = await Database.UNSAFE_GetWarningsAsync(user.Id);
             await ListWarningsAsync($"**{GetUnmentionedUser(user.Id)}** has {warnings.Length} warnings.", warnings, Context.Channel);
         }
 
@@ -340,7 +340,7 @@ namespace ForumCrawler.Commands
         public async Task WarnStats(IUser user = null)
         {
             if (user == null) user = Context.User;
-            var state = WarningState.FromDatabase(await Database.GetWarningsAsync(user.Id));
+            var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
             var embed = AddWarningsToEmbed(new EmbedBuilder().WithAuthor(user), state).Build();
             await ReplyAsync(embed: embed);
         }
@@ -363,7 +363,7 @@ namespace ForumCrawler.Commands
             if (user.IsStaff())
                 throw new Exception("User is staff.");
 
-            var history = await Database.GetWarningsAsync(user.Id);
+            var history = await Database.UNSAFE_GetWarningsAsync(user.Id);
 
             var warning = new Warning
             {
@@ -385,7 +385,7 @@ namespace ForumCrawler.Commands
             try
             {
                 var state = await ApplyWarningWithSeverity(user, history, warning, tempEmbed);
-                await Database.AddWarningAsync(warning);
+                await Database.UNSAFE_AddWarningAsync(warning);
 
                 var embed = GetWarningIssuedEmbed(user, warning, state);
                 await AnnounceWarningEverywhereAsync(user, embed.Build());

@@ -102,7 +102,7 @@ namespace DiscordSocialScore
         {
             var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userObj.Id);
             const string WootString = "<:woot:329697747701727235>";
-            var hs = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, user.Id);
+            var hs = await Database.UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, user.Id);
             var score = hs.Item1;
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
@@ -161,8 +161,8 @@ namespace DiscordSocialScore
         [Command("top"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Top(int page = 1)
         {
-            var topPlayers = await Database.GetScoreUsersByLeaderboardPositionAsync(page - 1);
-            var myPlayer = await Database.GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, Context.User.Id);
+            var topPlayers = await Database.UNSAFE_GetScoreUsersByLeaderboardPositionAsync(page - 1);
+            var myPlayer = await Database.UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, Context.User.Id);
 
             var topPlayerStrings = topPlayers.Select(t => GetLeaderboardPlayerString(t, (10 * (page - 1)) + 1 + topPlayers.Count(t2 => t2.Score > t.Score)));
             var myPlayerString = GetLeaderboardPlayerString(myPlayer.Item1, myPlayer.Item2);
