@@ -16,7 +16,10 @@ namespace DiscordSocialScore
 
         private static async Task<T> WithUserAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<T>> callback)
         {
-            return await WithUserUpdateAsync(client, userId, async u => (false, await callback(u)));
+            return await Database.WithDatabaseAsync(async () =>
+            {
+                return await DatabaseWithUserUpdateAsync(client, userId, async u => (false, await callback(u)));
+            });
         }
 
         public static async Task<List<(IGuildUser, ScoreUser)>> GetUsersUserHasBoosted(IGuild guild, IEntity<ulong> entityUser)
@@ -40,29 +43,29 @@ namespace DiscordSocialScore
             return guildUsers;
         }
 
-        private static async Task<T> WithUserUpdateAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<(bool, T)>> callback)
+        private static async Task<T> DatabaseWithUserUpdateAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<(bool, T)>> callback)
         {
-            return await Database.WithDatabaseAsync(async () =>
+            var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
+            var (shouldUpdate, res) = await callback(userObj);
+            if (shouldUpdate)
             {
-                var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
-                var (shouldUpdate, res) = await callback(userObj);
-                if (shouldUpdate)
-                {
-                    await Database.AddOrUpdateScoreUserAsync(userObj);
-                    OnUpdate?.Invoke(userObj.UserId, userObj.ScoreData);
-                }
-                return res;
-            });
+                await Database.AddOrUpdateScoreUserAsync(userObj);
+                OnUpdate?.Invoke(userObj.UserId, userObj.ScoreData);
+            }
+            return res;
         }
 
         private static async Task<(ScoreData, T)> WithTargetAndInvokerAsync<T>(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
-            return await WithUserUpdateAsync(client, targetUserId, async invoker => (true, await WithUserUpdateAsync(client, invokerUserId, voter =>
+            return await Database.WithDatabaseAsync(async () =>
             {
-                var res = callback(invoker, voter);
+                return await DatabaseWithUserUpdateAsync(client, targetUserId, async invoker => (true, await DatabaseWithUserUpdateAsync(client, invokerUserId, voter =>
+                {
+                    var res = callback(invoker, voter);
 
-                return Task.FromResult((true, (invoker.ScoreData, res)));
-            })));
+                    return Task.FromResult((true, (invoker.ScoreData, res)));
+                })));
+            });
         }
 
         public static async Task<(ScoreData, int)> DailyAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
