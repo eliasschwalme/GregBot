@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ForumCrawler;
-
+using PastebinAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -127,21 +127,12 @@ namespace DiscordSocialScore
             ));
         }
 
-        public static async Task<double> SetScoreAsync(DiscordSocketClient client, ulong userId, double score)
+        public static async Task SwapUsers(DiscordSocketClient client, ulong user1Id, ulong user2Id)
         {
-            return await WithUserUpdateAsync(client, userId, u =>
+            await WithTargetAndInvokerAsync(client, user1Id, user2Id, (user1, user2) =>
             {
-                u.Score = Math.Max(-10, Math.Min(5, score));
-                return Task.FromResult((true, u.Score));
-            });
-        }
-
-        public static async Task<double> SetInertiaAsync(DiscordSocketClient client, ulong userId, double inertia)
-        {
-            return await WithUserUpdateAsync(client, userId, u =>
-            {
-                u.Inertia = Math.Max(0, Math.Min(1, inertia));
-                return Task.FromResult((true, u.Inertia));
+                ScoreUser.SwapUsers(user1, user2);
+                return 0;
             });
         }
 
@@ -167,43 +158,6 @@ namespace DiscordSocialScore
                     await callback(user.UserId, user.ScoreData);
                 }
             });
-        }
-    }
-
-    public static class MyEnumerableExtensions
-    {
-        public static IEnumerable<T> LastN<T>(this IList<T> list, int n)
-        {
-            if (list == null)
-            {
-                throw new ArgumentNullException(nameof(list));
-            }
-
-            return LastN2();
-
-            IEnumerable<T> LastN2()
-            {
-                if (list.Count - n < 0)
-                {
-                    n = list.Count;
-                }
-
-                for (var i = list.Count - n; i < list.Count; i++)
-                {
-                    yield return list[i];
-                }
-            }
-        }
-
-        public static double RandomNormal(this Random random, double mean, double stdDev)
-        {
-            var u1 = 1.0 - random.NextDouble(); //uniform(0,1] random doubles
-            var u2 = 1.0 - random.NextDouble();
-            var randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
-                         Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
-            var randNormal =
-                         mean + (stdDev * randStdNormal); //random normal(mean,stdDev^2)
-            return randNormal;
         }
     }
 }

@@ -50,9 +50,9 @@ namespace ForumCrawler
 
         public DateTime? LastActivity { get; set; }
         public DateTime? LastDecay { get; set; }
-        public double Inertia { get; set; }
-        public int Gems { get; set; }
         public DateTime? LastDaily { get; set; }
+        public int Gems { get; set; }
+        public double Inertia { get; set; }
 
         [Index]
         public double Score { get; set; } = 1;
@@ -83,7 +83,7 @@ namespace ForumCrawler
         }
 
         [NotMapped]
-        public double InertiaPoints
+        private double InertiaPoints
         {
             get => ToPoints(Inertia, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // ln(1 - x / 1.1) / -0.01
             set => Inertia = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
@@ -170,6 +170,13 @@ namespace ForumCrawler
         private double SumInRange(double minEcl, double maxInc)
         {
            return (maxInc * (maxInc + 1) - minEcl * (minEcl + 1)) / 2;
+        }
+
+        internal static void SwapUsers(ScoreUser user1, ScoreUser user2)
+        {
+            var user1Id = user1.Id;
+            user1.UserId = user2.UserId;
+            user2.UserId = user1Id;
         }
 
         private void UpdateDecay()
@@ -278,7 +285,7 @@ namespace ForumCrawler
             var cooldown = TimeSpan.FromDays(0.5) - sinceLastVote;
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
-            var randomEff = Math.Max(0.75, Math.Min(5, random.RandomNormal(1, 0.4)));
+            var randomEff = Math.Max(0.75, random.NextDouble() * 2);
             var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
             var scoreDifference = this.Score - target.Score;
             var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);

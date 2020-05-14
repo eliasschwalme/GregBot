@@ -111,28 +111,11 @@ namespace DiscordSocialScore
                 $":rocket: **Inertia:** {score.Inertia * 100:F0}%").Build());
         }
 
-        [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetScore(IUser user, double value)
+        [Command("transfer"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        public async Task Transfer(IUser user1, IUser user2)
         {
-            if (user == null)
-            {
-                throw new Exception("Invalid user specified!");
-            }
-
-            var score = await Score.SetScoreAsync(Context.Client, user.Id, value);
-            await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
-        }
-
-        [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetInertia(IUser user, double value)
-        {
-            if (user == null)
-            {
-                throw new Exception("Invalid user specified!");
-            }
-
-            var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Client, user.Id, value / 100) * 100);
-            await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s inertia to {inertia}%.");
+            await Score.SwapUsers(Context.Client, user1.Id, user2.Id);
+            await ReplyAsync($"Swapped {MentionUtils.MentionUser(user1.Id)}'s user data with {MentionUtils.MentionUser(user1.Id)}'s.");
         }
 
         [Command("preview daily")]
