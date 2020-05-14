@@ -94,10 +94,10 @@ namespace DiscordSocialScore
             }
         }
 
-        [Command("stats"), Alias("score"), Priority(0)]
+        [Command("stats"), Alias("score"), Priority(0), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task GetMyStats() => await GetStats(Context.User);
 
-        [Command("stats"), Alias("score"), Priority(1)]
+        [Command("stats"), Alias("score"), Priority(1), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task GetStats(IUser userObj)
         {
             var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userObj.Id);
@@ -118,13 +118,13 @@ namespace DiscordSocialScore
             await ReplyAsync($"Swapped {MentionUtils.MentionUser(user1.Id)}'s user data with {MentionUtils.MentionUser(user1.Id)}'s.");
         }
 
-        [Command("preview daily")]
+        [Command("preview daily"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily()
         {
             await Daily((IGuildUser)Context.User);
         }
 
-        [Command("preview daily")]
+        [Command("preview daily"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily(IGuildUser targetUser)
         {
             var (scoreData, amount) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
@@ -135,7 +135,7 @@ namespace DiscordSocialScore
             );
         }
 
-        [Command("up")]
+        [Command("up"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task UpUser(IGuildUser targetUser)
         {
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
@@ -149,7 +149,7 @@ namespace DiscordSocialScore
             }
         }
 
-        [Command("down")]
+        [Command("down"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task DownUser(IGuildUser targetUser)
         {
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
