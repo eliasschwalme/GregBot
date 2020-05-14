@@ -108,7 +108,7 @@ namespace DiscordSocialScore
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString).ToString() + $" **Score:** {score.Score:F3}{boostStr}\n" +
                 $":gem: **Gems:** {score.Gems}\n" +
-                $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
+                $":rocket: **Inertia:** {score.Inertia * 100:F0}%").Build());
         }
 
         [Command("score set"), RequireRole(DiscordSettings.DiscordServerOwner)]
@@ -133,6 +133,12 @@ namespace DiscordSocialScore
 
             var inertia = Math.Floor(await Score.SetInertiaAsync(Context.Client, user.Id, value / 100) * 100);
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s inertia to {inertia}%.");
+        }
+
+        [Command("preview daily")]
+        public async Task Daily()
+        {
+            await Daily((IGuildUser)Context.User);
         }
 
         [Command("preview daily")]
