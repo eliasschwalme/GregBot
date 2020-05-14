@@ -66,8 +66,10 @@ namespace DiscordSocialScore
         {
             var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
             var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
-            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not use g!daily yet!");
-            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!daily yet!");
+            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) 
+                throw new Exception("You have recently joined this server and may not use g!daily yet!");
+            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) 
+                throw new Exception("The target has recently joined this server and may not receive g!daily yet!");
 
             return await WithTargetAndInvokerAsync(client, targetUserId, invokerUserId, (target, invoker) =>
             {

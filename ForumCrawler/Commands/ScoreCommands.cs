@@ -146,7 +146,10 @@ namespace DiscordSocialScore
         {
             var (scoreData, amount) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
 
-            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount} daily gems. They now have {scoreData.Gems} in total.");
+            await ReplyAsync(
+                $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount} daily gems. " +
+                $"They now have {scoreData.Gems} in total."
+            );
         }
 
         [Command("up")]

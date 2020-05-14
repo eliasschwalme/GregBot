@@ -254,9 +254,10 @@ namespace ForumCrawler
 
         public int Daily(ScoreUser target)
         {
-            var daysSinceLastDaily = DateTime.UtcNow.Date - (this.LastDaily ?? default);
+            var daysSinceLastDaily = DateTime.UtcNow - (this.LastDaily ?? default);
             var cooldown = TimeSpan.FromDays(1) - daysSinceLastDaily;
-            if (cooldown.TotalSeconds > 0) throw new Exception($"You have already used your daily today. Come back in {cooldown.ToHumanReadableString()}.");
+            if (cooldown.TotalSeconds > 0) 
+                throw new Exception($"You have already used your daily today. Come back in {cooldown.ToHumanReadableString()}.");
             
             var isSelfBonus = this.UserId == target.UserId ? 0 : 1;
             var amount = Math.Max(2, this.ScoreData.Class + isSelfBonus);
