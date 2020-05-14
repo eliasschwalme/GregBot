@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ForumCrawler;
-using PastebinAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 
 namespace DiscordSocialScore
@@ -13,14 +13,6 @@ namespace DiscordSocialScore
     {
 
         public static event Action<ulong, ScoreData> OnUpdate;
-
-        private static async Task<T> WithUserAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<T>> callback)
-        {
-            return await Database.WithDatabaseAsync(async () =>
-            {
-                return await DatabaseWithUserUpdateAsync(client, userId, async u => (false, await callback(u)));
-            });
-        }
 
         public static async Task<List<(IGuildUser, ScoreUser)>> GetUsersUserHasBoosted(IGuild guild, IEntity<ulong> entityUser)
         {
@@ -31,11 +23,7 @@ namespace DiscordSocialScore
             foreach (var boostingUser in boosting)
             {
                 var user = await guild.GetUserAsync(boostingUser.UserId);
-
-                if (user == null)
-                {
-                    continue;
-                }
+                if (user == null)  continue;
 
                 guildUsers.Add((user, boostingUser));
             }
@@ -43,94 +31,77 @@ namespace DiscordSocialScore
             return guildUsers;
         }
 
-        private static async Task<T> DatabaseWithUserUpdateAsync<T>(DiscordSocketClient client, ulong userId, Func<ScoreUser, Task<(bool, T)>> callback)
+        private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
-            var userObj = await Database.GetOrCreateScoreUserAsync(client, userId);
-            var (shouldUpdate, res) = await callback(userObj);
-            if (shouldUpdate)
+            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
+            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
+            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3)
+                throw new Exception($"You have recently joined this server and may not use {command} yet!");
+            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3)
+                throw new Exception($"The target has recently joined this server and may not receive {command} yet!");
+
+            using (var context = new DatabaseContext())
             {
-                await Database.AddOrUpdateScoreUserAsync(userObj);
-                OnUpdate?.Invoke(userObj.UserId, userObj.ScoreData);
+                var user1 = Database.GetOrCreateScoreUserAsync(context, client, targetUserId);
+                var user2 = Database.GetOrCreateScoreUserAsync(context, client, invokerUserId);
+                var res = callback(await user1, await user2);
+                await context.SaveChangesAsync();
+                return res;
             }
-            return res;
-        }
-
-        private static async Task<(ScoreData, T)> WithTargetAndInvokerAsync<T>(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
-        {
-            return await Database.WithDatabaseAsync(async () =>
-            {
-                return await DatabaseWithUserUpdateAsync(client, targetUserId, async invoker => (true, await DatabaseWithUserUpdateAsync(client, invokerUserId, voter =>
-                {
-                    var res = callback(invoker, voter);
-
-                    return Task.FromResult((true, (invoker.ScoreData, res)));
-                })));
-            });
         }
 
         public static async Task<(ScoreData, int)> DailyAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
         {
-            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
-            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
-            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) 
-                throw new Exception("You have recently joined this server and may not use g!daily yet!");
-            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) 
-                throw new Exception("The target has recently joined this server and may not receive g!daily yet!");
-
-            return await WithTargetAndInvokerAsync(client, targetUserId, invokerUserId, (target, invoker) =>
+            return await WithTargettedScoreCommand("g!daily", client, targetUserId, invokerUserId, (target, invoker) =>
             {
-                return invoker.Daily(target);
+                return (target.ScoreData, invoker.Daily(target));
             });
         }
 
         public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
         {
-            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
-            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
-            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!up other users yet!");
-            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!up from other users yet!");
-
-            return await WithTargetAndInvokerAsync(client, targetUserId, invokerUserId, (target, upvoter) =>
+            return await WithTargettedScoreCommand("g!up", client, targetUserId, invokerUserId, (target, upvoter) =>
             {
-                return upvoter.Upvote(target);
+                return (target.ScoreData, upvoter.Upvote(target));
             });
         }
 
         public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
         {
-            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
-            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
-            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("You have recently joined this server and may not g!down other users yet!");
-            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3) throw new Exception("The target has recently joined this server and may not receive g!down from other users yet!");
-
-            return await WithTargetAndInvokerAsync(client, targetUserId, invokerUserId, (target, upvoter) =>
+            return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, upvoter) =>
             {
-                return upvoter.Downvote(target);
+                return (target.ScoreData, upvoter.Downvote(target));
             });
+        }
+
+        public static async Task<ScoreUser> GetScoreUserAsync(DiscordSocketClient client, ulong userId)
+        {
+            using (var context = new DatabaseContext())
+            {
+                return await Database.GetOrCreateScoreUserAsync(context, client, userId);
+            }
         }
 
         public static async Task<ScoreData> GetScoreDataAsync(DiscordSocketClient client, ulong userId)
         {
-            return await WithUserAsync(client, userId, u => Task.FromResult(u.ScoreData));
+            return (await GetScoreUserAsync(client, userId)).ScoreData;
         }
 
         public static async Task<List<(ulong Key, DateTime LastBoost)>> GetHistoryAsync(DiscordSocketClient client, ulong userId)
         {
-            return await WithUserAsync(client, userId, u => Task.FromResult(u.Boosts
+            return (await GetScoreUserAsync(client, userId)).Boosts
                 .Where(kv => (DateTime.UtcNow - kv.Value).TotalDays < 7)
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
-                .ToList()
-            ));
+                .ToList();
         }
 
         public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostsAsync(DiscordSocketClient client, ulong userId)
         {
-            return await WithUserAsync(client, userId, u => Task.FromResult(u.GetBoostsLeft()
+            return (await GetScoreUserAsync(client, userId)).GetBoostsLeft()
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
-                .ToList()
-            ));
+                .ToList();
         }
 
         public static async Task SwapUsers(DiscordSocketClient client, ulong user1Id, ulong user2Id)
@@ -147,23 +118,29 @@ namespace DiscordSocialScore
 #if DEBUG
             return await GetScoreDataAsync(client, activityUserId);
 #else
-            return await WithUserUpdateAsync(client, activityUserId, async user =>
+
+            using (var context = new DatabaseContext())
             {
-                var res = user.CreditActivity();
-                return (res, user.ScoreData);
-            });
+                var user = await Database.GetOrCreateScoreUserAsync(context, client, activityUserId);
+                user.CreditActivity();
+                await context.SaveChangesAsync();
+                return user.ScoreData;
+            }
 #endif
         }
 
         public static async Task UpdateDecays(DiscordSocketClient client, Func<ulong, ScoreData, Task> callback)
         {
-            await Database.UNSAFE_WithAllScoreUsersAsync(client, async scoreUsers =>
+            using (var context = new DatabaseContext())
             {
-                foreach (var user in scoreUsers)
+                // this already calls update() on all useres
+                var users = await Database.GetAllScoreUsersAsync(context, client).ToListAsync();
+                foreach (var user in users)
                 {
                     await callback(user.UserId, user.ScoreData);
                 }
-            });
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

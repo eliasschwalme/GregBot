@@ -15,8 +15,6 @@ namespace ForumCrawler
 {
     internal static class Database
     {
-        [ThreadStatic]
-        private static DatabaseContext CurrentContext;
         //static Database()
         //{
         //    using (var ctx = new DatabaseContext())
@@ -24,30 +22,6 @@ namespace ForumCrawler
         //        ctx.ScoreUsers.Delete();
         //    }
         //}
-
-        public static async Task WithDatabaseAsync(Func<Task> callback)
-        {
-            await WithDatabaseAsync(() =>
-            {
-                callback();
-                return Task.FromResult(true);
-            });
-        }
-
-        public static async Task<T> WithDatabaseAsync<T>(Func<Task<T>> callback)
-        {
-            try
-            {
-                using (CurrentContext = new DatabaseContext())
-                {
-                    return await callback();
-                }
-            } 
-            finally
-            {
-                CurrentContext = null;
-            }
-        }
 
         public static async Task<StarboardInformation> UNSAFE_GetStarboardInformation(ulong messageId)
         {
@@ -208,18 +182,12 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task UNSAFE_WithAllScoreUsersAsync(DiscordSocketClient client, Action<IEnumerable<ScoreUser>> callback)
+        public static IAsyncEnumerable<ScoreUser> GetAllScoreUsersAsync(DatabaseContext context, DiscordSocketClient client)
         {
-            using (var context = new DatabaseContext())
-            {
-                callback((await context.ScoreUsers.ToListAsync()).Select(
-                    (scoreUser) =>
-                    {
-                        scoreUser.Update(client, scoreUser.UserId);
-                        return scoreUser;
-                    }));
-                await context.SaveChangesAsync();
-            }
+            return context.ScoreUsers.ToAsyncEnumerable().Select((scoreUser) => {
+                scoreUser.Update(client, scoreUser.UserId);
+                return scoreUser;
+            });
         }
 
         public static async Task<List<ScoreUser>> UNSAFE_GetScoreUsersByLeaderboardPositionAsync(int page)
@@ -232,21 +200,21 @@ namespace ForumCrawler
 
         public static async Task<(ScoreUser, int)> UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(DiscordSocketClient client, ulong userId)
         {
-            var myScoreUser = await GetOrCreateScoreUserAsync(client, userId);
-            return await WithDatabaseAsync(async () =>
+            using (var context = new DatabaseContext())
             {
-                return (myScoreUser, 1 + await CurrentContext.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
-            });
+                var myScoreUser = await GetOrCreateScoreUserAsync(context, client, userId);
+                return (myScoreUser, 1 + await context.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
+            };
         }
 
-        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DiscordSocketClient client, ulong userId)
+        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DatabaseContext context, DiscordSocketClient client, ulong userId)
         {
-            var res = await CurrentContext.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
+            var res = await context.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
             if (res == null)
             {
                 res = new ScoreUser { UserId = userId };
-                CurrentContext.ScoreUsers.AddOrUpdate(res);
-                await CurrentContext.SaveChangesAsync();
+                context.ScoreUsers.AddOrUpdate(res);
+                await context.SaveChangesAsync();
             }
             res.Update(client, userId);
             return res;
@@ -261,12 +229,6 @@ namespace ForumCrawler
                 
                 return res;
             }
-        }
-
-        public static async Task AddOrUpdateScoreUserAsync(ScoreUser scoreUser)
-        {
-            CurrentContext.ScoreUsers.AddOrUpdate(scoreUser);
-            await CurrentContext.SaveChangesAsync();
         }
 
         public static async Task<Mute[]> UNSAFE_GetAllExpiredMutes(DateTimeOffset time)
