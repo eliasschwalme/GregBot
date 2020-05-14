@@ -174,7 +174,7 @@ namespace ForumCrawler
 
         internal static void SwapUsers(ScoreUser user1, ScoreUser user2)
         {
-            var user1Id = user1.Id;
+            var user1Id = user1.UserId;
             user1.UserId = user2.UserId;
             user2.UserId = user1Id;
         }
