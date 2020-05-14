@@ -107,7 +107,7 @@ namespace DiscordSocialScore
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString).ToString() + $" **Score:** {score.Score:F3}{boostStr}\n" +
-                $":gem: **Gems:** {score.Gems})\n" +
+                $":gem: **Gems:** {score.Gems}\n" +
                 $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
         }
 
