@@ -48,11 +48,11 @@ namespace ForumCrawler
             set => Id = (long)value;
         }
 
-        public DateTime? LastEnergy { get; set; }
         public DateTime? LastActivity { get; set; }
         public DateTime? LastDecay { get; set; }
-        public double Energy { get; set; }
         public double Inertia { get; set; }
+        public int Gems { get; set; }
+        public DateTime? LastDaily { get; set; }
 
         [Index]
         public double Score { get; set; } = 1;
@@ -76,26 +76,6 @@ namespace ForumCrawler
         }
 
         [NotMapped]
-        private int BonusEnergy
-        {
-            get
-            {
-                var boostLevel = GetBoostLevel();
-                return (IsPremium ? 250 : 0) +
-                    (boostLevel >= 3
-                    ? 250
-                    : boostLevel >= 2
-                    ? 100
-                    : boostLevel >= 1
-                    ? 25
-                    : 0);
-            }
-        }
-
-        [NotMapped]
-        public int MaxEnergy => 250 + BonusEnergy;
-
-        [NotMapped]
         private double ScorePoints
         {
             get => ToPoints(Score, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // ln((1 - x / 5.1) / -0.0015
@@ -110,8 +90,7 @@ namespace ForumCrawler
         }
 
         private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log(1 - value / (max + epsilon)) / -multiplier; 
-        private static double ToValue(double points, double max, double epsilon, double multiplier) => Math.Max(0, Math.Min(max, (max + epsilon) * (1 - Math.Exp(-multiplier * points)))); 
-
+        private static double ToValue(double points, double max, double epsilon, double multiplier) => Math.Max(0, Math.Min(max, (max + epsilon) * (1 - Math.Exp(-multiplier * points))));
 
 
         [NotMapped]
@@ -139,15 +118,12 @@ namespace ForumCrawler
                 return new ScoreData
                 {
                     Score = Score,
+                    Gems = Gems,
                     BoostLevel = GetBoostLevel(),
                     BonusScore = BonusScore,
-                    BonusEnergy = BonusEnergy
                 };
             }
         }
-
-        [NotMapped]
-        public TimeSpan NextEnergy => TimeSpan.FromSeconds(288 * (1 - (Energy % 1)));
 
         [NotMapped]
         public bool IsPremium { get; private set; }
@@ -189,20 +165,6 @@ namespace ForumCrawler
             }
 
             UpdateDecay();
-            UpdateEnergy();
-        }
-
-        private void UpdateEnergy()
-        {
-            var time = DateTime.UtcNow;
-            var timeSinceLastEnergy = time - (LastEnergy ?? default);
-            var energyGenerated = timeSinceLastEnergy.TotalSeconds / 288;
-            Energy = Math.Min(MaxEnergy, Energy + energyGenerated);
-            LastEnergy = time;
-            if (energyGenerated < 0)
-            {
-                Console.WriteLine($"{Energy}, {energyGenerated}");
-            }
         }
 
         private double SumInRange(double minEcl, double maxInc)
@@ -269,11 +231,12 @@ namespace ForumCrawler
             if (target.Score - this.Score > 1) throw new Exception("The target's score is over the maximum allowed amount (1.0).");
 
             var efficiency = GetEfficiency(target);
-            if (this.Energy < 25) throw new Exception($"An upvote costs 25 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
-            this.Energy -= 25;
+            if (this.Gems < 1) throw new Exception($"An upvote costs 1 gem, which you currently do not have.");
+            this.Gems -= 1;
 
             var lowScoreFactor = target.Score < 2 ? 3 : 1;
             target.ScorePoints += 5 * efficiency * lowScoreFactor;
+            target.Boosts[this.UserId] = DateTime.UtcNow;
 
             return efficiency;
         }
@@ -281,11 +244,27 @@ namespace ForumCrawler
         public double Downvote(ScoreUser target)
         {
             var efficiency = GetEfficiency(target);
-            if (this.Energy < 25) throw new Exception($"A downvote costs 50 energy! You currently have __**{Math.Floor(this.Energy)}**__/{this.MaxEnergy} energy.");
-            this.Energy -= 50;
+            if (this.Gems < 1) throw new Exception($"A downvote costs 1 gem, which you currently do not have.");
+            this.Gems -= 1;
             target.ScorePoints -= 5 * efficiency;
+            target.DownBoosts[this.UserId] = DateTime.UtcNow;
 
             return efficiency;
+        }
+
+        public int Daily(ScoreUser target)
+        {
+            var daysSinceLastDaily = DateTime.UtcNow.Date - (this.LastDaily ?? default);
+            var cooldown = TimeSpan.FromDays(1) - daysSinceLastDaily;
+            if (cooldown.TotalSeconds > 0) throw new Exception($"You have already used your daily today. Come back in {cooldown.ToHumanReadableString()}.");
+            
+            var isSelfBonus = this.UserId == target.UserId ? 0 : 1;
+            var amount = Math.Max(2, this.ScoreData.Class + isSelfBonus);
+
+            this.LastDaily = DateTime.UtcNow.Date;
+            target.Gems += amount;
+
+            return amount;
         }
 
         private double GetEfficiency(ScoreUser target)
@@ -311,12 +290,13 @@ namespace ForumCrawler
     public class ScoreData
     {
         public double Score { get; set; } = 1;
+        public double Gems { get; set; }
         public double BoostLevel { get; set; }
         public double BonusScore { get; set; }
-        public int BonusEnergy { get; set; }
         public double ScoreAfterBoost => Score + BonusScore;
+        public int Class => (int)Math.Truncate(ScoreLevel);
 
-        public string Class => ToRoman((int)Math.Truncate(ScoreLevel));
+        public string ClassString => ToRoman(Class);
 
         public double ScoreLevel => Math.Truncate(Math.Round(ScoreAfterBoost * 1000) / 100) / 10;
 

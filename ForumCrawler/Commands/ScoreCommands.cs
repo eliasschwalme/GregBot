@@ -107,7 +107,7 @@ namespace DiscordSocialScore
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString).ToString() + $" **Score:** {score.Score:F3}{boostStr}\n" +
-                $":zap: **Energy:** {Math.Floor(score.Energy)}/{score.MaxEnergy} (more in {score.NextEnergy:m\\:ss})\n" +
+                $":gem: **Gems:** {score.Gems})\n" +
                 $":rocket: **Inertia:** {Math.Round(score.Inertia * 100)}%").Build());
         }
 
@@ -123,18 +123,6 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s score to {score:F3}.");
         }
 
-        [Command("energy set"), RequireRole(DiscordSettings.DiscordServerOwner)]
-        public async Task SetEnergy(IUser user, double value)
-        {
-            if (user == null)
-            {
-                throw new Exception("Invalid user specified!");
-            }
-
-            var energy = Math.Floor(await Score.SetEnergyAsync(Context.Client, user.Id, value));
-            await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s energy to {energy}.");
-        }
-
         [Command("inertia set"), RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task SetInertia(IUser user, double value)
         {
@@ -147,6 +135,14 @@ namespace DiscordSocialScore
             await ReplyAsync($"Set {MentionUtils.MentionUser(user.Id)}'s inertia to {inertia}%.");
         }
 
+        [Command("preview daily")]
+        public async Task Daily(IGuildUser targetUser)
+        {
+            var (scoreData, amount) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
+
+            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount} daily gems. They now have {scoreData.Gems} in total.");
+        }
+
         [Command("up")]
         public async Task UpUser(IGuildUser targetUser)
         {
@@ -157,7 +153,7 @@ namespace DiscordSocialScore
 
             if (scoreData.BonusScore != oldScoreData.BonusScore)
             {
-                await ReplyAsync($"{MentionUtils.MentionUser(targetUser.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score and +{scoreData.BonusEnergy} bonus max energy.");
+                await ReplyAsync($"{MentionUtils.MentionUser(targetUser.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score.");
             }
         }
 
@@ -189,11 +185,16 @@ namespace DiscordSocialScore
         }
 
         [Command("confirm"), RequireChannel(DiscordSettings.UnverifiedChannel), Priority(1)]
-        public async Task Confirm() => await Confirm((SocketGuildUser)Context.User);
+        public async Task Confirm()
+        {
+            await Confirm((SocketGuildUser)Context.User);
+        }
 
         [Command("confirm"), RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
-        public async Task Confirm(SocketGuildUser user) => await SocialScoreWatcher.UpdateUserAsync(Context.Client, user, await Score.GetScoreDataAsync(Context.Client, user.Id), true);
-
+        public async Task Confirm(SocketGuildUser user)
+        {
+            await SocialScoreWatcher.UpdateUserAsync(Context.Client, user, await Score.GetScoreDataAsync(Context.Client, user.Id), true);
+        }
 
         private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
 

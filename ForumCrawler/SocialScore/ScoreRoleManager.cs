@@ -57,7 +57,7 @@ namespace DiscordSocialScore
         }
 
         public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData) {
-            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.Class} members", permissions: GetClassPermissions(), isHoisted: true);
+            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.ClassString} members", permissions: GetClassPermissions(), isHoisted: true);
         }
 
         public static GuildPermissions GetClassPermissions() {
