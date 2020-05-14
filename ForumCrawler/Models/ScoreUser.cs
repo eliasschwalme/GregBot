@@ -183,7 +183,7 @@ namespace ForumCrawler
             var inertiaDecay = inertiaDecayRate * ticks;
             var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
             this.Inertia -= inertiaDecay;
-            if (this.Inertia < 1.0) this.Inertia = 1;
+            if (this.Inertia < 0.0) this.Inertia = 0;
 
 
             if (Score > 1.0)
