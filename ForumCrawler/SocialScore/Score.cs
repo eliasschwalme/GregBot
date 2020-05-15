@@ -42,9 +42,9 @@ namespace DiscordSocialScore
 
             using (var context = new DatabaseContext())
             {
-                var user1 = Database.GetOrCreateScoreUserAsync(context, client, targetUserId);
-                var user2 = Database.GetOrCreateScoreUserAsync(context, client, invokerUserId);
-                var res = callback(await user1, await user2);
+                var user1 = await Database.GetOrCreateScoreUserAsync(context, client, targetUserId);
+                var user2 = await Database.GetOrCreateScoreUserAsync(context, client, invokerUserId);
+                var res = callback(user1, user2);
                 await context.SaveChangesAsync();
                 return res;
             }
@@ -106,11 +106,15 @@ namespace DiscordSocialScore
 
         public static async Task SwapUsers(DiscordSocketClient client, ulong user1Id, ulong user2Id)
         {
-            await WithTargetAndInvokerAsync(client, user1Id, user2Id, (user1, user2) =>
+            using (var context = new DatabaseContext())
             {
+                var user1 = await Database.GetOrCreateScoreUserAsync(context, client, user1Id);
+                var user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
                 ScoreUser.SwapUsers(user1, user2);
-                return 0;
-            });
+                context.Entry(user1).State = System.Data.Entity.EntityState.Added;
+                context.Entry(user2).State = System.Data.Entity.EntityState.Added;
+                context.SaveChanges();
+            };
         }
 
         public static async Task<ScoreData> CreditActivityScoreAsync(DiscordSocketClient client, ulong activityUserId)
