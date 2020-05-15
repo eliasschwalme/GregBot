@@ -89,7 +89,8 @@ namespace ForumCrawler
             set => Inertia = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
-        private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log(1 - value / (max + epsilon)) / -multiplier; 
+        private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log(1 - value / (max + epsilon)) / -multiplier;
+
         private static double ToValue(double points, double max, double epsilon, double multiplier) => Math.Max(0, Math.Min(max, (max + epsilon) * (1 - Math.Exp(-multiplier * points))));
 
 
@@ -273,6 +274,20 @@ namespace ForumCrawler
             target.Gems += amount;
 
             return amount;
+        }
+
+        internal void SendGems(ScoreUser target, int amount)
+        {
+            DeductGems(amount);
+            target.Gems += amount;
+        }
+
+        private void DeductGems(int amount)
+        {
+            if (amount < 1) throw new Exception("Amount cannot be smaller than 1.");
+            if (this.Gems < amount)
+                throw new Exception("You don't have that many gems.");
+            this.Gems -= amount;
         }
 
         private double GetEfficiency(ScoreUser target)

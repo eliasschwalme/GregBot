@@ -3,11 +3,12 @@ using Discord.WebSocket;
 using ForumCrawler;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 
-namespace DiscordSocialScore
+namespace ForumCrawler
 {
     public static class Score
     {
@@ -54,7 +55,8 @@ namespace DiscordSocialScore
         {
             return await WithTargettedScoreCommand("g!daily", client, targetUserId, invokerUserId, (target, invoker) =>
             {
-                return (target.ScoreData, invoker.Daily(target));
+                var increase = invoker.Daily(target);
+                return (target.ScoreData, increase);
             });
         }
 
@@ -62,15 +64,26 @@ namespace DiscordSocialScore
         {
             return await WithTargettedScoreCommand("g!up", client, targetUserId, invokerUserId, (target, upvoter) =>
             {
-                return (target.ScoreData, upvoter.Upvote(target));
+                var change = upvoter.Upvote(target);
+                return (target.ScoreData, change);
             });
         }
 
         public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
         {
-            return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, upvoter) =>
+            return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, downvoter) =>
             {
-                return (target.ScoreData, upvoter.Downvote(target));
+                var change = downvoter.Downvote(target);
+                return (target.ScoreData, change);
+            });
+        }
+
+        internal static async Task<(ScoreData, ScoreData)> SendGems(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, int amount)
+        {
+            return await WithTargettedScoreCommand("g!send gem", client, targetUserId, invokerUserId, (target, sender) =>
+            {
+                sender.SendGems(target, amount);
+                return (target.ScoreData, sender.ScoreData);
             });
         }
 
@@ -106,15 +119,21 @@ namespace DiscordSocialScore
 
         public static async Task SwapUsers(DiscordSocketClient client, ulong user1Id, ulong user2Id)
         {
+            ScoreUser user1, user2;
             using (var context = new DatabaseContext())
             {
-                var user1 = await Database.GetOrCreateScoreUserAsync(context, client, user1Id);
-                var user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
-                ScoreUser.SwapUsers(user1, user2);
-                context.Entry(user1).State = System.Data.Entity.EntityState.Added;
-                context.Entry(user2).State = System.Data.Entity.EntityState.Added;
-                context.SaveChanges();
+                user1 = await Database.GetOrCreateScoreUserAsync(context, client, user1Id);
+                user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
             };
+            ScoreUser.SwapUsers(user1, user2);
+            using (var context = new DatabaseContext())
+            {
+                context.ScoreUsers.Attach(user1);
+                context.ScoreUsers.Attach(user2);
+                context.Entry(user1).State = System.Data.Entity.EntityState.Modified;
+                context.Entry(user2).State = System.Data.Entity.EntityState.Modified;
+                context.SaveChanges();
+            }
         }
 
         public static async Task<ScoreData> CreditActivityScoreAsync(DiscordSocketClient client, ulong activityUserId)

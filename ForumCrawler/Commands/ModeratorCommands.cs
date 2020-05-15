@@ -2,9 +2,6 @@
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-
-using DiscordSocialScore;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +11,13 @@ namespace ForumCrawler.Commands
 {
     public class RoleCommands : ModuleBase<SocketCommandContext>
     {
+        [Command("halt"), RequireRole(DiscordSettings.DiscordStaff)]
+        public async Task Halt()
+        {
+            await ReplyAsync("Goodbye.");
+            Environment.Exit(0);
+        }
+
         [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task ChangeNickname([Remainder] string nick)
         {
@@ -23,8 +27,6 @@ namespace ForumCrawler.Commands
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");
         }
-
-
 
         [Group("mod"), Summary("These are moderator-specific commands."), RequireRole(DiscordSettings.DiscordStaff)]
         public class ModeratorCommands : ModuleBase<SocketCommandContext>

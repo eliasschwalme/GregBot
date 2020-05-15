@@ -115,7 +115,7 @@ namespace DiscordSocialScore
         public async Task Transfer(IUser user1, IUser user2)
         {
             await Score.SwapUsers(Context.Client, user1.Id, user2.Id);
-            await ReplyAsync($"Swapped {MentionUtils.MentionUser(user1.Id)}'s user data with {MentionUtils.MentionUser(user1.Id)}'s.");
+            await ReplyAsync($"Swapped {MentionUtils.MentionUser(user1.Id)}'s user data with {MentionUtils.MentionUser(user2.Id)}'s.");
         }
 
         [Command("preview daily"), RequireChannel(DiscordSettings.BotCommandsChannel)]
@@ -156,6 +156,15 @@ namespace DiscordSocialScore
             var (scoreData, efficiency) = await Score.DownvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
 
             await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a downvote. Their score decreased by {oldScoreData.Score - scoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
+        }
+
+        [Command("send gem"), RequireChannel(DiscordSettings.BotCommandsChannel)]
+        public async Task SendGems(IGuildUser targetUser, int amount)
+        {
+            var (targetData, senderData) = await Score.SendGems(Context.Client, targetUser.Id, Context.User.Id, amount);
+
+            await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} sent {MentionUtils.MentionUser(targetUser.Id)} {amount} gems. " +
+                $"They now have {targetData.Gems} in total. You now have {senderData.Gems} gems.");
         }
 
         [Command("top"), RequireChannel(DiscordSettings.BotCommandsChannel)]
