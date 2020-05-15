@@ -21,7 +21,7 @@
 
 using System.Collections.Generic;
 
-namespace DiffMatchPatch
+namespace ForumCrawler
 {
     internal static class CompatibilityExtensions
     {

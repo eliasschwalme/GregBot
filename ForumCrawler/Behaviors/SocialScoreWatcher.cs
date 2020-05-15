@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.WebSocket;
-using ForumCrawler;
-using ForumCrawler.Helpers;
 
-namespace DiscordSocialScore
+namespace ForumCrawler
 {
     public static class SocialScoreWatcher
     {

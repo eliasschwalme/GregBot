@@ -1,4 +1,4 @@
-namespace DiffMatchPatch
+namespace ForumCrawler
 {
     public enum Operation
     {

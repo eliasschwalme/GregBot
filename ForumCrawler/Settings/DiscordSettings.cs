@@ -6,7 +6,6 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using ForumCrawler.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ForumCrawler

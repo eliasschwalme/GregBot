@@ -1,4 +1,4 @@
-﻿namespace ForumCrawler.Models
+﻿namespace ForumCrawler
 {
     public class RevisedStarboardPost
     {

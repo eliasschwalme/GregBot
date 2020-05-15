@@ -116,11 +116,4 @@ namespace ForumCrawler
             return DiscordSettings.GovernanceConfigs[guild.Id];
         }
     }
-
-    public enum SuggestionType
-    {
-        Draft,
-        RFC,
-        Vote
-    }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Data.Entity;
-using ForumCrawler.Models;
 
 namespace ForumCrawler
 {

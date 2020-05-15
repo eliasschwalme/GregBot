@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.WebSocket;
-using ForumCrawler.Helpers;
 
 namespace ForumCrawler
 {

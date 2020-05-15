@@ -4,9 +4,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using ForumCrawler;
 
-namespace DiscordSocialScore
+namespace ForumCrawler
 {
     [Group]
     public class ScoreCommands : ModuleBase<SocketCommandContext>

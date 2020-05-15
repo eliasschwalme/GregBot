@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace ForumCrawler.Commands
+namespace ForumCrawler
 {
     public class ReportCommand : ModuleBase<SocketCommandContext>
     {

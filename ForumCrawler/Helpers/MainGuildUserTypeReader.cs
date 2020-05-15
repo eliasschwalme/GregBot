@@ -7,12 +7,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace ForumCrawler.Helpers
+namespace ForumCrawler
 {
-    internal interface IMainGuildUser
-    {
-    }
-
     internal class MainGuildUserTypeReader<T> : TypeReader where T : class, IUser
     {
         public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input,

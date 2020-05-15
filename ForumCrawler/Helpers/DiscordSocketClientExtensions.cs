@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord.WebSocket;
 
-namespace ForumCrawler.Helpers
+namespace ForumCrawler
 {
     public static class DiscordSocketClientExtensions
     {

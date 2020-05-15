@@ -5,27 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using ForumCrawler.Helpers;
-using ForumCrawler.Models;
 
 namespace ForumCrawler
 {
-    /// <summary>
-    ///     Represents criteria that may or may not make a channel eligible for starboarding.
-    /// </summary>
-    /// <param name="channel">
-    ///     The channel in question to determine if it is qualified
-    ///     to be pinned to the designated starboard.
-    /// </param>
-    public delegate bool ChannelQualifier(ISocketMessageChannel channel);
-
-    /// <summary>
-    ///     Determines if an emote is qualified to represent the action of starboarding
-    ///     a given post.
-    /// </summary>
-    /// <param name="emote">The emote in question.</param>
-    public delegate bool EmoteQualifier(IEmote emote);
-
     public class StarboardWatcher
     {
         private readonly EmoteQualifier _adminQualifier;
@@ -357,57 +339,6 @@ namespace ForumCrawler
             {
                 return obj == null ? default : obj.Id.GetHashCode();
             }
-        }
-    }
-
-
-    public static class StarboardWatcherConfigurator
-    {
-        public static StarboardWatcher GeneralStarboard(DiscordSocketClient client)
-        {
-            var guild = client.GetGuild(DiscordSettings.GuildId);
-            var starboard = new StarboardWatcher
-            (
-                client,
-                guild,
-                guild.GetTextChannel(DiscordSettings.StarboardChannel),
-                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
-                WootQualifier,
-                10
-            );
-
-            return starboard;
-        }
-
-        public static StarboardWatcher StaffVoteStarboard(DiscordSocketClient client)
-        {
-            var guild = client.GetGuild(DiscordSettings.DSGuildId);
-            var starboard = new StarboardWatcher
-            (
-                client,
-                guild,
-                guild.GetTextChannel(DiscordSettings.DSVoteboardChannel), // #vote-board
-                channel => channel.Id == DiscordSettings.DSModerationChannel, // #staff
-                VoteQualifier,
-                1
-            );
-
-            return starboard;
-        }
-
-        private static bool WootQualifier(IEmote emote)
-        {
-            return emote.Name == "woot";
-        }
-
-        private static bool VoteQualifier(IEmote emote)
-        {
-            return emote.Name == "👍" || emote.Name == "👎";
-        }
-
-        private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
-        {
-            return channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);
         }
     }
 }

@@ -301,12 +301,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Behaviors\ChannelQualifier.cs" />
+    <Compile Include="Behaviors\CoronaData.cs" />
+    <Compile Include="Behaviors\CoronaLiveData.cs" />
     <Compile Include="Behaviors\CoronaWatcher.cs" />
-    <Compile Include="Behaviors\GorvernanceVoteWatcher.cs" />
+    <Compile Include="Behaviors\EmoteQualifier.cs" />
+    <Compile Include="Behaviors\GovernanceVoteWatcher.cs" />
     <Compile Include="Behaviors\EditWatcher.cs" />
+    <Compile Include="Behaviors\ICoronaEntry.cs" />
     <Compile Include="Behaviors\MuteWatcher.cs" />
     <Compile Include="Behaviors\QuickReportWatcher.cs" />
     <Compile Include="Behaviors\StarboardWatcher.cs" />
+    <Compile Include="Behaviors\StarboardWatcherConfigurator.cs" />
     <Compile Include="Behaviors\VoiceChat.cs" />
     <Compile Include="Commands\Helpers\RequireChannelAttribute.cs" />
     <Compile Include="Commands\Helpers\RequireEitherRoleAttribute.cs" />
@@ -314,8 +320,13 @@
     <Compile Include="Commands\Helpers\RequireRoleParameterAttribute.cs" />
     <Compile Include="Commands\GovernanceCommandsBase.cs" />
     <Compile Include="Commands\Helpers\RequireBotCommandsAttribute.cs" />
-    <Compile Include="Commands\ModeratorCommands.cs" />
+    <Compile Include="Commands\RoleCommands.cs" />
+    <Compile Include="Commands\MuteCommands.cs" />
     <Compile Include="Commands\ReportCommand.cs" />
+    <Compile Include="Commands\RFCCommands.cs" />
+    <Compile Include="Commands\SharedGovernanceCommands.cs" />
+    <Compile Include="Commands\SuggestionCommands.cs" />
+    <Compile Include="Commands\WarningCommands.cs" />
     <Compile Include="Helpers\Crawler.cs" />
     <Compile Include="Helpers\DiscordSocketClientExtensions.cs" />
     <Compile Include="Helpers\DMP\Diff.cs" />
@@ -323,6 +334,8 @@
     <Compile Include="Helpers\DMP\diff_match_patch.cs" />
     <Compile Include="Helpers\DiscordAvatar.cs" />
     <Compile Include="Commands\Helpers\IgnoreCaseEnumTypeReader.cs" />
+    <Compile Include="Helpers\RoleCacheProvider.cs" />
+    <Compile Include="Helpers\SuggestionType.cs" />
     <Compile Include="Helpers\UlongLongExtensions.cs" />
     <Compile Include="Helpers\MainGuildUserTypeReader.cs" />
     <Compile Include="Helpers\UserExtensions.cs" />
@@ -368,6 +381,7 @@
     </Compile>
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RevisedStarboardPost.cs" />
+    <Compile Include="Models\ScoreData.cs" />
     <Compile Include="Models\StarboardInformation.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.cs" />
     <Compile Include="Migrations\201902251104518_AddGovernanceVotes.Designer.cs">
