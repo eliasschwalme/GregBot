@@ -124,14 +124,14 @@ namespace ForumCrawler
                 $"Swapped {MentionUtils.MentionUser(user1.Id)}'s user data with {MentionUtils.MentionUser(user2.Id)}'s.");
         }
 
-        [Command("preview daily")]
+        [Command("daily")]
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily()
         {
             await Daily((IGuildUser)Context.User);
         }
 
-        [Command("preview daily")]
+        [Command("daily")]
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily(IGuildUser targetUser)
         {
@@ -218,6 +218,33 @@ namespace ForumCrawler
         {
             await SocialScoreWatcher.UpdateUserAsync(Context.Client, user,
                 await Score.GetScoreDataAsync(Context.Client, user.Id), true);
+        }
+
+        [Command("alt set")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(0)]
+        public async Task Alt(IUser user, IUser user2)
+        {
+            await Score.MarkAltOf(Context.Client, user.Id, user2.Id);
+            await ReplyAsync($"Marked {user.Mention} as an alt of {user2.Mention}.");
+        }
+
+        [Command("alt")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(1)]
+        public async Task Alt(IUser user)
+        {
+            var scoreData = await Score.GetScoreDataAsync(Context.Client, user.Id);
+            await ReplyAsync($"{user.Mention} is an alt of {(scoreData.AltOf.HasValue ? MentionUtils.MentionUser(scoreData.AltOf.Value) : "nobody")}.");
+        }
+
+        [Command("alt unset")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(0)]
+        public async Task UnAlt(IUser user)
+        {
+            await Score.MarkAltOf(Context.Client, user.Id, null);
+            await ReplyAsync($"Marked {user.Mention} as an alt of nobody.");
         }
 
         private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user)

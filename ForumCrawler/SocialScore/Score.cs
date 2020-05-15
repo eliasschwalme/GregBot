@@ -170,5 +170,15 @@ namespace ForumCrawler
                 }
             }
         }
+
+        public static async Task MarkAltOf(DiscordSocketClient client, ulong userId, ulong? value)
+        {
+            using (var context = new DatabaseContext())
+            {
+                var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
+                user.AltOf = value;
+                await context.SaveChangesAsync();
+            }
+        }
     }
 }

@@ -191,11 +191,14 @@ namespace ForumCrawler
 
             var result2 = await NextMessageAsync(GetCriteria(channel), TimeSpan.FromMinutes(5));
             await tempMsg2.DeleteAsync();
-            await result2?.DeleteAsync();
-
-            if (result2?.Content.ToLowerInvariant() == "submit")
+            if (result2 != null)
             {
-                return message;
+                await result2.DeleteAsync();
+
+                if (result2?.Content.ToLowerInvariant() == "submit")
+                {
+                    return message;
+                }
             }
 
             await message.DeleteAsync();
