@@ -15,22 +15,6 @@ namespace ForumCrawler
 
         public static event Action<ulong, ScoreData> OnUpdate;
 
-        public static async Task<List<(IGuildUser, ScoreUser)>> GetUsersUserHasBoosted(IGuild guild, IEntity<ulong> entityUser)
-        {
-            var boosting = await Database.UNSAFE_GetScoreUsersUserIsBoosting(user => user.Id == (long)entityUser.Id);
-
-            var guildUsers = new List<(IGuildUser, ScoreUser)>();
-
-            foreach (var boostingUser in boosting)
-            {
-                var user = await guild.GetUserAsync(boostingUser.UserId);
-                if (user == null)  continue;
-
-                guildUsers.Add((user, boostingUser));
-            }
-
-            return guildUsers;
-        }
 
         private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
@@ -108,6 +92,18 @@ namespace ForumCrawler
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
                 .ToList();
+        }
+        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostingsAsync(DiscordSocketClient client, ulong userId)
+        {
+            using (var context = new DatabaseContext())
+            {
+                return (await Database.GetAllScoreUsersAsync(context, client).ToListAsync())
+                    .Select(u => (Key: u.UserId, BoostsLeft: u.GetBoostsLeft()))
+                    .Where(u => u.BoostsLeft.ContainsKey(userId))
+                    .Select(u => (u.Key, TimeLeft: u.BoostsLeft[userId]))
+                    .OrderByDescending(boost => boost.TimeLeft)
+                    .ToList();
+            }
         }
 
         public static async Task SwapUsers(DiscordSocketClient client, ulong user1Id, ulong user2Id)

@@ -156,10 +156,10 @@ namespace ForumCrawler
             return boostDate > downVoteDate ? boostDate : downVoteDate;
         }
 
-        public void Update(DiscordSocketClient client, ulong userId)
+        public void Update(DiscordSocketClient client)
         {
             var guild = client.GetGuild(DiscordSettings.GuildId);
-            var guildUser = guild.GetUser(userId);
+            var guildUser = guild.GetUser(this.UserId);
             if (guildUser != null)
             {
                 IsPremium = guildUser.PremiumSince.HasValue;

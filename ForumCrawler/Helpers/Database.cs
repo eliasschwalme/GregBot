@@ -2,7 +2,6 @@
 using Discord.WebSocket;
 
 using EntityFramework.Extensions;
-
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -164,28 +163,10 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<IEnumerable<ScoreUser>> UNSAFE_GetScoreUsersUserIsBoosting(Expression<Func<ScoreUser, bool>> userPredicate)
-        {
-            using (var context = new DatabaseContext())
-            {
-                var user = await context.ScoreUsers
-                    .FirstAsync(userPredicate)
-                    ;
-
-                var users = await context.ScoreUsers
-                    .ToListAsync();
-
-                var query = users
-                    .Where(u => u.Boosts.Keys.Contains(user.UserId));
-
-                return query;
-            }
-        }
-
         public static IAsyncEnumerable<ScoreUser> GetAllScoreUsersAsync(DatabaseContext context, DiscordSocketClient client)
         {
             return context.ScoreUsers.ToAsyncEnumerable().Select((scoreUser) => {
-                scoreUser.Update(client, scoreUser.UserId);
+                scoreUser.Update(client);
                 return scoreUser;
             });
         }
@@ -216,7 +197,7 @@ namespace ForumCrawler
                 context.ScoreUsers.AddOrUpdate(res);
                 await context.SaveChangesAsync();
             }
-            res.Update(client, userId);
+            res.Update(client);
             return res;
         }
 

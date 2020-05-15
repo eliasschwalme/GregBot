@@ -54,44 +54,24 @@ namespace DiscordSocialScore
             await ReplyAsync($"{user.GetName()} is being boosted by{boostString}");
         }
 
-        [Command("boosting"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(2)]
-        public async Task GetUsersUserIsBoosting()
+        [Command("boosting"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(0)]
+        public async Task GetMyBoosting()
         {
-            var boosting = await Score.GetUsersUserHasBoosted(Context.Client.GetGuild(DiscordSettings.GuildId), Context.User);
+            await GetBoosting(Context.User as IGuildUser);
+        }
 
-            switch (boosting.Count)
-            {
-                case 0:
-                {
-                    await ReplyAsync("You are boosting nobody.");
-                }
-                break;
-
-                case 1:
-                {
-                    var userId = boosting[0].Item1.Id;
-                    var boostTime = boosting[0].Item2.Boosts[Context.User.Id];
-
-                    await ReplyAsync($"You are boosting `{GetHistoryAsync((userId, boostTime))}`");
-                }
-                break;
-
-                default:
-                {
-                    var strb = new StringBuilder();
-
-                    foreach (var user in boosting.OrderByDescending(x => x.Item2.Boosts[Context.User.Id]))
-                    {
-                        var userId = user.Item1.Id;
-                        var boostTime = user.Item2.Boosts[Context.User.Id];
-
-                        strb.AppendLine(GetHistoryAsync((userId, boostTime)));
-                    }
-
-                    await ReplyAsync($"You are boosting: ```yml\n{strb}```");
-                }
-                break;
-            }
+        [Command("boosting"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
+        public async Task GetBoosting(IGuildUser user)
+        {
+            var boostings = await Score.GetBoostingsAsync(Context.Client, user.Id); 
+            var boostingString = boostings.Count == 0
+             ? " nobody."
+             : boostings.Count == 1
+                 ? $" {GetBoostString(boostings[0])}."
+                 : ": ```yml\n" +
+                     string.Join("\n", boostings.Select(a => $"- {GetBoostString(a)}")) + "\n" +
+                     "```";
+            await ReplyAsync($"{user.GetName()} is boosting{boostingString}");
         }
 
         [Command("stats"), Alias("score"), Priority(0), RequireChannel(DiscordSettings.BotCommandsChannel)]
@@ -199,7 +179,10 @@ namespace DiscordSocialScore
 
         private string GetHistoryAsync((ulong Key, DateTimeOffset LastBoost) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ (DateTimeOffset.UtcNow - user.LastBoost).ToHumanReadableString()} ago)";
 
-        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user) => $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
+        private string GetBoostString((ulong Key, TimeSpan TimeLeft) user)
+        {
+            return $"{ Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(user.Key)?.GetName() ?? $"<{user.Key}>"} ({ user.TimeLeft.ToHumanReadableString()} left)";
+        }
 
         private string GetLeaderboardPlayerString(ScoreUser scoreUser, int position)
         {
