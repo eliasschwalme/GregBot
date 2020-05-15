@@ -78,12 +78,12 @@ namespace ForumCrawler
                 var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
                 while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
                 {
-                    state.LastTick.AddDays(WarningExpiryDays);
+                    state.LastTick = state.LastTick.AddDays(WarningExpiryDays);
                     state.Warnings--;
                 }
                 while (state.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
                 {
-                    state.LastTick.AddDays(StrikeExpiryDays);
+                    state.LastTick = state.LastTick.AddDays(StrikeExpiryDays);
                     state.Strikes--;
                 }
             }
@@ -99,12 +99,12 @@ namespace ForumCrawler
                 var duration = new Func<TimeSpan>(() => timestamp - state.LastTick);
                 while (state.Warnings > 0 && duration().TotalDays >= WarningExpiryDays)
                 {
-                    state.LastTick.AddDays(WarningExpiryDays);
+                    state.LastTick = state.LastTick.AddDays(WarningExpiryDays);
                     state.Warnings--;
                 }
                 while (state.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
                 {
-                    state.LastTick.AddDays(StrikeExpiryDays);
+                    state.LastTick = state.LastTick.AddDays(StrikeExpiryDays);
                     state.Strikes--;
                 }
             }
@@ -126,7 +126,7 @@ namespace ForumCrawler
             {
                 while (state.Warnings > 0 && duration().TotalDays >= GetWarningExpiryDays(state))
                 {
-                    state.LastTick.AddDays(WarningExpiryDays);
+                    state.LastTick = state.LastTick.AddDays(WarningExpiryDays);
                     state.Warnings--;
                 }
             }
@@ -134,7 +134,7 @@ namespace ForumCrawler
             {
                 while (state.Strikes > 0 && duration().TotalDays >= StrikeExpiryDays)
                 {
-                    state.LastTick.AddDays(StrikeExpiryDays + ProbationDays);
+                    state.LastTick = state.LastTick.AddDays(StrikeExpiryDays + ProbationDays);
                     state.Warnings++;
                     state.Strikes--;
                 }
