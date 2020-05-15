@@ -176,7 +176,7 @@ namespace ForumCrawler
             using (var context = new DatabaseContext())
             {
                 var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
-                user.AltOf = value;
+                user.AltOfUserId = value;
                 await context.SaveChangesAsync();
             }
         }

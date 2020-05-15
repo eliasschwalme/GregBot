@@ -379,6 +379,10 @@
     <Compile Include="Migrations\202005111946245_AddGemsRemoveEnergy.Designer.cs">
       <DependentUpon>202005111946245_AddGemsRemoveEnergy.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202005152243174_AddAlts.cs" />
+    <Compile Include="Migrations\202005152243174_AddAlts.Designer.cs">
+      <DependentUpon>202005152243174_AddAlts.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RevisedStarboardPost.cs" />
     <Compile Include="Models\ScoreData.cs" />
@@ -548,6 +552,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202005111946245_AddGemsRemoveEnergy.resx">
       <DependentUpon>202005111946245_AddGemsRemoveEnergy.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202005152243174_AddAlts.resx">
+      <DependentUpon>202005152243174_AddAlts.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>

@@ -120,7 +120,7 @@ namespace ForumCrawler
                     Gems = Gems,
                     BoostLevel = GetBoostLevel(),
                     BonusScore = BonusScore,
-                    AltOf = AltOf
+                    AltOf = AltOfUserId
                 };
             }
         }
@@ -270,12 +270,18 @@ namespace ForumCrawler
                 return cooldown;
             }
         }
+        public long? AltOfId { get; set; }
 
-        public ulong? AltOf { get; set; }
+        [NotMapped]
+        public ulong? AltOfUserId
+        {
+            get => (ulong?)AltOfId;
+            set => AltOfId = (long?)value;
+        }
 
         public int Daily(ScoreUser target)
         {
-            if (this.AltOf.HasValue || target.AltOf.HasValue)
+            if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
                 throw new Exception("Sorry, alts cannot send or receive gems.");
 
             if (this.DailyCooldown.HasValue) 
@@ -292,7 +298,7 @@ namespace ForumCrawler
 
         internal void SendGems(ScoreUser target, int amount)
         {
-            if (this.AltOf.HasValue || target.AltOf.HasValue)
+            if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
                 throw new Exception("Sorry, alts cannot send or receive gems.");
 
             DeductGems(amount);
@@ -309,7 +315,7 @@ namespace ForumCrawler
 
         private double GetEfficiency(ScoreUser target)
         {
-            if (this.AltOf.HasValue || target.AltOf.HasValue)
+            if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
                 throw new Exception("Sorry, alts cannot send or receive gems.");
             if (target.UserId == UserId) throw new Exception($"Sorry, voting yourself is not allowed!");
             if (this.Inertia < 0.095 || target.Inertia < 0.095) throw new Exception("Users with inertia lower than 10% cannot not send or receive votes.");
