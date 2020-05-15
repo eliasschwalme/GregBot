@@ -18,6 +18,16 @@ namespace ForumCrawler.Commands
             Environment.Exit(0);
         }
 
+        [Command("rolecleanup"), RequireRole(DiscordSettings.DiscordStaff)]
+        public async Task RoleCleanup()
+        {
+            foreach (var r in Context.Guild.Roles.Where(r => r.Name == "new role"))
+            {
+                await r.DeleteAsync();
+            }
+            await ReplyAsync("Role cleanup complete.");
+        }
+
         [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task ChangeNickname([Remainder] string nick)
         {
