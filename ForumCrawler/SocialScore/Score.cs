@@ -34,13 +34,6 @@ namespace ForumCrawler
 
         private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
-            var upvoterGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(invokerUserId);
-            var targetGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(targetUserId);
-            if ((DateTimeOffset.UtcNow - upvoterGuildUser.JoinedAt)?.TotalDays < 3)
-                throw new Exception($"You have recently joined this server and may not use {command} yet!");
-            if ((DateTimeOffset.UtcNow - targetGuildUser.JoinedAt)?.TotalDays < 3)
-                throw new Exception($"The target has recently joined this server and may not receive {command} yet!");
-
             using (var context = new DatabaseContext())
             {
                 var user1 = await Database.GetOrCreateScoreUserAsync(context, client, targetUserId);
