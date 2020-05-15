@@ -1,10 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ForumCrawler;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity.Migrations;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 
@@ -42,6 +41,7 @@ namespace ForumCrawler
             return await WithTargettedScoreCommand("g!up", client, targetUserId, invokerUserId, (target, upvoter) =>
             {
                 var change = upvoter.Upvote(target);
+                OnUpdate?.Invoke(target.UserId, target.ScoreData);
                 return (target.ScoreData, change);
             });
         }
@@ -51,6 +51,7 @@ namespace ForumCrawler
             return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, downvoter) =>
             {
                 var change = downvoter.Downvote(target);
+                OnUpdate?.Invoke(target.UserId, target.ScoreData);
                 return (target.ScoreData, change);
             });
         }
@@ -64,7 +65,7 @@ namespace ForumCrawler
             });
         }
 
-        public static async Task<ScoreUser> GetScoreUserAsync(DiscordSocketClient client, ulong userId)
+        private static async Task<ScoreUser> GetScoreUserAsync(DiscordSocketClient client, ulong userId)
         {
             using (var context = new DatabaseContext())
             {
@@ -139,19 +140,26 @@ namespace ForumCrawler
                 var user = await Database.GetOrCreateScoreUserAsync(context, client, activityUserId);
                 user.CreditActivity();
                 await context.SaveChangesAsync();
+                OnUpdate?.Invoke(user.UserId, user.ScoreData);
                 return user.ScoreData;
             }
 #endif
         }
 
-        public static async Task<List<ScoreUser>> UpdateDecays(DiscordSocketClient client)
+        public static async Task UpdateDecays(DiscordSocketClient client)
         {
             using (var context = new DatabaseContext())
             {
                 // this already calls update() on all useres
-                var users = await Database.GetAllScoreUsersAsync(context, client).ToListAsync();
+                var users = await Database.GetAllScoreUsersAsync(context, client)
+                    .Select(u => (u.UserId, u.ScoreData))
+                    .ToListAsync();
                 await context.SaveChangesAsync();
-                return users;
+
+                foreach (var user in users)
+                {
+                    OnUpdate?.Invoke(user.UserId, user.ScoreData);
+                }
             }
         }
     }

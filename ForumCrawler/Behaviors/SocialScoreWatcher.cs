@@ -34,11 +34,7 @@ namespace DiscordSocialScore
 
         private static async void OnHour(DiscordSocketClient client)
         {
-            var users = await Score.UpdateDecays(client);
-            foreach (var user in users) {
-                await OnScoreChangeAsync(client, user.UserId, user.ScoreData);
-            }
-
+            await Score.UpdateDecays(client);
             foreach (var guild in client.Guilds)
             {
                 var cache = CacheProvider.Get(guild);
