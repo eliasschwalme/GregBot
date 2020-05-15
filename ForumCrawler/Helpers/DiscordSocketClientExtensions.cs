@@ -1,6 +1,6 @@
-﻿using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 
 namespace ForumCrawler.Helpers
 {
@@ -13,6 +13,7 @@ namespace ForumCrawler.Helpers
                 client.Ready -= ActionHandler;
                 return callback();
             }
+
             client.Ready += ActionHandler;
         }
     }

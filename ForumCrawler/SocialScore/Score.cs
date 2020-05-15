@@ -1,20 +1,19 @@
-﻿using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
     public static class Score
     {
-
         public static event Action<ulong, ScoreData> OnUpdate;
 
 
-        private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
+        private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client,
+            ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
             using (var context = new DatabaseContext())
             {
@@ -26,7 +25,8 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreData, int)> DailyAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
+        public static async Task<(ScoreData, int)> DailyAsync(DiscordSocketClient client, ulong targetUserId,
+            ulong invokerUserId)
         {
             return await WithTargettedScoreCommand("g!daily", client, targetUserId, invokerUserId, (target, invoker) =>
             {
@@ -35,7 +35,8 @@ namespace ForumCrawler
             });
         }
 
-        public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
+        public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId,
+            ulong invokerUserId)
         {
             return await WithTargettedScoreCommand("g!up", client, targetUserId, invokerUserId, (target, upvoter) =>
             {
@@ -45,7 +46,8 @@ namespace ForumCrawler
             });
         }
 
-        public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId)
+        public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId,
+            ulong invokerUserId)
         {
             return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, downvoter) =>
             {
@@ -55,13 +57,15 @@ namespace ForumCrawler
             });
         }
 
-        internal static async Task<(ScoreData, ScoreData)> SendGems(DiscordSocketClient client, ulong targetUserId, ulong invokerUserId, int amount)
+        internal static async Task<(ScoreData, ScoreData)> SendGems(DiscordSocketClient client, ulong targetUserId,
+            ulong invokerUserId, int amount)
         {
-            return await WithTargettedScoreCommand("g!send gem", client, targetUserId, invokerUserId, (target, sender) =>
-            {
-                sender.SendGems(target, amount);
-                return (target.ScoreData, sender.ScoreData);
-            });
+            return await WithTargettedScoreCommand("g!send gem", client, targetUserId, invokerUserId,
+                (target, sender) =>
+                {
+                    sender.SendGems(target, amount);
+                    return (target.ScoreData, sender.ScoreData);
+                });
         }
 
         private static async Task<ScoreUser> GetScoreUserAsync(DiscordSocketClient client, ulong userId)
@@ -77,7 +81,8 @@ namespace ForumCrawler
             return (await GetScoreUserAsync(client, userId)).ScoreData;
         }
 
-        public static async Task<List<(ulong Key, DateTime LastBoost)>> GetHistoryAsync(DiscordSocketClient client, ulong userId)
+        public static async Task<List<(ulong Key, DateTime LastBoost)>> GetHistoryAsync(DiscordSocketClient client,
+            ulong userId)
         {
             return (await GetScoreUserAsync(client, userId)).Boosts
                 .Where(kv => (DateTime.UtcNow - kv.Value).TotalDays < 7)
@@ -86,14 +91,17 @@ namespace ForumCrawler
                 .ToList();
         }
 
-        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostsAsync(DiscordSocketClient client, ulong userId)
+        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostsAsync(DiscordSocketClient client,
+            ulong userId)
         {
             return (await GetScoreUserAsync(client, userId)).GetBoostsLeft()
                 .Select(kv => (kv.Key, TimeLeft: kv.Value))
                 .OrderByDescending(boost => boost.TimeLeft)
                 .ToList();
         }
-        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostingsAsync(DiscordSocketClient client, ulong userId)
+
+        public static async Task<List<(ulong Key, TimeSpan TimeLeft)>> GetBoostingsAsync(DiscordSocketClient client,
+            ulong userId)
         {
             using (var context = new DatabaseContext())
             {
@@ -113,7 +121,9 @@ namespace ForumCrawler
             {
                 user1 = await Database.GetOrCreateScoreUserAsync(context, client, user1Id);
                 user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
-            };
+            }
+
+            ;
             ScoreUser.SwapUsers(user1, user2);
 
             // EF does not let us change the primary key of an object 
@@ -122,8 +132,8 @@ namespace ForumCrawler
             {
                 context.ScoreUsers.Attach(user1);
                 context.ScoreUsers.Attach(user2);
-                context.Entry(user1).State = System.Data.Entity.EntityState.Modified;
-                context.Entry(user2).State = System.Data.Entity.EntityState.Modified;
+                context.Entry(user1).State = EntityState.Modified;
+                context.Entry(user2).State = EntityState.Modified;
                 context.SaveChanges();
             }
         }
@@ -133,7 +143,6 @@ namespace ForumCrawler
 #if DEBUG
             return await GetScoreDataAsync(client, activityUserId);
 #else
-
             using (var context = new DatabaseContext())
             {
                 var user = await Database.GetOrCreateScoreUserAsync(context, client, activityUserId);

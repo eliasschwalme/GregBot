@@ -6,8 +6,8 @@ namespace ForumCrawler
 {
     public class Mute
     {
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long Id { get; set; }
 
         [NotMapped]
@@ -17,8 +17,8 @@ namespace ForumCrawler
             set => Id = (long)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long IssuerUId { get; set; }
 
         [NotMapped]

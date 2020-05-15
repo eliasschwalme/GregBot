@@ -1,12 +1,9 @@
-﻿using Discord;
-using Discord.WebSocket;
-
-using ForumCrawler;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
@@ -33,10 +30,14 @@ namespace ForumCrawler
             return new Color(rAverage, gAverage, bAverage);
         }
 
-        public static async Task<IRole> GetScoreRoleForUserAsync(DiscordSocketClient client, RoleCache cache, ulong userId, ScoreData scoreData)
+        public static async Task<IRole> GetScoreRoleForUserAsync(DiscordSocketClient client, RoleCache cache,
+            ulong userId, ScoreData scoreData)
         {
             var mainGuildUser = client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
-            if (mainGuildUser == null) return await GetScoreRole(cache, scoreData);
+            if (mainGuildUser == null)
+            {
+                return await GetScoreRole(cache, scoreData);
+            }
 
             var specialRole = SpecialRoles.Find(kv => mainGuildUser.Roles.Any(r => r.Name == kv.Item1));
             return specialRole.Item1 == null
@@ -50,17 +51,21 @@ namespace ForumCrawler
             return await guild.CreateOrUpdateRoleAsync(scoreData.ShortScoreString, color: color);
         }
 
-        private static async Task<IRole> GetSpecialScoreRole(RoleCache guild, string specialRole, (Color, Color) specialColor, ScoreData scoreData)
+        private static async Task<IRole> GetSpecialScoreRole(RoleCache guild, string specialRole,
+            (Color, Color) specialColor, ScoreData scoreData)
         {
             var color = GetGradient(scoreData.ScoreLevel, specialColor.Item1, specialColor.Item2);
             return await guild.CreateOrUpdateRoleAsync($"{scoreData.ShortScoreString} ({specialRole})", color: color);
         }
 
-        public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData) {
-            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.ClassString} members", permissions: GetClassPermissions(), isHoisted: true);
+        public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData)
+        {
+            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.ClassString} members", GetClassPermissions(),
+                isHoisted: true);
         }
 
-        public static GuildPermissions GetClassPermissions() {
+        public static GuildPermissions GetClassPermissions()
+        {
             return new GuildPermissions(viewChannel: true);
         }
 
@@ -68,7 +73,7 @@ namespace ForumCrawler
         {
             var sortedRoles = guild.Roles.GetBotRoles()
                 .OrderBy(r => r.Name)
-                .Select((role, index) => new { role, index })
+                .Select((role, index) => new {role, index})
                 .Where(item => item.role.Position != item.index)
                 .Select(item => new ReorderRoleProperties(item.role.Id, item.index));
 
@@ -86,6 +91,9 @@ namespace ForumCrawler
             }
         }
 
-        public static IEnumerable<SocketRole> GetBotRoles(this IEnumerable<SocketRole> roles) => roles.Where(r => r.Name.StartsWith(RolePrefix.ToString()));
+        public static IEnumerable<SocketRole> GetBotRoles(this IEnumerable<SocketRole> roles)
+        {
+            return roles.Where(r => r.Name.StartsWith(RolePrefix.ToString()));
+        }
     }
 }

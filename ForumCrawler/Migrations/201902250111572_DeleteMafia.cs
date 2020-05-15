@@ -1,7 +1,7 @@
+using System.Data.Entity.Migrations;
+
 namespace ForumCrawler.Migrations
 {
-    using System.Data.Entity.Migrations;
-
     public partial class DeleteMafia : DbMigration
     {
         public override void Up()
@@ -13,25 +13,20 @@ namespace ForumCrawler.Migrations
         public override void Down()
         {
             CreateTable(
-                "dbo.MafiaVotes",
-                c => new
-                {
-                    UId = c.Long(nullable: false),
-                    TId = c.Long(nullable: false),
-                    LastUpdated = c.DateTime(nullable: false),
-                })
+                    "dbo.MafiaVotes",
+                    c => new {UId = c.Long(false), TId = c.Long(false), LastUpdated = c.DateTime(false)})
                 .PrimaryKey(t => t.UId);
 
             CreateTable(
-                "dbo.MafiaSettings",
-                c => new
-                {
-                    Id = c.Int(nullable: false),
-                    PlayerCount = c.Int(nullable: false),
-                    DayEnd = c.DateTime(nullable: false),
-                    IsNight = c.Boolean(nullable: false),
-                    GameConfigUrl = c.String(),
-                })
+                    "dbo.MafiaSettings",
+                    c => new
+                    {
+                        Id = c.Int(false),
+                        PlayerCount = c.Int(false),
+                        DayEnd = c.DateTime(false),
+                        IsNight = c.Boolean(false),
+                        GameConfigUrl = c.String()
+                    })
                 .PrimaryKey(t => t.Id);
         }
     }

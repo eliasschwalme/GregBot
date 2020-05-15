@@ -1,6 +1,7 @@
 ﻿public class Post
 {
-    public Post(string topic, int topicId, string poster, int posterId, string forum, int pnumber, int postId, string time)
+    public Post(string topic, int topicId, string poster, int posterId, string forum, int pnumber, int postId,
+        string time)
     {
         Topic = topic;
         TopicId = topicId;

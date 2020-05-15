@@ -1,8 +1,8 @@
+using System.Data.Entity.Migrations;
+
 namespace ForumCrawler.Migrations
 {
-    using System.Data.Entity.Migrations;
-
-    internal sealed class Configuration : DbMigrationsConfiguration<ForumCrawler.DatabaseContext>
+    internal sealed class Configuration : DbMigrationsConfiguration<DatabaseContext>
     {
         public Configuration()
         {
@@ -10,7 +10,7 @@ namespace ForumCrawler.Migrations
             ContextKey = "ForumCrawler.DatabaseContext";
         }
 
-        protected override void Seed(ForumCrawler.DatabaseContext context)
+        protected override void Seed(DatabaseContext context)
         {
             //  This method will be called after migrating to the latest version.
 

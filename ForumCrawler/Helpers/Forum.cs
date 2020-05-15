@@ -1,11 +1,10 @@
-﻿using HtmlAgilityPack;
-
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 
 namespace ForumCrawler
 {
@@ -18,7 +17,10 @@ namespace ForumCrawler
         private const string DirectUrl = "https://forums.everybodyedits.com/post.php?tid={0}&qid={1}";
         private static readonly CookieContainer _cookies = new CookieContainer();
 
-        static Forum() => Login();
+        static Forum()
+        {
+            Login();
+        }
 
         public static async Task<string> GetCSRFAsync()
         {
@@ -43,17 +45,18 @@ namespace ForumCrawler
             {
                 client.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
                 client.Headers[HttpRequestHeader.Referer] = LoginUrl;
-                client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
+                client.Headers[HttpRequestHeader.UserAgent] =
+                    "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
 
                 var reqparm = new NameValueCollection
                 {
-                    { "form_sent", "1" },
-                    { "csrf_token", csrf_token },
-                    { "redirect_url", "https://forums.everybodyedits.com/index.php" },
-                    { "req_username", "GregBot" },
-                    { "req_password", Passwords.ForumPassword },
-                    { "save_pass", "1" },
-                    { "login", "Login" }
+                    {"form_sent", "1"},
+                    {"csrf_token", csrf_token},
+                    {"redirect_url", "https://forums.everybodyedits.com/index.php"},
+                    {"req_username", "GregBot"},
+                    {"req_password", Passwords.ForumPassword},
+                    {"save_pass", "1"},
+                    {"login", "Login"}
                 };
                 client.UploadValues(LoginUrl, "post", reqparm);
             }
@@ -75,13 +78,18 @@ namespace ForumCrawler
                 .SelectNodes("tr").Select(item =>
                 {
                     var content = item.ChildNodes[1].ChildNodes[3].ChildNodes["div"].ChildNodes[1];
-                    if (content.Name != "strong") return null;
+                    if (content.Name != "strong")
+                    {
+                        return null;
+                    }
+
                     var topic = WebUtility.HtmlDecode(content.ChildNodes["a"].InnerText);
                     var topicId = int.Parse(content.ChildNodes["a"].Attributes["href"].Value.Split('=')[1]);
 
                     var lastPostPoster = item.ChildNodes[7].ChildNodes["span"];
                     var poster = WebUtility.HtmlDecode(lastPostPoster.InnerText.Substring(3));
-                    var posterId = int.Parse(lastPostPoster.ChildNodes["a"]?.Attributes["href"].Value.Split('=')[1] ?? "-1");
+                    var posterId = int.Parse(lastPostPoster.ChildNodes["a"]?.Attributes["href"].Value.Split('=')[1] ??
+                                             "-1");
 
                     var forum = item.ChildNodes[3].ChildNodes["a"].InnerText;
                     var pnumber = int.Parse(item.ChildNodes[5].InnerText.Replace(",", "")) + 1;

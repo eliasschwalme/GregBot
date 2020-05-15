@@ -37,7 +37,10 @@ namespace DiffMatchPatch
         }
 
         // Java substring function
-        public static string JavaSubstring(this string s, int begin, int end) => s.Substring(begin, end - begin);
+        public static string JavaSubstring(this string s, int begin, int end)
+        {
+            return s.Substring(begin, end - begin);
+        }
     }
 
     /**-

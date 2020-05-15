@@ -1,16 +1,20 @@
-﻿using Discord;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Rest;
 using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ForumCrawler
-{    public static class UserExtensions
+{
+    public static class UserExtensions
     {
+        public static Dictionary<SuggestionType, string> ChannelSuffixes = new Dictionary<SuggestionType, string>
+        {
+            {SuggestionType.Draft, "draft_"}, {SuggestionType.RFC, "rfc_"}, {SuggestionType.Vote, "vote_"}
+        };
+
         public static string GetName(this IGuildUser user)
         {
             return user.Nickname ?? user.Username;
@@ -19,44 +23,38 @@ namespace ForumCrawler
         public static bool IsServerOwner(this IGuildUser guildUser)
         {
             return guildUser.RoleIds.Contains(DiscordSettings.DiscordServerOwner) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
-
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
         }
 
         public static bool IsStaff(this IGuildUser guildUser)
         {
             return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) || 
-                guildUser.RoleIds.Contains(DiscordSettings.DiscordServerOwner) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
-
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DiscordServerOwner) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
         }
 
         public static bool IsStaffOrConsultant(this IGuildUser guildUser)
         {
             return guildUser.RoleIds.Contains(DiscordSettings.DiscordStaff) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DiscordStaffConsultant) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaffConsultant) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DiscordServerOwner) ||
-                guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
+                   guildUser.RoleIds.Contains(DiscordSettings.DiscordStaffConsultant) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaff) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordStaffConsultant) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DiscordServerOwner) ||
+                   guildUser.RoleIds.Contains(DiscordSettings.DSDiscordServerOwner);
         }
-
-        public static Dictionary<SuggestionType, string> ChannelSuffixes = new Dictionary<SuggestionType, string>()
-        {
-            { SuggestionType.Draft, "draft_" },
-            { SuggestionType.RFC, "rfc_" },
-            { SuggestionType.Vote, "vote_" },
-        };
 
         public static bool IsSuggestionChannelByName(this IChannel channel)
         {
-            return ChannelSuffixes.Where(kv => channel.Name.StartsWith(kv.Value, StringComparison.InvariantCultureIgnoreCase)).Any();
+            return ChannelSuffixes
+                .Where(kv => channel.Name.StartsWith(kv.Value, StringComparison.InvariantCultureIgnoreCase)).Any();
         }
 
         public static SuggestionType GetSuggestionChannelType(this IChannel channel)
         {
-            return ChannelSuffixes.Where(kv => channel.Name.StartsWith(kv.Value, StringComparison.InvariantCultureIgnoreCase)).First().Key;
+            return ChannelSuffixes
+                .Where(kv => channel.Name.StartsWith(kv.Value, StringComparison.InvariantCultureIgnoreCase)).First()
+                .Key;
         }
 
         public static string GetSuggestionChannelName(this IChannel channel)
@@ -87,7 +85,8 @@ namespace ForumCrawler
             });
         }
 
-        public static async Task<RestTextChannel> CreateSuggestionChannel(this SocketGuild guild, ulong categoryId, SuggestionType type, string name)
+        public static async Task<RestTextChannel> CreateSuggestionChannel(this SocketGuild guild, ulong categoryId,
+            SuggestionType type, string name)
         {
             var suffix = ChannelSuffixes[type];
             var res = await guild.CreateTextChannelAsync(suffix + name, c =>
@@ -101,16 +100,21 @@ namespace ForumCrawler
         private static async Task ReorderChannels(SocketGuild guild)
         {
             var config = guild.GetGovernanceConfig();
-            var channels = guild.CategoryChannels.First(c => c.Id == config.Category).Channels.OrderByDescending(c => c.Id).ToList();
+            var channels = guild.CategoryChannels.First(c => c.Id == config.Category).Channels
+                .OrderByDescending(c => c.Id).ToList();
 
             var normal = channels.Where(c => !c.IsSuggestionChannelByName()).Reverse();
             var vote = channels.Except(normal).Where(c => c.GetSuggestionChannelType() == SuggestionType.Vote);
             var rfc = channels.Except(normal).Where(c => c.GetSuggestionChannelType() == SuggestionType.RFC);
             var draft = channels.Except(normal).Where(c => c.GetSuggestionChannelType() == SuggestionType.Draft);
-            await guild.ReorderChannelsAsync(normal.Concat(vote).Concat(rfc).Concat(draft).Select((c, i) => new ReorderChannelProperties(c.Id, i)));
+            await guild.ReorderChannelsAsync(normal.Concat(vote).Concat(rfc).Concat(draft)
+                .Select((c, i) => new ReorderChannelProperties(c.Id, i)));
         }
 
-        public static DiscordSettings.GovernanceConfig GetGovernanceConfig(this IGuild guild) => DiscordSettings.GovernanceConfigs[guild.Id];
+        public static DiscordSettings.GovernanceConfig GetGovernanceConfig(this IGuild guild)
+        {
+            return DiscordSettings.GovernanceConfigs[guild.Id];
+        }
     }
 
     public enum SuggestionType

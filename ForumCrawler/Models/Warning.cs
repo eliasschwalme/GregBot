@@ -9,8 +9,9 @@ namespace ForumCrawler
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None), Index]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [Index]
         public long UId { get; set; }
 
         [NotMapped]
@@ -20,8 +21,8 @@ namespace ForumCrawler
             set => UId = (long)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long MId { get; set; }
 
         [NotMapped]
@@ -31,8 +32,8 @@ namespace ForumCrawler
             set => MId = (long)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long CId { get; set; }
 
         [NotMapped]
@@ -42,8 +43,8 @@ namespace ForumCrawler
             set => CId = (long)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long? RemoverUId { get; set; }
 
         [NotMapped]
@@ -53,8 +54,8 @@ namespace ForumCrawler
             set => RemoverUId = (long?)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long IssuerUId { get; set; }
 
         [NotMapped]
@@ -64,8 +65,8 @@ namespace ForumCrawler
             set => IssuerUId = (long)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long? RemoveMId { get; set; }
 
         [NotMapped]
@@ -75,8 +76,8 @@ namespace ForumCrawler
             set => RemoveMId = (long?)value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long? RemoveCId { get; set; }
 
         [NotMapped]

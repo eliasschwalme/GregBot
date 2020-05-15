@@ -1,10 +1,10 @@
-﻿using Discord;
-using Discord.WebSocket;
-using ForumCrawler.Helpers;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using Discord;
+using Discord.WebSocket;
+using ForumCrawler.Helpers;
 
 namespace ForumCrawler
 {
@@ -32,7 +32,8 @@ namespace ForumCrawler
             }
         }
 
-        private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser, SocketGuildUser newUser)
+        private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser,
+            SocketGuildUser newUser)
         {
             var role = client.GetGuild(DiscordSettings.GuildId).GetRole(DiscordSettings.MutedRole);
             if (oldUser.Roles.Contains(role) && !newUser.Roles.Contains(role))
@@ -53,7 +54,8 @@ namespace ForumCrawler
         {
             var user = client.GetGuild(DiscordSettings.GuildId).GetUser(mute.UserId);
             await user.AddRoleAsync(client.GetGuild(DiscordSettings.GuildId).GetRole(DiscordSettings.MutedRole));
-            await user.SendMessageAsync($"You were muted until {mute.ExpiryDate} UTC by {MentionUtils.MentionUser(mute.IssuerId)}. Reason: {reason}");
+            await user.SendMessageAsync(
+                $"You were muted until {mute.ExpiryDate} UTC by {MentionUtils.MentionUser(mute.IssuerId)}. Reason: {reason}");
         }
 
         private static async Task MuteWatcher_OnUnmute(DiscordSocketClient client, ulong userId)
@@ -74,12 +76,17 @@ namespace ForumCrawler
             {
                 await OnUnmute(mute.UserId);
             }
+
             await Database.UNSAFE_RemoveAllExpiredMutes(timestamp);
         }
 
         public static async Task<Mute> MuteUser(Mute mute, string reason, bool shorten, bool sameAuthorShorten)
         {
-            if (mute.ExpiryDate <= DateTimeOffset.UtcNow) return null;
+            if (mute.ExpiryDate <= DateTimeOffset.UtcNow)
+            {
+                return null;
+            }
+
             var lastMute = await Database.UNSAFE_GetMute(mute.UserId);
             var shorts = mute.ExpiryDate <= lastMute?.ExpiryDate;
             var sameAuthor = lastMute?.IssuerId == mute.IssuerId;
@@ -98,7 +105,10 @@ namespace ForumCrawler
             if (issuerId != null)
             {
                 var lastMute = await Database.UNSAFE_GetMute(userId);
-                if (lastMute == null || lastMute.IssuerId != issuerId) return;
+                if (lastMute == null || lastMute.IssuerId != issuerId)
+                {
+                    return;
+                }
             }
 
             await Database.UNSAFE_RemoveMute(userId);

@@ -1,12 +1,12 @@
-﻿using Discord;
-using Discord.WebSocket;
-using ForumCrawler;
-using ForumCrawler.Helpers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using Discord;
+using Discord.WebSocket;
+using ForumCrawler;
+using ForumCrawler.Helpers;
 
 namespace DiscordSocialScore
 {
@@ -17,7 +17,7 @@ namespace DiscordSocialScore
         public static void Bind(DiscordSocketClient client)
         {
             CacheProvider = new RoleCacheProvider(client);
-            client.MessageReceived += (a) => Client_MessageReceived(client, a);
+            client.MessageReceived += a => Client_MessageReceived(client, a);
             client.GuildMemberUpdated += (a, b) => Client_GuildMemberUpdated(client, a, b);
             client.RoleUpdated += Client_RoleUpdated;
             client.AddOnFirstReady(() => Client_Ready(client));
@@ -42,7 +42,10 @@ namespace DiscordSocialScore
             }
         }
 
-        private static async void Score_OnUpdate(DiscordSocketClient client, ulong userId, ScoreData scoreData) => await OnScoreChangeAsync(client, userId, scoreData);
+        private static async void Score_OnUpdate(DiscordSocketClient client, ulong userId, ScoreData scoreData)
+        {
+            await OnScoreChangeAsync(client, userId, scoreData);
+        }
 
         private static async Task OnScoreChangeAsync(DiscordSocketClient client, ulong userId, ScoreData scoreData)
         {
@@ -64,7 +67,8 @@ namespace DiscordSocialScore
             }
         }
 
-        private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser, SocketGuildUser newUser)
+        private static async Task Client_GuildMemberUpdated(DiscordSocketClient client, SocketGuildUser oldUser,
+            SocketGuildUser newUser)
         {
             if (!oldUser.Roles.SequenceEqual(newUser.Roles))
             {
@@ -74,8 +78,16 @@ namespace DiscordSocialScore
 
         private static async Task Client_MessageReceived(DiscordSocketClient client, SocketMessage message)
         {
-            if (message.Author.IsBot) return;
-            if (!(message.Author is SocketGuildUser guildUser)) return;
+            if (message.Author.IsBot)
+            {
+                return;
+            }
+
+            if (!(message.Author is SocketGuildUser guildUser))
+            {
+                return;
+            }
+
             if (guildUser.Guild.Id == DiscordSettings.GuildId &&
                 message.Channel.Id != DiscordSettings.BotCommandsChannel) // bot-spam
             {
@@ -83,18 +95,41 @@ namespace DiscordSocialScore
             }
         }
 
-        public static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData, bool force = false)
+        public static async Task UpdateUserAsync(DiscordSocketClient client, SocketGuildUser user, ScoreData scoreData,
+            bool force = false)
         {
-            if (user.IsBot) return;
-            if (user.Guild.Id != DiscordSettings.GuildId) return;
-            if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy) return;
-            if (!force && user.Roles.Count <= 1) return;
+            if (user.IsBot)
+            {
+                return;
+            }
+
+            if (user.Guild.Id != DiscordSettings.GuildId)
+            {
+                return;
+            }
+
+            if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy)
+            {
+                return;
+            }
+
+            if (!force && user.Roles.Count <= 1)
+            {
+                return;
+            }
 
             var cache = CacheProvider.Get(user.Guild);
 
-            var muted = (await Database.UNSAFE_GetMute(user.Id)) != null; // TODO: looking up mutes on everyone every hour is not a good idea
-            var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData) };
-            if (!muted) roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
+            var muted = await Database.UNSAFE_GetMute(user.Id) !=
+                        null; // TODO: looking up mutes on everyone every hour is not a good idea
+            var roles = new List<IRole>
+            {
+                await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData)
+            };
+            if (!muted)
+            {
+                roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
+            }
 
             var toDelete = user.Roles.GetBotRoles().Where(r => roles.All(r2 => r.Id != r2.Id)).ToList();
             var toAdd = roles.Where(r => user.Roles.All(r2 => r.Id != r2.Id)).ToList();

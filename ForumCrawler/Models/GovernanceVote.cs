@@ -5,8 +5,8 @@ namespace ForumCrawler
 {
     public class GovernanceVote
     {
-        [EditorBrowsable(EditorBrowsableState.Never),
-            DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long Id { get; set; }
 
         [EditorBrowsable(EditorBrowsableState.Never)]

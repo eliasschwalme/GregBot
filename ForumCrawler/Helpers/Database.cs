@@ -1,14 +1,12 @@
-﻿using Discord;
-using Discord.WebSocket;
-
-using EntityFramework.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Migrations;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
+using EntityFramework.Extensions;
 
 namespace ForumCrawler
 {
@@ -38,13 +36,13 @@ namespace ForumCrawler
 
                 return new StarboardInformation
                 {
-                    OnStarboard = post.OnStarboard,
-                    StarboardMessageId = (ulong)post.StarboardMessageId
+                    OnStarboard = post.OnStarboard, StarboardMessageId = (ulong)post.StarboardMessageId
                 };
             }
         }
 
-        internal static async Task<Dictionary<ulong, QuickReportWatcher.Report>> UNSAFE_PullReports(DiscordSocketClient client)
+        internal static async Task<Dictionary<ulong, QuickReportWatcher.Report>> UNSAFE_PullReports(
+            DiscordSocketClient client)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -57,7 +55,11 @@ namespace ForumCrawler
                 foreach (var report in reports)
                 {
                     var channel = guild.GetTextChannel(report.ChannelId);
-                    if (channel == null) continue;
+                    if (channel == null)
+                    {
+                        continue;
+                    }
+
                     dict[report.ReportId] = new QuickReportWatcher.Report
                     {
                         Channel = channel,
@@ -81,7 +83,7 @@ namespace ForumCrawler
             using (var ctx = new DatabaseContext())
             {
                 var post = await ctx.StarboardPosts
-                    .FirstOrDefaultAsync(p => p.MessageId == (long)messageId)
+                        .FirstOrDefaultAsync(p => p.MessageId == (long)messageId)
                     ;
 
                 if (post == null)
@@ -102,11 +104,11 @@ namespace ForumCrawler
                 post.OnStarboard = true;
 
                 await ctx.SaveChangesAsync();
-                return;
             }
         }
 
-        internal static async Task UNSAFE_UpdateReport(ulong msgId, IUser moderator, QuickReportWatcher.Report.ReportStatus status)
+        internal static async Task UNSAFE_UpdateReport(ulong msgId, IUser moderator,
+            QuickReportWatcher.Report.ReportStatus status)
         {
             using (var ctx = new DatabaseContext())
             {
@@ -163,9 +165,11 @@ namespace ForumCrawler
             }
         }
 
-        public static IAsyncEnumerable<ScoreUser> GetAllScoreUsersAsync(DatabaseContext context, DiscordSocketClient client)
+        public static IAsyncEnumerable<ScoreUser> GetAllScoreUsersAsync(DatabaseContext context,
+            DiscordSocketClient client)
         {
-            return context.ScoreUsers.ToAsyncEnumerable().Select((scoreUser) => {
+            return context.ScoreUsers.ToAsyncEnumerable().Select(scoreUser =>
+            {
                 scoreUser.Update(client);
                 return scoreUser;
             });
@@ -179,24 +183,29 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreUser, int)> UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(DiscordSocketClient client, ulong userId)
+        public static async Task<(ScoreUser, int)> UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(
+            DiscordSocketClient client, ulong userId)
         {
             using (var context = new DatabaseContext())
             {
                 var myScoreUser = await GetOrCreateScoreUserAsync(context, client, userId);
                 return (myScoreUser, 1 + await context.ScoreUsers.CountAsync(u => u.Score > myScoreUser.Score));
-            };
+            }
+
+            ;
         }
 
-        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DatabaseContext context, DiscordSocketClient client, ulong userId)
+        public static async Task<ScoreUser> GetOrCreateScoreUserAsync(DatabaseContext context,
+            DiscordSocketClient client, ulong userId)
         {
             var res = await context.ScoreUsers.SingleOrDefaultAsync(m => m.Id == (long)userId);
             if (res == null)
             {
-                res = new ScoreUser { UserId = userId };
+                res = new ScoreUser {UserId = userId};
                 context.ScoreUsers.AddOrUpdate(res);
                 await context.SaveChangesAsync();
             }
+
             res.Update(client);
             return res;
         }
@@ -207,7 +216,7 @@ namespace ForumCrawler
             using (var context = new DatabaseContext())
             {
                 var res = await context.ScoreUsers.Where(m => userIdsLong.Contains(m.Id)).ToArrayAsync();
-                
+
                 return res;
             }
         }

@@ -1,15 +1,16 @@
-﻿using Discord;
-using Discord.Commands;
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 
 namespace ForumCrawler.Commands
 {
     public class ReportCommand : ModuleBase<SocketCommandContext>
     {
-        [Command("report"), Summary("Make a report on a user"), Priority(1)]
+        [Command("report")]
+        [Summary("Make a report on a user")]
+        [Priority(1)]
         public async Task ReportAsync(IUser user, [Remainder] string reportMessage = null)
         {
             if (Context.Guild != null)
@@ -27,24 +28,34 @@ namespace ForumCrawler.Commands
             await QuickReportWatcher.FileReport(reportId, Context.User, user, Context.Channel, previous, reportMessage);
         }
 
-        [Command("report"), Summary("Make a report on a user"), Priority(1)]
+        [Command("report")]
+        [Summary("Make a report on a user")]
+        [Priority(1)]
         public async Task ReportAsync(IUserMessage message, [Remainder] string reportMessage = null)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message);
-            await QuickReportWatcher.FileReport(message.Id, Context.User, message.Author, message.Channel, message, reportMessage);
+            await QuickReportWatcher.FileReport(message.Id, Context.User, message.Author, message.Channel, message,
+                reportMessage);
         }
 
-        [Command("report"), Alias("report edit"), Summary("Make a report on a user"), Priority(0)]
+        [Command("report")]
+        [Alias("report edit")]
+        [Summary("Make a report on a user")]
+        [Priority(0)]
         public async Task ReportAsync(ulong reportId, [Remainder] string reportMessage = null)
         {
             if (Context.Channel is IGuildChannel)
+            {
                 await Context.Channel.DeleteMessageAsync(Context.Message);
+            }
+
             await QuickReportWatcher.FileReport(reportId, Context.User, null, null, null, reportMessage);
         }
 
         private IUserMessage GetPreviousMessage(IUser user)
         {
-            foreach (var message in Context.Channel.CachedMessages.OrderByDescending(w => SnowflakeUtils.FromSnowflake(w.Id)).Take(20))
+            foreach (var message in Context.Channel.CachedMessages
+                .OrderByDescending(w => SnowflakeUtils.FromSnowflake(w.Id)).Take(20))
             {
                 if (message.Author.Id == user.Id &&
                     message.Id != Context.Message.Id)
@@ -52,6 +63,7 @@ namespace ForumCrawler.Commands
                     return message as IUserMessage;
                 }
             }
+
             return null;
         }
     }

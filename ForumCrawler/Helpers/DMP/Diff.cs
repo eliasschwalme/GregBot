@@ -14,7 +14,6 @@ namespace DiffMatchPatch
      * @param operation One of INSERT, DELETE or EQUAL.
      * @param text The text being applied.
      */
-
         public Diff(Operation operation, string text)
         {
             // Construct a diff with the specified operation and text.
@@ -26,7 +25,6 @@ namespace DiffMatchPatch
      * Display a human-readable version of this Diff.
      * @return text version.
      */
-
         public override string ToString()
         {
             var prettyText = text.Replace('\n', '\u00b6');
@@ -38,7 +36,6 @@ namespace DiffMatchPatch
      * @param d Another Diff to compare against.
      * @return true or false.
      */
-
         public override bool Equals(object obj)
         {
             // If parameter is null return false.
@@ -69,6 +66,9 @@ namespace DiffMatchPatch
             return obj.operation == operation && obj.text == text;
         }
 
-        public override int GetHashCode() => text.GetHashCode() ^ operation.GetHashCode();
+        public override int GetHashCode()
+        {
+            return text.GetHashCode() ^ operation.GetHashCode();
+        }
     }
 }

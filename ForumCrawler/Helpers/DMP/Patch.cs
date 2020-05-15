@@ -8,10 +8,10 @@ namespace DiffMatchPatch
     public class Patch
     {
         public List<Diff> diffs = new List<Diff>();
-        public int start1;
-        public int start2;
         public int length1;
         public int length2;
+        public int start1;
+        public int start2;
 
         /**
      * Emmulate GNU diff's format.
@@ -19,7 +19,6 @@ namespace DiffMatchPatch
      * Indicies are printed as 1-based, not 0-based.
      * @return The GNU diff string.
      */
-
         public override string ToString()
         {
             string coords1, coords2;
@@ -33,8 +32,9 @@ namespace DiffMatchPatch
             }
             else
             {
-                coords1 = (start1 + 1) + "," + length1;
+                coords1 = start1 + 1 + "," + length1;
             }
+
             if (length2 == 0)
             {
                 coords2 = start2 + ",0";
@@ -45,8 +45,9 @@ namespace DiffMatchPatch
             }
             else
             {
-                coords2 = (start2 + 1) + "," + length2;
+                coords2 = start2 + 1 + "," + length2;
             }
+
             var text = new StringBuilder();
             text.Append("@@ -").Append(coords1).Append(" +").Append(coords2)
                 .Append(" @@\n");

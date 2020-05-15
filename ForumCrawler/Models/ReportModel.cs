@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using Newtonsoft.Json;
 
 namespace ForumCrawler
 {
-    /// <see cref="QuickReportWatcher.Report"/>
+    /// <see cref="QuickReportWatcher.Report" />
     public class ReportModel
     {
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -17,33 +18,33 @@ namespace ForumCrawler
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _reportId { get; set; }
 
-        [NotMapped]
-        public ulong ReportId { get => _reportId.ToULong(); set => _reportId = value.ToLong(); }
+        [NotMapped] public ulong ReportId { get => _reportId.ToULong(); set => _reportId = value.ToLong(); }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public string _reporters { get; set; }
 
         // /  perfect  /  //
         [NotMapped]
-        public Dictionary<ulong, string> Reporters { get => Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<ulong, string>>(_reporters); set => _reporters = Newtonsoft.Json.JsonConvert.SerializeObject(value); }
+        public Dictionary<ulong, string> Reporters
+        {
+            get => JsonConvert.DeserializeObject<Dictionary<ulong, string>>(_reporters);
+            set => _reporters = JsonConvert.SerializeObject(value);
+        }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _suspectId { get; set; }
 
-        [NotMapped]
-        public ulong SuspectId { get => _suspectId.ToULong(); set => _suspectId = value.ToLong(); }
+        [NotMapped] public ulong SuspectId { get => _suspectId.ToULong(); set => _suspectId = value.ToLong(); }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _channelId { get; set; }
 
-        [NotMapped]
-        public ulong ChannelId { get => _channelId.ToULong(); set => _channelId = value.ToLong(); }
+        [NotMapped] public ulong ChannelId { get => _channelId.ToULong(); set => _channelId = value.ToLong(); }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _messageId { get; set; }
 
-        [NotMapped]
-        public ulong MessageId { get => _messageId.ToULong(); set => _messageId = value.ToLong(); }
+        [NotMapped] public ulong MessageId { get => _messageId.ToULong(); set => _messageId = value.ToLong(); }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _reportsMessage { get; set; }
@@ -57,7 +58,6 @@ namespace ForumCrawler
         [EditorBrowsable(EditorBrowsableState.Never)]
         public long _moderatorId { get; set; }
 
-        [NotMapped]
-        public ulong ModeratorId { get => _moderatorId.ToULong(); set => _moderatorId = value.ToLong(); }
+        [NotMapped] public ulong ModeratorId { get => _moderatorId.ToULong(); set => _moderatorId = value.ToLong(); }
     }
 }

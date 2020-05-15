@@ -1,7 +1,6 @@
-﻿using Discord;
+﻿using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
-
-using System.Threading.Tasks;
 
 namespace ForumCrawler
 {
@@ -25,11 +24,18 @@ namespace ForumCrawler
             }
         }
 
-        private static async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
+        private static async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> message,
+            ISocketMessageChannel channel, SocketReaction reaction)
         {
-            if (!channel.IsSuggestionChannelByName()) return;
+            if (!channel.IsSuggestionChannelByName())
+            {
+                return;
+            }
 
-            if (!(reaction.User.GetValueOrDefault() is IGuildUser guildUser)) return;
+            if (!(reaction.User.GetValueOrDefault() is IGuildUser guildUser))
+            {
+                return;
+            }
 
             var msg = await message.GetOrDownloadAsync();
             if (channel.GetSuggestionChannelType() != SuggestionType.Vote && msg.Author.IsBot && !guildUser.IsBot)
@@ -39,10 +45,18 @@ namespace ForumCrawler
             }
 
             var governanceVote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
-            if (governanceVote == null) return;
-            if (governanceVote.MessageId != message.Id) return;
+            if (governanceVote == null)
+            {
+                return;
+            }
 
-            await GovernanceCommandsBase.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote, channel.GetSuggestionChannelType());
+            if (governanceVote.MessageId != message.Id)
+            {
+                return;
+            }
+
+            await GovernanceCommandsBase.UpdateBillboardAsync(guildUser.Guild, msg, channel, governanceVote,
+                channel.GetSuggestionChannelType());
         }
     }
 }

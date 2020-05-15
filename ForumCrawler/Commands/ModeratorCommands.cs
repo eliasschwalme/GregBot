@@ -1,52 +1,67 @@
-﻿using Discord;
-using Discord.Addons.Interactive;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
 
 namespace ForumCrawler.Commands
 {
     public class RoleCommands : ModuleBase<SocketCommandContext>
     {
-        [Command("halt"), RequireRole(DiscordSettings.DiscordStaff)]
+        [Command("halt")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
         public async Task Halt()
         {
             await ReplyAsync("Goodbye.");
             Environment.Exit(0);
         }
 
-        [Command("prunegregroles"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Command("prunegregroles")]
+        [RequireRole(DiscordSettings.DiscordServerOwner)]
         public async Task RoleTest()
         {
             foreach (var role in Context.Guild.Roles.Where(r => r.Name[0] == ScoreRoleManager.RolePrefix))
+            {
                 await role.DeleteAsync();
+            }
+
             await ReplyAsync("Pruned greg roles.");
         }
 
-        [Command("rolecleanup"), RequireRole(DiscordSettings.DiscordStaff)]
+        [Command("rolecleanup")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
         public async Task RoleCleanup()
         {
             foreach (var r in Context.Guild.Roles.Where(r => r.Name == "new role"))
             {
                 await r.DeleteAsync();
             }
+
             await ReplyAsync("Role cleanup complete.");
         }
 
-        [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(0)]
+        [Command("nick")]
+        [RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Priority(0)]
         public async Task ChangeNickname([Remainder] string nick)
         {
             var user = (IGuildUser)Context.User;
             var score = await Score.GetScoreDataAsync(Context.Client, user.Id);
-            if (score.ScoreLevel < 4) throw new Exception("You must be a class of 4 or higher to change your nick.");
+            if (score.ScoreLevel < 4)
+            {
+                throw new Exception("You must be a class of 4 or higher to change your nick.");
+            }
+
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");
         }
 
-        [Command("nick reset"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
+        [Command("nick reset")]
+        [RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Priority(1)]
         public async Task ResetNickname()
         {
             var user = (IGuildUser)Context.User;
@@ -54,10 +69,14 @@ namespace ForumCrawler.Commands
             await ReplyAsync("Your nickname was reset.");
         }
 
-        [Group("mod"), Summary("These are moderator-specific commands."), RequireRole(DiscordSettings.DiscordStaff)]
+        [Group("mod")]
+        [Summary("These are moderator-specific commands.")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
         public class ModeratorCommands : ModuleBase<SocketCommandContext>
         {
-            [Group("18+"), Alias("18+", "18"), Summary("Give 18+ role to people")]
+            [Group("18+")]
+            [Alias("18+", "18")]
+            [Summary("Give 18+ role to people")]
             public class EighteenPlusRole : ModuleBase<SocketCommandContext>
             {
                 [Command("give")]
@@ -73,15 +92,17 @@ namespace ForumCrawler.Commands
                         throw new Exception("Unable to get role from guild user.");
                     }
 
-                    await user.AddRoleAsync(muted, new RequestOptions
-                    {
-                        AuditLogReason = "Manual 18+ role given by " + Context.User.Username.DiscordEscape(),
-                    });
+                    await user.AddRoleAsync(muted,
+                        new RequestOptions
+                        {
+                            AuditLogReason = "Manual 18+ role given by " + Context.User.Username.DiscordEscape()
+                        });
 
                     await Context.Message.DeleteAsync();
                 }
 
-                [Command("remove"), Alias("rm")]
+                [Command("remove")]
+                [Alias("rm")]
                 public async Task RemoveRole(IGuildUser user)
                 {
                     // intentionally allowing removing the muted role from staff
@@ -91,10 +112,11 @@ namespace ForumCrawler.Commands
                         throw new Exception("Unable to get role from guild user.");
                     }
 
-                    await user.RemoveRoleAsync(muted, new RequestOptions
-                    {
-                        AuditLogReason = "Manual 18+ role removed by " + Context.User.Username.DiscordEscape(),
-                    });
+                    await user.RemoveRoleAsync(muted,
+                        new RequestOptions
+                        {
+                            AuditLogReason = "Manual 18+ role removed by " + Context.User.Username.DiscordEscape()
+                        });
 
                     await Context.Message.DeleteAsync();
                 }
@@ -115,7 +137,6 @@ namespace ForumCrawler.Commands
                     return true;
                 }
             }
-
         }
     }
 
@@ -127,24 +148,33 @@ namespace ForumCrawler.Commands
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
-        public static Task<Mute> MuteUser(IUser issuer, IUser user, DateTimeOffset expiry, string reason, bool shorten, bool sameAuthorShorten)
+        public static Task<Mute> MuteUser(IUser issuer, IUser user, DateTimeOffset expiry, string reason, bool shorten,
+            bool sameAuthorShorten)
         {
-            return MuteWatcher.MuteUser(new Mute
-            {
-                UserId = user.Id,
-                IssuerId = issuer.Id,
-                ExpiryDate = expiry.UtcDateTime,
-                IssueDate = DateTime.UtcNow
-            }, reason, shorten, sameAuthorShorten);
+            return MuteWatcher.MuteUser(
+                new Mute
+                {
+                    UserId = user.Id,
+                    IssuerId = issuer.Id,
+                    ExpiryDate = expiry.UtcDateTime,
+                    IssueDate = DateTime.UtcNow
+                }, reason, shorten, sameAuthorShorten);
         }
 
         public async Task UnmuteUser(IUser user, bool force)
         {
             var mute = await Database.UNSAFE_GetMute(user.Id);
             if (mute == null)
+            {
                 throw new Exception("User is currently not muted.");
+            }
+
             if (mute.IssuerId != Context.User.Id && !force)
-                throw new Exception("Mute can only be removed by its issuer, " + MentionUtils.MentionUser(mute.IssuerId) + ".");
+            {
+                throw new Exception("Mute can only be removed by its issuer, " +
+                                    MentionUtils.MentionUser(mute.IssuerId) + ".");
+            }
+
             var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
             if (!state.MutedUntil.HasValue)
             {
@@ -153,60 +183,86 @@ namespace ForumCrawler.Commands
             }
             else if (state.MutedUntil.Value < mute.ExpiryDate)
             {
-                var res = await MuteUser(Context.Client.CurrentUser, user, state.MutedUntil.Value, $"Mute shortened.", true, false);
+                var res = await MuteUser(Context.Client.CurrentUser, user, state.MutedUntil.Value, "Mute shortened.",
+                    true, false);
                 await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} muted until {res.ExpiryDate}. " +
-                    $"A reduction of the mute duration beyond this point is not possible due to an active auto-mute from the warnings system.");
+                                 "A reduction of the mute duration beyond this point is not possible due to an active auto-mute from the warnings system.");
             }
             else
             {
                 await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} muted until {mute.ExpiryDate}. " +
-                    $"A reduction of the mute duration beyond this point is not possible due to an active auto-mute from the warnings system.");
+                                 "A reduction of the mute duration beyond this point is not possible due to an active auto-mute from the warnings system.");
             }
         }
 
-        [Command("mute"), RequireRole(DiscordSettings.DiscordStaff)]
+        [Command("mute")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
         public async Task Mute(IGuildUser user, TimeSpan duration, [Remainder] string reason)
         {
             var mute = await Database.UNSAFE_GetMute(user.Id);
             if (mute != null)
+            {
                 throw new Exception("User is already muted.");
+            }
+
             if (user.IsStaff())
+            {
                 throw new Exception("User is staff.");
+            }
 
             var res = await MuteUser(Context.User, user, DateTimeOffset.UtcNow + duration, reason, false, false);
             await ReplyAsync($"{MentionUtils.MentionUser(user.Id)} muted until {res.ExpiryDate}.");
         }
 
-        [Command("force unmute"), RequireRole(DiscordSettings.DiscordStaff)]
-        public async Task ForceUnmute(IUser user) => await UnmuteUser(user, true);
+        [Command("force unmute")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        public async Task ForceUnmute(IUser user)
+        {
+            await UnmuteUser(user, true);
+        }
 
-        [Command("unmute"), RequireRole(DiscordSettings.DiscordStaff)]
-        public async Task Unmute(IUser user) => await UnmuteUser(user, false);
+        [Command("unmute")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        public async Task Unmute(IUser user)
+        {
+            await UnmuteUser(user, false);
+        }
 
-        [Command("mute status"), Alias("mute stats"), RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Command("mute status")]
+        [Alias("mute stats")]
+        [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task MuteState(IUser user = null)
         {
-            if (user == null) user = Context.User;
+            if (user == null)
+            {
+                user = Context.User;
+            }
+
             var mute = await Database.UNSAFE_GetMute(user.Id);
             await ReplyAsync($"{GetUnmentionedUser(user.Id)} muted until {mute.ExpiryDate} UTC.");
         }
     }
 
-    [Group("warn"), Alias("warning", "warns", "warnings")]
+    [Group("warn")]
+    [Alias("warning", "warns", "warnings")]
     public class WarningCommands : InteractiveBase<SocketCommandContext>
     {
         private static EmbedBuilder AddWarningsToEmbed(EmbedBuilder embed, WarningState state)
         {
             if (state.Warnings > 0)
             {
-                embed.AddField($"Warnings ({state.Warnings})", string.Concat(Enumerable.Repeat("⚠️ ", state.Warnings)), true);
+                embed.AddField($"Warnings ({state.Warnings})", string.Concat(Enumerable.Repeat("⚠️ ", state.Warnings)),
+                    true);
                 embed.WithColor(Color.Orange);
             }
+
             if (state.Strikes > 0)
             {
-                embed.AddField($"Strikes ({state.Strikes})", string.Concat(Enumerable.Repeat("❌ ", state.Strikes)), true);
+                embed.AddField($"Strikes ({state.Strikes})", string.Concat(Enumerable.Repeat("❌ ", state.Strikes)),
+                    true);
                 embed.WithColor(Color.Red);
             }
+
             if (state.Warnings == 0 && state.Strikes == 0)
             {
                 embed.AddField("Warnings (0)", "No warnings, well done!");
@@ -214,11 +270,12 @@ namespace ForumCrawler.Commands
             }
             else if (state.MutedUntil.HasValue)
             {
-                embed.AddField($"Strike mute penalty expires in", (state.MutedUntil.Value - DateTimeOffset.UtcNow).ToHumanReadableString());
+                embed.AddField("Strike mute penalty expires in",
+                    (state.MutedUntil.Value - DateTimeOffset.UtcNow).ToHumanReadableString());
             }
             else if (state.LastTick > DateTimeOffset.UtcNow)
             {
-                embed.AddField($"Probation ends in", (state.LastTick - DateTimeOffset.UtcNow).ToHumanReadableString());
+                embed.AddField("Probation ends in", (state.LastTick - DateTimeOffset.UtcNow).ToHumanReadableString());
             }
             else
             {
@@ -226,7 +283,8 @@ namespace ForumCrawler.Commands
                 var duration = state.Warnings == 0
                     ? TimeSpan.FromDays(WarningState.WarningDecayLogicV3.StrikeExpiryDays)
                     : TimeSpan.FromDays(WarningState.WarningDecayLogicV3.GetWarningExpiryDays(state));
-                embed.AddField($"Next {next} expires in", (duration - (DateTimeOffset.UtcNow - state.LastTick)).ToHumanReadableString());
+                embed.AddField($"Next {next} expires in",
+                    (duration - (DateTimeOffset.UtcNow - state.LastTick)).ToHumanReadableString());
             }
 
             return embed;
@@ -247,8 +305,10 @@ namespace ForumCrawler.Commands
 
         private EmbedBuilder GetWarningIssuedEmbed(IUser user, Warning warning, WarningState state)
         {
-            return (warning.Amount == 0 ? GetWarningEmbed(user, warning) : AddWarningsToEmbed(GetWarningEmbed(user, warning), state))
-                            .WithTitle($"**{warning.Type}**");
+            return (warning.Amount == 0
+                    ? GetWarningEmbed(user, warning)
+                    : AddWarningsToEmbed(GetWarningEmbed(user, warning), state))
+                .WithTitle($"**{warning.Type}**");
         }
 
         private async Task EditWarningInternalAsync(IUser user, long id, string reason, bool force)
@@ -257,11 +317,20 @@ namespace ForumCrawler.Commands
             {
                 var warning = Array.Find(history, w => w.Id == id);
                 if (warning == null)
+                {
                     throw new Exception("Invalid warning ID.");
+                }
+
                 if (warning.UserId != user.Id) // this check exists to catch typos in warning IDs
+                {
                     throw new Exception("Warning ID does not match with user!");
+                }
+
                 if (warning.IssuerId != Context.User.Id && !force)
-                    throw new Exception("Warning can only be edited by its issuer, " + MentionUtils.MentionUser(warning.IssuerId) + ".");
+                {
+                    throw new Exception("Warning can only be edited by its issuer, " +
+                                        MentionUtils.MentionUser(warning.IssuerId) + ".");
+                }
 
                 var oldReason = warning.Reason;
                 warning.Reason = reason ?? warning.Reason;
@@ -278,14 +347,20 @@ namespace ForumCrawler.Commands
                     var embed = GetWarningIssuedEmbed(user, warning, state);
                     if (warning.Type != oldSeverity)
                     {
-                        if (warning.Amount == 0) AddWarningsToEmbed(embed, state);
+                        if (warning.Amount == 0)
+                        {
+                            AddWarningsToEmbed(embed, state);
+                        }
+
                         embed.Title += $" (Changed from {oldSeverity})";
                     }
+
                     if (warning.Reason != oldReason)
                     {
-                        embed.Title += $" (Reason updated)";
+                        embed.Title += " (Reason updated)";
                         embed.Fields.Insert(3, new EmbedFieldBuilder().WithName("Old Reason").WithValue(oldReason));
                     }
+
                     await AnnounceWarningEverywhereAsync(user, embed.Build());
                 }
             });
@@ -295,11 +370,21 @@ namespace ForumCrawler.Commands
         {
             var warning = await Database.UNSAFE_GetWarningAsync(id);
             if (warning == null)
+            {
                 throw new Exception("Invalid warning ID.");
+            }
+
             if (warning.UserId != user.Id) // this check exists to catch typos in warning IDs
+            {
                 throw new Exception("Warning ID does not match with user!");
+            }
+
             if (warning.IssuerId != Context.User.Id && !force)
-                throw new Exception("Warning can only be deleted by its issuer, " + MentionUtils.MentionUser(warning.IssuerId) + ".");
+            {
+                throw new Exception("Warning can only be deleted by its issuer, " +
+                                    MentionUtils.MentionUser(warning.IssuerId) + ".");
+            }
+
             await Database.UNSAFE_RemoveWarningAsync(id, Context.Message, reason);
 
             var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
@@ -318,7 +403,7 @@ namespace ForumCrawler.Commands
 
         private async Task ListWarningsAsync(string message, ICollection<Warning> warnings, IMessageChannel target)
         {
-            var warningEmbeds = new List<EmbedBuilder> { new EmbedBuilder() };
+            var warningEmbeds = new List<EmbedBuilder> {new EmbedBuilder()};
             foreach (var w in warnings)
             {
                 var warningStr =
@@ -356,40 +441,78 @@ namespace ForumCrawler.Commands
             return criteria;
         }
 
-        [Command("list"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
+        [Command("list")]
+        [RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Priority(1)]
         public async Task ListWarns(IUser user = null)
         {
-            if (user == null) user = Context.User;
+            if (user == null)
+            {
+                user = Context.User;
+            }
+
             var warnings = await Database.UNSAFE_GetWarningsAsync(user.Id);
-            await ListWarningsAsync($"**{GetUnmentionedUser(user.Id)}** has {warnings.Length} warnings.", warnings, Context.Channel);
+            await ListWarningsAsync($"**{GetUnmentionedUser(user.Id)}** has {warnings.Length} warnings.", warnings,
+                Context.Channel);
         }
 
-        [Command("status"), Alias("stats"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
+        [Command("status")]
+        [Alias("stats")]
+        [RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Priority(1)]
         public async Task WarnStats(IUser user = null)
         {
-            if (user == null) user = Context.User;
+            if (user == null)
+            {
+                user = Context.User;
+            }
+
             var state = WarningState.FromDatabase(await Database.UNSAFE_GetWarningsAsync(user.Id));
             var embed = AddWarningsToEmbed(new EmbedBuilder().WithAuthor(user), state).Build();
             await ReplyAsync(embed: embed);
         }
 
-        [Command("force remove"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
-        public async Task ForceRemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, true);
+        [Command("force remove")]
+        [RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Priority(1)]
+        public async Task ForceRemoveWarn(IUser user, long id, [Remainder] string reason)
+        {
+            await RemoveWarningInternalAsync(user, id, reason, true);
+        }
 
-        [Command("remove"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
-        public async Task RemoveWarn(IUser user, long id, [Remainder] string reason) => await RemoveWarningInternalAsync(user, id, reason, false);
+        [Command("remove")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(1)]
+        public async Task RemoveWarn(IUser user, long id, [Remainder] string reason)
+        {
+            await RemoveWarningInternalAsync(user, id, reason, false);
+        }
 
-        [Command("force edit"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
-        public async Task ForceEditWarn(IUser user, long id, [Remainder] string reason = null) => await EditWarningInternalAsync(user, id, reason, true);
+        [Command("force edit")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(1)]
+        public async Task ForceEditWarn(IUser user, long id, [Remainder] string reason = null)
+        {
+            await EditWarningInternalAsync(user, id, reason, true);
+        }
 
-        [Command("edit"), RequireRole(DiscordSettings.DiscordStaff), Priority(1)]
-        public async Task EditWarn(IUser user, long id, [Remainder] string reason = null) => await EditWarningInternalAsync(user, id, reason, false);
+        [Command("edit")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(1)]
+        public async Task EditWarn(IUser user, long id, [Remainder] string reason = null)
+        {
+            await EditWarningInternalAsync(user, id, reason, false);
+        }
 
-        [Command, RequireRole(DiscordSettings.DiscordStaff), Priority(0)]
+        [Command]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(0)]
         public async Task Warn(IGuildUser user, [Remainder] string reason)
         {
             if (user.IsStaff())
+            {
                 throw new Exception("User is staff.");
+            }
 
             var history = await Database.UNSAFE_GetWarningsAsync(user.Id);
 
@@ -439,25 +562,32 @@ namespace ForumCrawler.Commands
                 .SendMessageAsync(embed: embed);
         }
 
-        private async Task<WarningState> ApplyWarningWithSeverity(IUser user, Warning[] history, Warning warning, Embed tempEmbed)
+        private async Task<WarningState> ApplyWarningWithSeverity(IUser user, Warning[] history, Warning warning,
+            Embed tempEmbed)
         {
             var state = WarningState.FromDatabase(history);
 
-            warning.Amount = await RequestSeverity(user, history, AddWarningsToEmbed(tempEmbed.ToEmbedBuilder(), state).Build());
+            warning.Amount = await RequestSeverity(user, history,
+                AddWarningsToEmbed(tempEmbed.ToEmbedBuilder(), state).Build());
             if (history.Contains(warning))
+            {
                 state = WarningState.FromDatabase(history);
+            }
             else
+            {
                 state.Add(warning.Amount, warning.IssueDate);
+            }
 
             if (state.MutedUntil.HasValue)
             {
-                await MuteWatcher.MuteUser(new Mute
-                {
-                    UserId = user.Id,
-                    IssuerId = Context.Client.GetGuild(DiscordSettings.GuildId).CurrentUser.Id,
-                    IssueDate = DateTime.UtcNow,
-                    ExpiryDate = state.MutedUntil.Value.UtcDateTime
-                }, "You got a strike!", true, true);
+                await MuteWatcher.MuteUser(
+                    new Mute
+                    {
+                        UserId = user.Id,
+                        IssuerId = Context.Client.GetGuild(DiscordSettings.GuildId).CurrentUser.Id,
+                        IssueDate = DateTime.UtcNow,
+                        ExpiryDate = state.MutedUntil.Value.UtcDateTime
+                    }, "You got a strike!", true, true);
             }
             else
             {
@@ -471,7 +601,8 @@ namespace ForumCrawler.Commands
         {
             var initialWarnings = history.Where(w => w.Amount == 0 && !w.RemoveDate.HasValue).ToList();
             var dmChannel = await Context.User.GetOrCreateDMChannelAsync();
-            await ListWarningsAsync($"{GetUnmentionedUser(user.Id)} has {initialWarnings.Count} initial warnings.", initialWarnings, dmChannel);
+            await ListWarningsAsync($"{GetUnmentionedUser(user.Id)} has {initialWarnings.Count} initial warnings.",
+                initialWarnings, dmChannel);
             await dmChannel.SendMessageAsync(embed: embed);
             await dmChannel.SendMessageAsync(
                 "Select warning severity:\n" +
@@ -480,13 +611,22 @@ namespace ForumCrawler.Commands
                 "1 - Warning\n" +
                 "3 - Strike\n" +
                 "```");
-            var msg = await NextMessageAsync(GetCriteria(dmChannel), timeout: TimeSpan.FromMinutes(5));
+            var msg = await NextMessageAsync(GetCriteria(dmChannel), TimeSpan.FromMinutes(5));
             if (msg == null)
+            {
                 throw new Exception("Timeout, operation cancelled.");
+            }
+
             if (!int.TryParse(msg.Content, out var amount))
+            {
                 throw new Exception("Invalid input, operation cancelled.");
+            }
+
             if (amount != 0 && amount != 1 && amount != 3)
+            {
                 throw new Exception("Invalid input, operation cancelled.");
+            }
+
             return amount;
         }
     }

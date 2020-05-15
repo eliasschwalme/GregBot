@@ -4,7 +4,10 @@ namespace ForumCrawler
 {
     internal static class DiscordAvatar
     {
-        public static string GetAvatarUrlOrDefault(this IUser user) => user.GetAvatarUrl() ?? GetDefaultAvatarUrl(user);
+        public static string GetAvatarUrlOrDefault(this IUser user)
+        {
+            return user.GetAvatarUrl() ?? GetDefaultAvatarUrl(user);
+        }
 
         public static string GetDefaultAvatarUrl(this IUser user)
         {

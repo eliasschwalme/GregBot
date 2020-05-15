@@ -1,18 +1,13 @@
-﻿using Discord;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-
-using DiscordSocialScore;
 using ForumCrawler.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Security;
-using System.Threading.Tasks;
-using System.Web.UI.WebControls;
 
 namespace ForumCrawler
 {
@@ -48,31 +43,40 @@ namespace ForumCrawler
         public const ulong DSStaffCommandsChannel = 705936434489589822;
         public const ulong DSReportsChannel = 705933908008763503;
 
-        public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig> {
-            { GuildId, new GovernanceConfig(549399741994237984, 549402714103087144, new OverwritePermissions(viewChannel: PermValue.Allow)) },
-            { DSGuildId, new GovernanceConfig(705937563021737985, 705940856099569714, new OverwritePermissions(sendMessages: PermValue.Allow)) } 
+        public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig>
+        {
+            {
+                GuildId,
+                new GovernanceConfig(549399741994237984, 549402714103087144,
+                    new OverwritePermissions(viewChannel: PermValue.Allow))
+            },
+            {
+                DSGuildId,
+                new GovernanceConfig(705937563021737985, 705940856099569714,
+                    new OverwritePermissions(sendMessages: PermValue.Allow))
+            }
         };
 
         public class GovernanceConfig
         {
-            public ulong Category { get; }
-            public ulong ChangelogChannel { get; }
-            public OverwritePermissions EveryonePermissionsAfterSubmission { get; }
-
-            public GovernanceConfig(ulong category, ulong changelogChannel, OverwritePermissions everyonePermissionsAfterSubmission)
+            public GovernanceConfig(ulong category, ulong changelogChannel,
+                OverwritePermissions everyonePermissionsAfterSubmission)
             {
                 Category = category;
                 ChangelogChannel = changelogChannel;
                 EveryonePermissionsAfterSubmission = everyonePermissionsAfterSubmission;
             }
+
+            public ulong Category { get; }
+            public ulong ChangelogChannel { get; }
+            public OverwritePermissions EveryonePermissionsAfterSubmission { get; }
         }
 
         public static async Task<DiscordSocketClient> GetClient()
         {
             var client = new DiscordSocketClient(new DiscordSocketConfig
             {
-                MessageCacheSize = 50,
-                AlwaysDownloadUsers = true
+                MessageCacheSize = 50, AlwaysDownloadUsers = true
             });
             client.Log += Log;
             client.AddOnFirstReady(() => Ready(client));
@@ -84,7 +88,10 @@ namespace ForumCrawler
             return client;
         }
 
-        private static async Task Ready(DiscordSocketClient client) => await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
+        private static async Task Ready(DiscordSocketClient client)
+        {
+            await client.SetGameAsync("Greg Simulator " + DateTimeOffset.UtcNow.Year);
+        }
 
         private static Task Log(LogMessage message)
         {
@@ -114,18 +121,26 @@ namespace ForumCrawler
             return provider;
         }
 
-        public static Task HandleCommand(DiscordSocketClient client, IServiceProvider services, CommandService commands, SocketMessage messageParam)
+        public static Task HandleCommand(DiscordSocketClient client, IServiceProvider services, CommandService commands,
+            SocketMessage messageParam)
         {
-            if (!(messageParam is SocketUserMessage message)) return Task.Delay(0);
+            if (!(messageParam is SocketUserMessage message))
+            {
+                return Task.Delay(0);
+            }
 
             Task.Run(async () =>
             {
                 var argPos = 0;
-                if (!(message.HasStringPrefix(CommandPrefix, ref argPos) || message.HasMentionPrefix(client.CurrentUser, ref argPos))) return;
+                if (!(message.HasStringPrefix(CommandPrefix, ref argPos) ||
+                      message.HasMentionPrefix(client.CurrentUser, ref argPos)))
+                {
+                    return;
+                }
 
                 {
                     var context = new SocketCommandContext(client, message);
-                    var result = await commands.ExecuteAsync(context, argPos, services, MultiMatchHandling.Exception);
+                    var result = await commands.ExecuteAsync(context, argPos, services);
                     if (!result.IsSuccess)
                     {
                         await context.Message.Channel.SendErrorAsync(result.ErrorReason);

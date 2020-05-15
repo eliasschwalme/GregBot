@@ -1,20 +1,22 @@
-﻿using Discord;
-using Discord.WebSocket;
-
-using Nito.AsyncEx;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
+using Nito.AsyncEx;
 
 namespace ForumCrawler
 {
     public class RoleCacheProvider
     {
-        public DiscordSocketClient Client { get; }
         private readonly Dictionary<ulong, RoleCache> cacheCollection = new Dictionary<ulong, RoleCache>();
 
-        public RoleCacheProvider(DiscordSocketClient client) => Client = client;
+        public RoleCacheProvider(DiscordSocketClient client)
+        {
+            Client = client;
+        }
+
+        public DiscordSocketClient Client { get; }
 
         public RoleCache Get(SocketGuild guild)
         {
@@ -22,6 +24,7 @@ namespace ForumCrawler
             {
                 result = cacheCollection[guild.Id] = new RoleCache(Client, guild);
             }
+
             return result;
         }
     }
@@ -29,7 +32,6 @@ namespace ForumCrawler
     public class RoleCache
     {
         private readonly AsyncLock _mutex = new AsyncLock();
-        public SocketGuild Guild { get; }
         private readonly Dictionary<string, IRole> cache = new Dictionary<string, IRole>();
 
         public RoleCache(DiscordSocketClient client, SocketGuild guild)
@@ -38,20 +40,25 @@ namespace ForumCrawler
             client.RoleCreated += Client_RoleCreated;
         }
 
+        public SocketGuild Guild { get; }
+
         private Task Client_RoleCreated(SocketRole arg)
         {
             if (arg.Guild == Guild)
             {
-                var toDelete = cache.Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key).ToList();
+                var toDelete = cache.Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key)
+                    .ToList();
                 foreach (var key in toDelete)
                 {
                     cache.Remove(key);
                 }
             }
+
             return Task.CompletedTask;
         }
 
-        public async Task<IRole> CreateOrUpdateRoleAsync(string roleName, GuildPermissions? permissions = null, Color color = default, bool isHoisted = false)
+        public async Task<IRole> CreateOrUpdateRoleAsync(string roleName, GuildPermissions? permissions = null,
+            Color color = default, bool isHoisted = false)
         {
             var name = ScoreRoleManager.RolePrefix + roleName;
             IRole res = Guild.Roles.FirstOrDefault(r => r.Name == name);

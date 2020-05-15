@@ -6,12 +6,20 @@ namespace ForumCrawler
     {
         public static double CalculateSimilarity(string source, string target)
         {
-            if ((source == null) || (target == null))
+            if (source == null || target == null)
+            {
                 return 0.0;
-            if ((source.Length == 0) || (target.Length == 0))
+            }
+
+            if (source.Length == 0 || target.Length == 0)
+            {
                 return 0.0;
+            }
+
             if (source == target)
+            {
                 return 1.0;
+            }
 
             var stepsToSame = Compute(source, target);
             return 1.0 - (stepsToSame / (double)Math.Max(source.Length, target.Length));
@@ -53,7 +61,7 @@ namespace ForumCrawler
                 for (var j = 1; j <= m; j++)
                 {
                     // Step 5
-                    var cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+                    var cost = t[j - 1] == s[i - 1] ? 0 : 1;
 
                     // Step 6
                     d[i, j] = Math.Min(
@@ -61,6 +69,7 @@ namespace ForumCrawler
                         d[i - 1, j - 1] + cost);
                 }
             }
+
             // Step 7
             return d[n, m];
         }

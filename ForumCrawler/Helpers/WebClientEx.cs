@@ -5,7 +5,10 @@ namespace ForumCrawler
 {
     public class WebClientEx : WebClient
     {
-        public WebClientEx(CookieContainer container) => CookieContainer = container;
+        public WebClientEx(CookieContainer container)
+        {
+            CookieContainer = container;
+        }
 
         public CookieContainer CookieContainer { get; set; }
 
@@ -16,6 +19,7 @@ namespace ForumCrawler
             {
                 request.CookieContainer = CookieContainer;
             }
+
             return r;
         }
 

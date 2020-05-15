@@ -1,12 +1,11 @@
-﻿using Discord;
-using Discord.WebSocket;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
@@ -19,14 +18,12 @@ namespace ForumCrawler
                 .WithDescription(message.Content)
                 .WithFooter("In #" + message.Channel.Name)
                 .WithTimestamp(message.CreatedAt)
-
                 .WithFields
                 (
                     new EmbedFieldBuilder()
                         .WithIsInline(true)
                         .WithName("Original:")
                         .WithValue($"[Click here]({message.GetJumpUrl()})"),
-
                     new EmbedFieldBuilder()
                         .WithIsInline(true)
                         .WithName("Score:")
@@ -57,13 +54,15 @@ namespace ForumCrawler
             var extraStack = new Stack<string>();
             var res = new List<string>();
             var currStr = new StringBuilder();
+
             void commit()
             {
                 res.Add(currStr.ToString());
                 currStr = new StringBuilder();
             }
 
-            var matchesUnsafe = Regex.Matches(bbCode, @"\[code\](.*)\[\/code\]|\[(\/?[a-z]+)(=[^\]]+)?\]|([^\[]+)", RegexOptions.Multiline & RegexOptions.IgnoreCase);
+            var matchesUnsafe = Regex.Matches(bbCode, @"\[code\](.*)\[\/code\]|\[(\/?[a-z]+)(=[^\]]+)?\]|([^\[]+)",
+                RegexOptions.Multiline & RegexOptions.IgnoreCase);
             foreach (var matchUnsafe in matchesUnsafe.Cast<Match>().Skip(1).Take(matchesUnsafe.Count - 3))
             {
                 if (matchUnsafe.Groups[1].Success) // code tag
@@ -121,6 +120,7 @@ namespace ForumCrawler
                             {
                                 currStr.Append("||");
                             }
+
                             break;
 
                         case "pre":
@@ -139,37 +139,79 @@ namespace ForumCrawler
                                 {
                                     currStr.Append("(quote ommited)");
                                 }
+
                                 currStr.AppendLine().AppendLine();
                             }
+
                             break;
 
                         case "youtube":
-                            if (open && extra != "") currStr.Append('[').Append(extra).Append("](");
-                            if (!open && lastExtra != "") currStr.Append(") ");
-                            if (open) currStr.Append("https://www.youtube.com/watch?v=");
+                            if (open && extra != "")
+                            {
+                                currStr.Append('[').Append(extra).Append("](");
+                            }
+
+                            if (!open && lastExtra != "")
+                            {
+                                currStr.Append(") ");
+                            }
+
+                            if (open)
+                            {
+                                currStr.Append("https://www.youtube.com/watch?v=");
+                            }
+
                             break;
 
                         case "world":
-                            if (open) currStr.Append("https://everybodyedits.com/games/");
+                            if (open)
+                            {
+                                currStr.Append("https://everybodyedits.com/games/");
+                            }
+
                             break;
 
                         case "img":
-                            if (open && extra != "") currStr.Append('[').Append(extra).Append("](");
-                            if (!open && lastExtra != "") currStr.Append(") ");
+                            if (open && extra != "")
+                            {
+                                currStr.Append('[').Append(extra).Append("](");
+                            }
+
+                            if (!open && lastExtra != "")
+                            {
+                                currStr.Append(") ");
+                            }
+
                             break;
 
                         case "url":
-                            if (open && extra != "") currStr.Append(" [");
-                            if (!open && lastExtra != "") currStr.Append("](").Append(lastExtra).Append(") ");
+                            if (open && extra != "")
+                            {
+                                currStr.Append(" [");
+                            }
+
+                            if (!open && lastExtra != "")
+                            {
+                                currStr.Append("](").Append(lastExtra).Append(") ");
+                            }
+
                             break;
 
                         case "list":
                             currStr.AppendLine();
-                            if (!open) currStr.AppendLine();
+                            if (!open)
+                            {
+                                currStr.AppendLine();
+                            }
+
                             break;
 
                         case "item":
-                            if (open) currStr.AppendLine().Append("- ");
+                            if (open)
+                            {
+                                currStr.AppendLine().Append("- ");
+                            }
+
                             break;
 
                         case "color":
@@ -188,7 +230,10 @@ namespace ForumCrawler
                 }
                 else if (matchUnsafe.Groups[4].Success)
                 {
-                    if (tagStack.Contains("quote")) continue;
+                    if (tagStack.Contains("quote"))
+                    {
+                        continue;
+                    }
 
                     var value = matchUnsafe.Groups[4].Value.Trim('\n').DiscordEscape();
 
@@ -213,6 +258,7 @@ namespace ForumCrawler
                     currStr.Append(value);
                 }
             }
+
             commit();
             return (res, string.Join(" ", media));
         }
@@ -225,7 +271,9 @@ namespace ForumCrawler
             var (content, media) = BBCodeToMarkdown(post.Content);
 
             var embed = new EmbedBuilder()
-                .WithAuthor(post.Poster, string.Format("https://forums.everybodyedits.com/img/avatar.php?id={0}", post.PosterId), "https://forums.everybodyedits.com/profile.php?id=" + post.PosterId)
+                .WithAuthor(post.Poster,
+                    string.Format("https://forums.everybodyedits.com/img/avatar.php?id={0}", post.PosterId),
+                    "https://forums.everybodyedits.com/profile.php?id=" + post.PosterId)
                 .WithFooter($"In {GetForumShortName(post.Forum).DiscordEscape()}")
                 .WithTimestamp(DateTimeOffset.Parse(post.Time))
                 .WithUrl($"{DiscordSettings.UrlPrefix + post.PostId}")
@@ -236,8 +284,9 @@ namespace ForumCrawler
             {
                 var title = content[(i * 2) - 1];
                 var value = content[i * 2];
-                
-                embed.AddField(title.Substring(0, Math.Min(title.Length, 256)), value.Substring(0, Math.Min(value.Length, 1024)));
+
+                embed.AddField(title.Substring(0, Math.Min(title.Length, 256)),
+                    value.Substring(0, Math.Min(value.Length, 1024)));
             }
 
             var mediaMsg = media.Length > 0 ? "Referenced media: " + media : null;
@@ -283,17 +332,24 @@ namespace ForumCrawler
 
         public static StringBuilder TrimEnd(this StringBuilder sb)
         {
-            if (sb == null || sb.Length == 0) return sb;
+            if (sb == null || sb.Length == 0)
+            {
+                return sb;
+            }
 
             var i = sb.Length - 1;
             for (; i >= 0; i--)
             {
                 if (!char.IsWhiteSpace(sb[i]))
+                {
                     break;
+                }
             }
 
             if (i < sb.Length - 1)
+            {
                 sb.Length = i + 1;
+            }
 
             return sb;
         }

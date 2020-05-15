@@ -1,56 +1,66 @@
-﻿using Discord;
-using Discord.Addons.Interactive;
-using Discord.Commands;
-using Discord.WebSocket;
-using PastebinAPI;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
-    [Group("suggest"), Alias("suggestion")]
+    [Group("suggest")]
+    [Alias("suggestion")]
     public class SuggestionCommands : GovernanceCommandsBase
     {
-        [
-            Command(),
-            Summary("Starts the amendment process."),
-            Priority(0)
-        ]
+        [Command]
+        [Summary("Starts the amendment process.")]
+        [Priority(0)]
         public async Task Draft([Summary("The short name.")] string shortName)
         {
             await CreateSuggestionChannel(SuggestionType.Draft, shortName, Context.User,
                 channel => GetSuggestionFromUserAsync(channel, Context.User));
         }
 
-        [
-            Command("upgrade"), Alias("import"),
-            Summary("Upgrades an existing message to a suggestion"),
-            Priority(1)
-        ]
+        [Command("upgrade")]
+        [Alias("import")]
+        [Summary("Upgrades an existing message to a suggestion")]
+        [Priority(1)]
         public async Task Upgrade(ulong messageId, string shortName)
         {
             var message = await Context.Channel.GetMessageAsync(messageId);
-            if (message == null) throw new Exception("Message with the given ID was not found in this channel.");
+            if (message == null)
+            {
+                throw new Exception("Message with the given ID was not found in this channel.");
+            }
 
             await CreateSuggestionChannel(SuggestionType.Draft, shortName, message.Author,
                 async channel =>
                 {
-                    await channel.SendMessageAsync($"Suggestion upgraded by {MentionUtils.MentionUser(Context.User.Id)}.");
+                    await channel.SendMessageAsync(
+                        $"Suggestion upgraded by {MentionUtils.MentionUser(Context.User.Id)}.");
                     return await ConfirmSuggestionFromUserAsync(channel, message.Author, message.Content);
                 });
         }
-        private static string ToHumanCounter(int number, string unit) => $"{number} {unit}{(number == 1 ? "" : "s")}";
 
-        [Command("finalize"), Summary("Finalizes a suggestion."), Priority(1)]
+        private static string ToHumanCounter(int number, string unit)
+        {
+            return $"{number} {unit}{(number == 1 ? "" : "s")}";
+        }
+
+        [Command("finalize")]
+        [Summary("Finalizes a suggestion.")]
+        [Priority(1)]
         public async Task Finalize(bool force = false)
         {
             var channel = Context.Channel;
             var oldType = channel.GetSuggestionChannelType();
-            if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
+            if (!channel.IsSuggestionChannelByName())
+            {
+                throw new InvalidOperationException("Wrong channel!");
+            }
 
             var user = (IGuildUser)Context.User;
             var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
@@ -59,15 +69,30 @@ namespace ForumCrawler
             var ageLeft = TimeSpan.FromTicks((channel.CreatedAt.AddDays(3) - DateTimeOffset.UtcNow).Ticks);
 
 
-            if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
-            if (!user.IsStaff() && ageInDays < 10) throw new Exception("Only the staff can finalize suggestions.");
-            if (oldType == SuggestionType.RFC) throw new Exception("RFCs cannot be finalized.");
-            if (oldType == SuggestionType.Vote) throw new Exception("Finalized suggestions cannot be finalized.");
+            if (vote == null)
+            {
+                throw new Exception("Cannot find information about this suggestion in database!");
+            }
+
+            if (!user.IsStaff() && ageInDays < 10)
+            {
+                throw new Exception("Only the staff can finalize suggestions.");
+            }
+
+            if (oldType == SuggestionType.RFC)
+            {
+                throw new Exception("RFCs cannot be finalized.");
+            }
+
+            if (oldType == SuggestionType.Vote)
+            {
+                throw new Exception("Finalized suggestions cannot be finalized.");
+            }
 
             if (ageInDays < 3 && (!force || !user.IsServerOwner()))
             {
-                throw new Exception($"Suggestion too young. " +
-                    $"{ToHumanCounter(ageLeft.Days, "day")}, {ToHumanCounter(ageLeft.Hours, "hour")}, {ToHumanCounter(ageLeft.Minutes, "minute")} left.");
+                throw new Exception("Suggestion too young. " +
+                                    $"{ToHumanCounter(ageLeft.Days, "day")}, {ToHumanCounter(ageLeft.Hours, "hour")}, {ToHumanCounter(ageLeft.Minutes, "minute")} left.");
             }
 
             var textChannel = (SocketTextChannel)channel;
@@ -75,7 +100,7 @@ namespace ForumCrawler
 
             await textChannel.ConvertSuggestionChannelType(SuggestionType.Vote);
 
-            await message.AddReactionsAsync(new[] { new Emoji("👍"), new Emoji("👎") });
+            await message.AddReactionsAsync(new[] {new Emoji("👍"), new Emoji("👎")});
             await UpdateBillboardAsync(Context.Guild, message, channel, vote, SuggestionType.Vote);
 
             var finalizeMsg = await channel.SendMessageAsync("", embed: new EmbedBuilder()
@@ -89,56 +114,76 @@ namespace ForumCrawler
     [Group("rfc")]
     public class RFCCommands : GovernanceCommandsBase
     {
-        [
-            Command(),
-            Summary("Starts the amendment process."),
-            Priority(0)
-        ]
+        [Command]
+        [Summary("Starts the amendment process.")]
+        [Priority(0)]
         public async Task RFC([Summary("The short name.")] string shortName)
         {
             await CreateSuggestionChannel(SuggestionType.RFC, shortName, Context.User,
                 channel => GetSuggestionFromUserAsync(channel, Context.User));
         }
 
-        [
-            Command("upgrade"), Alias("import"),
-            Summary("Upgrades an existing message to a suggestion"),
-            Priority(1)
-        ]
+        [Command("upgrade")]
+        [Alias("import")]
+        [Summary("Upgrades an existing message to a suggestion")]
+        [Priority(1)]
         public async Task Upgrade(ulong messageId, string shortName)
         {
             var message = await Context.Channel.GetMessageAsync(messageId);
-            if (message == null) throw new Exception("Message with the given ID was not found in this channel.");
+            if (message == null)
+            {
+                throw new Exception("Message with the given ID was not found in this channel.");
+            }
 
             await CreateSuggestionChannel(SuggestionType.RFC, shortName, message.Author,
                 async channel =>
                 {
-                    await channel.SendMessageAsync($"Suggestion upgraded by {MentionUtils.MentionUser(Context.User.Id)}.");
+                    await channel.SendMessageAsync(
+                        $"Suggestion upgraded by {MentionUtils.MentionUser(Context.User.Id)}.");
                     return await ConfirmSuggestionFromUserAsync(channel, message.Author, message.Content);
                 });
         }
     }
 
-    [Group("suggest"), Alias("suggestion", "rfc")]
+    [Group("suggest")]
+    [Alias("suggestion", "rfc")]
     public class SharedGovernanceCommands : GovernanceCommandsBase
     {
-
-        [
-            Command("convert"),
-            Summary("Converts an existing suggestion's type."),
-            Priority(0)
-        ]
+        [Command("convert")]
+        [Summary("Converts an existing suggestion's type.")]
+        [Priority(0)]
         public async Task Convert(SuggestionType type, bool force = false)
         {
             var guildUser = (IGuildUser)Context.User;
             var channel = (SocketTextChannel)Context.Channel;
             var oldType = channel.GetSuggestionChannelType();
-            if (oldType == SuggestionType.Vote && !force) throw new Exception("Suggestion is in voting mode. Converting it would delete all existing votes. To confirm, run the command again with the force flag set.");
-            if (!guildUser.IsServerOwner()) throw new Exception("Only server owner can convert suggestions.");
-            if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
-            if (type == SuggestionType.Vote) throw new Exception("Use g!suggest finalize to start a vote.");
+            if (oldType == SuggestionType.Vote && !force)
+            {
+                throw new Exception(
+                    "Suggestion is in voting mode. Converting it would delete all existing votes. To confirm, run the command again with the force flag set.");
+            }
+
+            if (!guildUser.IsServerOwner())
+            {
+                throw new Exception("Only server owner can convert suggestions.");
+            }
+
+            if (!channel.IsSuggestionChannelByName())
+            {
+                throw new InvalidOperationException("Wrong channel!");
+            }
+
+            if (type == SuggestionType.Vote)
+            {
+                throw new Exception("Use g!suggest finalize to start a vote.");
+            }
+
             var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
-            if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
+            if (vote == null)
+            {
+                throw new Exception("Cannot find information about this suggestion in database!");
+            }
+
             var message = (IUserMessage)await Context.Channel.GetMessageAsync(vote.MessageId);
 
             await message.RemoveAllReactionsAsync();
@@ -149,18 +194,34 @@ namespace ForumCrawler
         }
 
 
-        [Command("rename"), Summary("Edits a suggestion."), Priority(1)]
+        [Command("rename")]
+        [Summary("Edits a suggestion.")]
+        [Priority(1)]
         public async Task Rename([Summary("The short name.")] string shortName)
         {
             var channel = (SocketTextChannel)Context.Channel;
             var type = channel.GetSuggestionChannelType();
-            if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
-            if (type == SuggestionType.Vote) throw new Exception("Finalized suggestions cannot be renamed.");
+            if (!channel.IsSuggestionChannelByName())
+            {
+                throw new InvalidOperationException("Wrong channel!");
+            }
+
+            if (type == SuggestionType.Vote)
+            {
+                throw new Exception("Finalized suggestions cannot be renamed.");
+            }
 
             var user = (IGuildUser)Context.User;
             var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
-            if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
-            if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner can rename suggestions.");
+            if (vote == null)
+            {
+                throw new Exception("Cannot find information about this suggestion in database!");
+            }
+
+            if (vote.UserId != user.Id && !user.IsStaff())
+            {
+                throw new Exception("Only the owner can rename suggestions.");
+            }
 
             var submissionOld = channel.GetSuggestionChannelName();
             var submissionNew = shortName;
@@ -172,17 +233,34 @@ namespace ForumCrawler
             }
         }
 
-        [Command("edit"), Summary("Edits a suggestion."), Priority(1)]
+        [Command("edit")]
+        [Summary("Edits a suggestion.")]
+        [Priority(1)]
         public async Task Edit()
         {
             var channel = (SocketTextChannel)Context.Channel;
-            if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
-            if (channel.GetSuggestionChannelType() == SuggestionType.Vote) throw new Exception("Finalized suggestions cannot be edited.");
+            if (!channel.IsSuggestionChannelByName())
+            {
+                throw new InvalidOperationException("Wrong channel!");
+            }
+
+            if (channel.GetSuggestionChannelType() == SuggestionType.Vote)
+            {
+                throw new Exception("Finalized suggestions cannot be edited.");
+            }
 
             var user = (IGuildUser)Context.User;
             var vote = await Database.UNSAFE_GetGovernanceVoteAsync(channel.Id);
-            if (vote == null) throw new Exception("Cannot find information about this suggestion in database!");
-            if (vote.UserId != user.Id && !user.IsStaff()) throw new Exception("Only the owner or staff can edit suggestions.");
+            if (vote == null)
+            {
+                throw new Exception("Cannot find information about this suggestion in database!");
+            }
+
+            if (vote.UserId != user.Id && !user.IsStaff())
+            {
+                throw new Exception("Only the owner or staff can edit suggestions.");
+            }
+
             var message = (IUserMessage)await channel.GetMessageAsync(vote.MessageId);
             var author = Context.Client.GetUser(vote.UserId);
 
@@ -194,7 +272,8 @@ namespace ForumCrawler
             {
                 var submissionOld = message.Embeds.OfType<Embed>().FirstOrDefault();
                 var submissionNew = suggestionMessage.Embeds.OfType<Embed>().FirstOrDefault();
-                var editEmbed = EditWatcher.GetEditEmbed(user, "edited their suggestion", submissionOld.Description, submissionNew.Description);
+                var editEmbed = EditWatcher.GetEditEmbed(user, "edited their suggestion", submissionOld.Description,
+                    submissionNew.Description);
                 if (editEmbed != null)
                 {
                     await message.ModifyAsync(props => props.Embed = submissionNew);
@@ -204,16 +283,33 @@ namespace ForumCrawler
             }
         }
 
-        [Command("approve"), Alias("pass"), Summary("Approves an ammendment."), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
-        public async Task Approve([Remainder] string reason = null) => await Archive("approved", Color.Green, reason);
+        [Command("approve")]
+        [Alias("pass")]
+        [Summary("Approves an ammendment.")]
+        [RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Priority(1)]
+        public async Task Approve([Remainder] string reason = null)
+        {
+            await Archive("approved", Color.Green, reason);
+        }
 
-        [Command("reject"), Alias("veto"), Summary("Rejects an ammendment"), RequireRole(DiscordSettings.DiscordServerOwner), Priority(1)]
-        public async Task Reject([Remainder] string reason = null) => await Archive("rejected", Color.Red, reason);
+        [Command("reject")]
+        [Alias("veto")]
+        [Summary("Rejects an ammendment")]
+        [RequireRole(DiscordSettings.DiscordServerOwner)]
+        [Priority(1)]
+        public async Task Reject([Remainder] string reason = null)
+        {
+            await Archive("rejected", Color.Red, reason);
+        }
 
         private async Task Archive(string status, Color color, string reason)
         {
             var channel = Context.Channel;
-            if (!channel.IsSuggestionChannelByName()) throw new InvalidOperationException("Wrong channel!");
+            if (!channel.IsSuggestionChannelByName())
+            {
+                throw new InvalidOperationException("Wrong channel!");
+            }
 
             await Context.Message.DeleteAsync();
             var textChannel = (SocketTextChannel)channel;
@@ -222,26 +318,31 @@ namespace ForumCrawler
                 var stream = GenerateStreamFromString(text);
                 var guild = Context.Guild;
                 var config = guild.GetGovernanceConfig();
-                var baseEmbed = await AddVotesAsync(guild, message.Embeds.FirstOrDefault()?.ToEmbedBuilder() ?? new EmbedBuilder(), message);
-                await guild.GetTextChannel(config.ChangelogChannel).SendFileAsync(stream, $"log_{channel.GetSuggestionChannelName()}.txt",
+                var baseEmbed = await AddVotesAsync(guild,
+                    message.Embeds.FirstOrDefault()?.ToEmbedBuilder() ?? new EmbedBuilder(), message);
+                await guild.GetTextChannel(config.ChangelogChannel).SendFileAsync(stream,
+                    $"log_{channel.GetSuggestionChannelName()}.txt",
                     $"\"{channel.GetSuggestionChannelName()}\" was {status} by {MentionUtils.MentionUser(Context.User.Id)}. {reason}",
                     embed: baseEmbed
-                    .WithColor(color)
-                    .Build());
+                        .WithColor(color)
+                        .Build());
             });
 
             await textChannel.DeleteAsync();
             await Database.UNSAFE_RemoveGovernanceVoteAsync(channel.Id);
         }
 
-        private static async Task ArchiveChannel(ISocketMessageChannel channel, Func<string, IUserMessage, Task> callback)
+        private static async Task ArchiveChannel(ISocketMessageChannel channel,
+            Func<string, IUserMessage, Task> callback)
         {
             var history = new StringBuilder();
-            var messages = (await channel.GetMessagesAsync(limit: 5000).FlattenAsync()).ToList();
+            var messages = (await channel.GetMessagesAsync(5000).FlattenAsync()).ToList();
             foreach (var message in Enumerable.Reverse(messages))
             {
-                history.Append('[').Append(message.Timestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss")).Append(" UTC] ");
-                history.Append(message.Author.Username.DiscordEscape()).Append('#').Append(message.Author.Discriminator ?? "@" + message.Author.Id.ToString());
+                history.Append('[').Append(message.Timestamp.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss"))
+                    .Append(" UTC] ");
+                history.Append(message.Author.Username.DiscordEscape()).Append('#')
+                    .Append(message.Author.Discriminator ?? "@" + message.Author.Id);
                 history.Append(": ");
 
                 if (message is IUserMessage userMsg)
@@ -250,7 +351,8 @@ namespace ForumCrawler
 
                     if (userMsg.Reactions.Count > 0)
                     {
-                        history.Append(" (").Append(string.Join(", ", userMsg.Reactions.Select(r => r.Key.Name + ": " + r.Value.ReactionCount))).Append(')');
+                        history.Append(" (").Append(string.Join(", ",
+                            userMsg.Reactions.Select(r => r.Key.Name + ": " + r.Value.ReactionCount))).Append(')');
                     }
                 }
 
@@ -269,10 +371,14 @@ namespace ForumCrawler
 
                 if (message.EditedTimestamp.HasValue)
                 {
-                    history.Append(" (Edited: ").Append(message.EditedTimestamp.Value.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss")).Append(" UTC)");
+                    history.Append(" (Edited: ")
+                        .Append(message.EditedTimestamp.Value.ToUniversalTime().ToString("MM/dd/yyyy HH:mm:ss"))
+                        .Append(" UTC)");
                 }
+
                 history.AppendLine();
             }
+
             await callback(history.ToString(), (IUserMessage)messages.Last(m => m.Author.IsBot && m.Embeds.Any()));
         }
 
@@ -289,12 +395,16 @@ namespace ForumCrawler
 
     public abstract class GovernanceCommandsBase : InteractiveBase<SocketCommandContext>
     {
-        public static async Task UpdateBillboardAsync(IGuild guild, IUserMessage message, ISocketMessageChannel channel, GovernanceVote vote, SuggestionType type)
+        public static async Task UpdateBillboardAsync(IGuild guild, IUserMessage message, ISocketMessageChannel channel,
+            GovernanceVote vote, SuggestionType type)
         {
             var msg = GetBillboardMessage(type);
 
             var billboard = (IUserMessage)await channel.GetMessageAsync(vote.VoteBillboardId);
-            if (billboard == null) return;
+            if (billboard == null)
+            {
+                return;
+            }
 
             if (type == SuggestionType.Vote)
             {
@@ -314,11 +424,15 @@ namespace ForumCrawler
                 });
             }
         }
-        protected static async Task<EmbedBuilder> AddVotesAsync(IGuild guild, EmbedBuilder builder, IUserMessage message)
+
+        protected static async Task<EmbedBuilder> AddVotesAsync(IGuild guild, EmbedBuilder builder,
+            IUserMessage message)
         {
             var voteUsers = (await Task.WhenAll(message.Reactions.Keys
-                .Select(async emoji => new { emoji, users = await message.GetReactionUsersAsync(emoji, 1000).FlattenAsync() })))
-                .Select(kv => new {
+                    .Select(async emoji =>
+                        new {emoji, users = await message.GetReactionUsersAsync(emoji, 1000).FlattenAsync()})))
+                .Select(kv => new
+                {
                     kv.emoji,
                     users = kv.users
                         .Select(user => guild.GetUserAsync(user.Id, CacheMode.CacheOnly).Result)
@@ -329,51 +443,63 @@ namespace ForumCrawler
                 .ToDictionary(kv => kv.emoji, kv => kv.users);
 
             var scoreUsers = (await Database.UNSAFE_GetScoreUsers(voteUsers.Values
-                .SelectMany(x => x)
-                .Select(a => a.Id)))
+                    .SelectMany(x => x)
+                    .Select(a => a.Id)))
                 .ToDictionary(u => u.UserId, u => u);
 
-            var getScore = new Func<IGuildUser, ScoreData>((user) =>
+            var getScore = new Func<IGuildUser, ScoreData>(user =>
             {
-                if (scoreUsers.TryGetValue(user.Id, out var value)) return value.ScoreData;
+                if (scoreUsers.TryGetValue(user.Id, out var value))
+                {
+                    return value.ScoreData;
+                }
+
                 return new ScoreData();
             });
 
             var formatting = new Func<IGuildUser, ScoreData, string>((user, score) =>
             {
                 var format = user.IsStaffOrConsultant() ? "__" : "";
-                return format + user.Username.DiscordEscape() + "#" + user.Discriminator + format + " (" + score.ShortBaseScoreString + ")";
+                return format + user.Username.DiscordEscape() + "#" + user.Discriminator + format + " (" +
+                       score.ShortBaseScoreString + ")";
             });
 
 
             foreach (var kv in voteUsers)
             {
                 var reacters = kv.Value.Where(user => !user.IsBot)
-                    .Select(user => new { user, score = getScore(user) })
+                    .Select(user => new {user, score = getScore(user)})
                     .OrderByDescending(userData => userData.score.BaseScoreLevel)
                     .ThenByDescending(userData => userData.user.IsStaffOrConsultant())
                     .ThenBy(userData => userData.user.Username)
-                    .Select(userData => new { formatted = formatting(userData.user, userData.score), userData.score })
+                    .Select(userData => new {formatted = formatting(userData.user, userData.score), userData.score})
                     .ToList();
-                builder.AddField($"{kv.Key} **({reacters.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**",
-                        reacters.Count == 0 ? "Nobody" : string.Join(", ", reacters.Select(a => a.formatted)));
+                builder.AddField(
+                    $"{kv.Key} **({reacters.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**",
+                    reacters.Count == 0 ? "Nobody" : string.Join(", ", reacters.Select(a => a.formatted)));
             }
+
             return builder;
         }
 
-        protected async Task CreateSuggestionChannel(SuggestionType type, string shortName, IUser owner, Func<IMessageChannel, Task<IUserMessage>> messageGenerator)
+        protected async Task CreateSuggestionChannel(SuggestionType type, string shortName, IUser owner,
+            Func<IMessageChannel, Task<IUserMessage>> messageGenerator)
         {
             await Context.Message.DeleteAsync();
 
             var user = Context.User;
             var guildUser = (IGuildUser)user;
-            if (!guildUser.IsStaffOrConsultant()) throw new Exception("Only staff can suggest new features.");
+            if (!guildUser.IsStaffOrConsultant())
+            {
+                throw new Exception("Only staff can suggest new features.");
+            }
 
             var guild = Context.Guild;
             var config = guild.GetGovernanceConfig();
 
             var channel = await guild.CreateSuggestionChannel(config.Category, type, shortName);
-            await channel.AddPermissionOverwriteAsync(user, new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
+            await channel.AddPermissionOverwriteAsync(user,
+                new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
 
             var message = await messageGenerator(channel);
             if (message == null)
@@ -403,8 +529,10 @@ namespace ForumCrawler
 
             var perms = channel.GetPermissionOverwrite(guild.EveryoneRole) ?? new OverwritePermissions();
             var targetPerms = new OverwritePermissions(
-                (perms.AllowValue | config.EveryonePermissionsAfterSubmission.AllowValue) & (~config.EveryonePermissionsAfterSubmission.DenyValue),
-                (perms.DenyValue | config.EveryonePermissionsAfterSubmission.DenyValue) & (~config.EveryonePermissionsAfterSubmission.AllowValue)
+                (perms.AllowValue | config.EveryonePermissionsAfterSubmission.AllowValue) &
+                ~config.EveryonePermissionsAfterSubmission.DenyValue,
+                (perms.DenyValue | config.EveryonePermissionsAfterSubmission.DenyValue) &
+                ~config.EveryonePermissionsAfterSubmission.AllowValue
             );
             await channel.AddPermissionOverwriteAsync(guild.EveryoneRole, targetPerms);
         }
@@ -412,39 +540,40 @@ namespace ForumCrawler
         protected static string GetBillboardMessage(SuggestionType type)
         {
             return type == SuggestionType.Draft
-                ? $":warning: Draft mode. Edits to suggestion are allowed but voting is disabled.\n"
-                + $"Available commands: `g!suggestion edit`, `g!suggestion rename [channel-name]`, `g!suggestion finalize` (owner and staff only)."
+                ? ":warning: Draft mode. Edits to suggestion are allowed but voting is disabled.\n"
+                  + "Available commands: `g!suggestion edit`, `g!suggestion rename [channel-name]`, `g!suggestion finalize` (owner and staff only)."
                 : type == SuggestionType.RFC
-                ? $":scroll: RFC mode. Suggest incremental changes, no vote is scheduled.\n"
-                + $"Available commands: `g!rfc edit`, `g!rfc rename [channel-name]` (owner and staff only)."
-                : "";
+                    ? ":scroll: RFC mode. Suggest incremental changes, no vote is scheduled.\n"
+                      + "Available commands: `g!rfc edit`, `g!rfc rename [channel-name]` (owner and staff only)."
+                    : "";
         }
 
         protected async Task<IUserMessage> GetSuggestionFromUserAsync(IMessageChannel channel, IUser author)
         {
-            var tempMsg = await channel.SendMessageAsync(MentionUtils.MentionUser(Context.User.Id) + " Type your suggestion here...");
-            var result = await NextMessageAsync(GetCriteria(channel), timeout: TimeSpan.FromMinutes(5));
+            var tempMsg =
+                await channel.SendMessageAsync(MentionUtils.MentionUser(Context.User.Id) +
+                                               " Type your suggestion here...");
+            var result = await NextMessageAsync(GetCriteria(channel), TimeSpan.FromMinutes(5));
             await tempMsg.DeleteAsync();
             await (result?.DeleteAsync() ?? Task.CompletedTask);
             if (result == null)
             {
                 return null;
             }
-            else
-            {
-                var suggestion = result.Content;
-                return await ConfirmSuggestionFromUserAsync(channel, author, suggestion);
-            }
+
+            var suggestion = result.Content;
+            return await ConfirmSuggestionFromUserAsync(channel, author, suggestion);
         }
 
-        protected async Task<IUserMessage> ConfirmSuggestionFromUserAsync(IMessageChannel channel, IUser author, string suggestion)
+        protected async Task<IUserMessage> ConfirmSuggestionFromUserAsync(IMessageChannel channel, IUser author,
+            string suggestion)
         {
             var embed = GetSuggestionEmbed(author, suggestion);
             var message = await channel.SendMessageAsync(embed: embed);
 
             var tempMsg2 = await channel.SendMessageAsync("Looks good? Type `submit` to publish this suggestion!");
 
-            var result2 = await NextMessageAsync(GetCriteria(channel), timeout: TimeSpan.FromMinutes(5));
+            var result2 = await NextMessageAsync(GetCriteria(channel), TimeSpan.FromMinutes(5));
             await tempMsg2.DeleteAsync();
             await result2?.DeleteAsync();
 
@@ -452,21 +581,19 @@ namespace ForumCrawler
             {
                 return message;
             }
-            else
-            {
-                await message.DeleteAsync();
-                return null;
-            }
+
+            await message.DeleteAsync();
+            return null;
         }
 
         private static Embed GetSuggestionEmbed(IUser user, string suggestion)
         {
             return new EmbedBuilder()
-             .WithAuthor(author => author
-                 .WithIconUrl(user.GetAvatarUrlOrDefault())
-                 .WithName(user.Username.DiscordEscape() + "#" + user.Discriminator + " suggests:"))
-             .WithColor(Color.Blue)
-             .WithDescription(suggestion.Substring(0, Math.Min(suggestion.Length, 2048))).Build();
+                .WithAuthor(author => author
+                    .WithIconUrl(user.GetAvatarUrlOrDefault())
+                    .WithName(user.Username.DiscordEscape() + "#" + user.Discriminator + " suggests:"))
+                .WithColor(Color.Blue)
+                .WithDescription(suggestion.Substring(0, Math.Min(suggestion.Length, 2048))).Build();
         }
 
 

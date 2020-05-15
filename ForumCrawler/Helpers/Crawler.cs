@@ -1,19 +1,20 @@
-﻿using Discord.WebSocket;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
     public class Crawler
     {
+        private readonly List<int> _consumedPosts = new List<int>();
         private readonly DiscordSocketClient _discord;
 
-        private readonly List<int> _consumedPosts = new List<int>();
-
-        public Crawler(DiscordSocketClient discord) => _discord = discord;
+        public Crawler(DiscordSocketClient discord)
+        {
+            _discord = discord;
+        }
 
         public async Task StartAsync()
         {
@@ -23,10 +24,14 @@ namespace ForumCrawler
                 try
                 {
                     if (DateTimeOffset.UtcNow.Second % 60 == 0)
+                    {
                         await UpdateOnlineUsersAsync();
+                    }
 
                     if (await CrawlAsync())
+                    {
                         isDown = false;
+                    }
                 }
                 catch
                 {
@@ -36,6 +41,7 @@ namespace ForumCrawler
                         await DiscordFormatting.AnnounceDownAsync(_discord);
                     }
                 }
+
                 await WaitABitAsync();
             }
         }
@@ -82,7 +88,9 @@ namespace ForumCrawler
             now = now.AddSeconds(-now.Second % 10);
             var waitTime = now - DateTimeOffset.UtcNow;
             if (waitTime.TotalMilliseconds > 0)
+            {
                 await Task.Delay(waitTime);
+            }
         }
     }
 }

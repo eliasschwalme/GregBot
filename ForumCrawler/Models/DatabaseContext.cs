@@ -1,5 +1,5 @@
-﻿using ForumCrawler.Models;
-using System.Data.Entity;
+﻿using System.Data.Entity;
+using ForumCrawler.Models;
 
 namespace ForumCrawler
 {
@@ -14,7 +14,7 @@ namespace ForumCrawler
         public DbSet<ReportModel> Reports { get; set; }
 
         /// <summary>
-        /// Represents starboard posts under the new system.
+        ///     Represents starboard posts under the new system.
         /// </summary>
         public DbSet<RevisedStarboardPost> RevisedStarboardPosts { get; set; }
     }

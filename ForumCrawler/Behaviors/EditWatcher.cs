@@ -1,14 +1,12 @@
-﻿using DiffMatchPatch;
-
-using Discord;
-using Discord.WebSocket;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DiffMatchPatch;
+using Discord;
+using Discord.WebSocket;
 
 namespace ForumCrawler
 {
@@ -20,10 +18,18 @@ namespace ForumCrawler
             client.MessageDeleted += (o, c) => Client_MessageDeleted(client, o, c);
         }
 
-        private static async Task Client_MessageUpdated(DiscordSocketClient client, Cacheable<IMessage, ulong> oldCache, SocketMessage newMessage, ISocketMessageChannel channel)
+        private static async Task Client_MessageUpdated(DiscordSocketClient client, Cacheable<IMessage, ulong> oldCache,
+            SocketMessage newMessage, ISocketMessageChannel channel)
         {
-            if (newMessage.Author.IsBot) return;
-            if (newMessage.Content == null) return;
+            if (newMessage.Author.IsBot)
+            {
+                return;
+            }
+
+            if (newMessage.Content == null)
+            {
+                return;
+            }
 
             if (newMessage is IUserMessage userMessage)
             {
@@ -31,28 +37,40 @@ namespace ForumCrawler
 
                 var oldContent = oldMessage?.Content ?? string.Empty;
                 var newContent = userMessage.Resolve();
-                if (oldContent == newContent) return;
+                if (oldContent == newContent)
+                {
+                    return;
+                }
 
                 var diffMatchPatch = new diff_match_patch();
                 var diffs = diffMatchPatch.diff_main(oldContent, newContent);
                 diffMatchPatch.diff_cleanupSemantic(diffs);
 
                 var md = ToMarkdown(diffs);
-                await PostEmbedAsync(client, "edited", new Color(0xF0E68C), userMessage.Author.Id, userMessage.Author, channel, md, oldMessage?.Attachment, userMessage.Id);
+                await PostEmbedAsync(client, "edited", new Color(0xF0E68C), userMessage.Author.Id, userMessage.Author,
+                    channel, md, oldMessage?.Attachment, userMessage.Id);
             }
         }
 
-        private static async Task Client_MessageDeleted(DiscordSocketClient client, Cacheable<IMessage, ulong> oldCache, ISocketMessageChannel channel)
+        private static async Task Client_MessageDeleted(DiscordSocketClient client, Cacheable<IMessage, ulong> oldCache,
+            ISocketMessageChannel channel)
         {
             var oldMessage = ToMessage(oldCache);
-            if (oldMessage == null) return;
+            if (oldMessage == null)
+            {
+                return;
+            }
 
             var oldUser = client.GetUser(oldMessage.UserId);
-            if (oldUser?.IsBot == true) return;
+            if (oldUser?.IsBot == true)
+            {
+                return;
+            }
 
             var oldContent = oldMessage.Content.DiscordEscapeWithoutMentions();
 
-            await PostEmbedAsync(client, "deleted", new Color(0xD62D20), oldMessage.UserId, oldUser, channel, oldContent, oldMessage.Attachment, oldMessage.MessageId);
+            await PostEmbedAsync(client, "deleted", new Color(0xD62D20), oldMessage.UserId, oldUser, channel,
+                oldContent, oldMessage.Attachment, oldMessage.MessageId);
         }
 
         private static Message ToMessage(Cacheable<IMessage, ulong> cached)
@@ -92,7 +110,10 @@ namespace ForumCrawler
 
         public static Embed GetEditEmbed(IUser author, string title, string oldContent, string newContent)
         {
-            if (oldContent == newContent) return null;
+            if (oldContent == newContent)
+            {
+                return null;
+            }
 
             var diffMatchPatch = new diff_match_patch();
             var diffs = diffMatchPatch.diff_main(oldContent, newContent);
@@ -102,7 +123,8 @@ namespace ForumCrawler
             return GetEmbed(title, new Color(0xF0E68C), author, null, md, null, null);
         }
 
-        private static async Task PostEmbedAsync(DiscordSocketClient client, string title, Color color, ulong userId, IUser user, IMessageChannel channel, string diff, string attachment, ulong messageId)
+        private static async Task PostEmbedAsync(DiscordSocketClient client, string title, Color color, ulong userId,
+            IUser user, IMessageChannel channel, string diff, string attachment, ulong messageId)
         {
             var embed = GetEmbed(title, color, user, channel, diff, attachment, messageId);
 
@@ -112,25 +134,29 @@ namespace ForumCrawler
                 .SendMessageAsync(string.Empty, embed: embed);
         }
 
-        private static Embed GetEmbed(string title, Color color, IUser user, IMessageChannel channel, string diff, string attachment, ulong? messageId)
+        private static Embed GetEmbed(string title, Color color, IUser user, IMessageChannel channel, string diff,
+            string attachment, ulong? messageId)
         {
             var addId = messageId == null ? "" : " (" + messageId + ")";
 
             var builder = new EmbedBuilder()
                 .WithAuthor(author => author
                     .WithIconUrl(user?.GetAvatarUrlOrDefault())
-                    .WithName(user?.Username.DiscordEscape() + "#" + (user?.Discriminator ?? "@" + user.Id.ToString()) + " " + title + ":"))
+                    .WithName(user?.Username.DiscordEscape() + "#" + (user?.Discriminator ?? "@" + user.Id) + " " +
+                              title + ":"))
                 .WithColor(color)
                 .WithDescription(diff);
             if (messageId.HasValue)
             {
                 builder.WithTimestamp(SnowflakeUtils.FromSnowflake(messageId.Value));
             }
+
             if (channel != null)
             {
                 builder.WithFooter(footer => footer
                     .WithText($"In #{channel}" + addId));
             }
+
             if (attachment != null)
             {
                 var host = new Uri(attachment).Host;
@@ -170,6 +196,7 @@ namespace ForumCrawler
                         break;
                 }
             }
+
             return md.ToString();
         }
     }
