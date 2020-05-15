@@ -87,7 +87,7 @@ namespace DiscordSocialScore
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString).ToString() + $" **Score:** {score.Score:F3}{boostStr}\n" +
-                $":gem: **Gems:** {score.Gems}{(score.DailyCooldown.HasValue ? "" : " - Daily available")}\n" +
+                $":gem: **Gems:** {score.Gems}{(score.DailyCooldown.HasValue ? "" : " (Daily available)")}\n" +
                 $":rocket: **Inertia:** {score.Inertia * 100:F0}%").Build());
         }
 

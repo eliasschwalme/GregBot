@@ -168,9 +168,9 @@ namespace ForumCrawler
             UpdateDecay();
         }
 
-        private double SumInRange(double minEcl, double maxInc)
+        private double SumInRange(double minExl, double maxInc)
         {
-           return (maxInc * (maxInc + 1) - minEcl * (minEcl + 1)) / 2;
+           return (maxInc * (maxInc + 1) - minExl * (minExl + 1)) / 2;
         }
 
         internal static void SwapUsers(ScoreUser user1, ScoreUser user2)
