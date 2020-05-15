@@ -267,8 +267,8 @@ namespace ForumCrawler
             if (cooldown.TotalSeconds > 0) 
                 throw new Exception($"You have already used your daily today. Come back in {cooldown.ToHumanReadableString()}.");
             
-            var isSelfBonus = this.UserId == target.UserId ? 0 : 1;
-            var amount = Math.Max(2, this.ScoreData.Class + isSelfBonus);
+            var isGiftBonus = this.UserId == target.UserId ? 0 : 1;
+            var amount = 3 + this.ScoreData.Class + isGiftBonus;
 
             this.LastDaily = DateTime.UtcNow.Date;
             target.Gems += amount;
