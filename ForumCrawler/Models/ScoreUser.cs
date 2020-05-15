@@ -191,14 +191,14 @@ namespace ForumCrawler
             var inertiaDecay = inertiaDecayRate * ticks;
             var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
             this.Inertia -= inertiaDecay;
-            if (this.Inertia < 0.0) this.Inertia = 0;
+            if (this.Inertia < 0) this.Inertia = 0;
 
 
-            if (Score > 1.0)
+            if (Score > 2)
             { 
                 this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactvitiyDecayRate 
                     + ScoreBaseDecayRate * remainderTicks;
-                if (this.Score < 1.0) this.Score = 1;
+                if (this.Score < 2) this.Score = 2;
             }
 
             LastDecay = DateTime.UtcNow;
@@ -260,12 +260,22 @@ namespace ForumCrawler
             return efficiency;
         }
 
+        public TimeSpan? DailyCooldown
+        {
+            get
+            {
+                var daysSinceLastDaily = DateTime.UtcNow - (this.LastDaily ?? default);
+                var cooldown = TimeSpan.FromDays(1) - daysSinceLastDaily;
+                if (cooldown.TotalSeconds <= 0)
+                    return null;
+                return cooldown;
+            }
+        }
+
         public int Daily(ScoreUser target)
         {
-            var daysSinceLastDaily = DateTime.UtcNow - (this.LastDaily ?? default);
-            var cooldown = TimeSpan.FromDays(1) - daysSinceLastDaily;
-            if (cooldown.TotalSeconds > 0) 
-                throw new Exception($"You have already used your daily today. Come back in {cooldown.ToHumanReadableString()}.");
+            if (this.DailyCooldown.HasValue) 
+                throw new Exception($"You have already used your daily today. Come back in {this.DailyCooldown.Value.ToHumanReadableString()}.");
             
             var isGiftBonus = this.UserId == target.UserId ? 0 : 1;
             var amount = 3 + this.ScoreData.Class + isGiftBonus;
