@@ -64,7 +64,7 @@ namespace ForumCrawler
 
                     if (res == null)
                     {
-                        res = cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted, null);
+                        res = cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted, false);
                     }
                 }
             }

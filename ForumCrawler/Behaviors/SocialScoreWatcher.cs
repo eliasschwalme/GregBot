@@ -34,7 +34,10 @@ namespace DiscordSocialScore
 
         private static async void OnHour(DiscordSocketClient client)
         {
-            await Score.UpdateDecays(client, (a, b) => OnScoreChangeAsync(client, a, b));
+            var users = await Score.UpdateDecays(client);
+            foreach (var user in users) {
+                await OnScoreChangeAsync(client, user.UserId, user.ScoreData);
+            }
 
             foreach (var guild in client.Guilds)
             {
@@ -52,11 +55,7 @@ namespace DiscordSocialScore
                 var user = guild.GetUser(userId);
                 if (user != null)
                 {
-                    try
-                    {
-                        await UpdateUserAsync(client, user, scoreData);
-                    }
-                    catch { }
+                    await UpdateUserAsync(client, user, scoreData);
                 }
             }
         }
@@ -82,9 +81,7 @@ namespace DiscordSocialScore
             if (message.Author.IsBot) return;
             if (!(message.Author is SocketGuildUser guildUser)) return;
             if (guildUser.Guild.Id == DiscordSettings.GuildId &&
-                message.Channel.Id != DiscordSettings.BotCommandsChannel && // bot-spam
-                message.Channel.Id != 329339732662419457 && // funposting
-                message.Channel.Id != 596114917380325387)  // other-languages
+                message.Channel.Id != DiscordSettings.BotCommandsChannel) // bot-spam
             {
                 await Score.CreditActivityScoreAsync(client, guildUser.Id);
             }
@@ -98,7 +95,7 @@ namespace DiscordSocialScore
 
             var cache = CacheProvider.Get(user.Guild);
 
-            var muted = (await Database.UNSAFE_GetMute(user.Id)) != null;
+            var muted = (await Database.UNSAFE_GetMute(user.Id)) != null; // TODO: looking up mutes on everyone every hour is not a good idea
             var roles = new List<IRole> { await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData) };
             if (!muted) roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
 
@@ -109,7 +106,10 @@ namespace DiscordSocialScore
             {
                 await user.ModifyAsync(x =>
                 {
-                    x.Roles = Optional.Create(user.Roles.Concat(toAdd).Except(toDelete).Where(r => r != r.Guild.EveryoneRole));
+                    x.Roles = Optional.Create(user.Roles
+                        .Concat(toAdd)
+                        .Except(toDelete)
+                        .Where(r => r != r.Guild.EveryoneRole));
                 });
             }
         }

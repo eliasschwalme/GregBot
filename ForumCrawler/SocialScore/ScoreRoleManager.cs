@@ -47,13 +47,13 @@ namespace ForumCrawler
         private static async Task<IRole> GetScoreRole(RoleCache guild, ScoreData scoreData)
         {
             var color = GetGradient(scoreData.ScoreLevel, new Color(215, 109, 119), Color.Gold);
-            return await guild.CreateOrUpdateRoleAsync(scoreData.ShortScoreString, permissions: new GuildPermissions(), color: color);
+            return await guild.CreateOrUpdateRoleAsync(scoreData.ShortScoreString, color: color);
         }
 
         private static async Task<IRole> GetSpecialScoreRole(RoleCache guild, string specialRole, (Color, Color) specialColor, ScoreData scoreData)
         {
             var color = GetGradient(scoreData.ScoreLevel, specialColor.Item1, specialColor.Item2);
-            return await guild.CreateOrUpdateRoleAsync($"{scoreData.ShortScoreString} ({specialRole})", permissions: new GuildPermissions(), color: color);
+            return await guild.CreateOrUpdateRoleAsync($"{scoreData.ShortScoreString} ({specialRole})", color: color);
         }
 
         public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData) {

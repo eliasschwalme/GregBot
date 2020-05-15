@@ -18,6 +18,14 @@ namespace ForumCrawler.Commands
             Environment.Exit(0);
         }
 
+        [Command("prunegregroles"), RequireRole(DiscordSettings.DiscordServerOwner)]
+        public async Task RoleTest()
+        {
+            foreach (var role in Context.Guild.Roles.Where(r => r.Name[0] == ScoreRoleManager.RolePrefix))
+                await role.DeleteAsync();
+            await ReplyAsync("Pruned greg roles.");
+        }
+
         [Command("rolecleanup"), RequireRole(DiscordSettings.DiscordStaff)]
         public async Task RoleCleanup()
         {
@@ -28,7 +36,7 @@ namespace ForumCrawler.Commands
             await ReplyAsync("Role cleanup complete.");
         }
 
-        [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel)]
+        [Command("nick"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(0)]
         public async Task ChangeNickname([Remainder] string nick)
         {
             var user = (IGuildUser)Context.User;
@@ -36,6 +44,14 @@ namespace ForumCrawler.Commands
             if (score.ScoreLevel < 4) throw new Exception("You must be a class of 4 or higher to change your nick.");
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");
+        }
+
+        [Command("nick reset"), RequireChannel(DiscordSettings.BotCommandsChannel), Priority(1)]
+        public async Task ResetNickname()
+        {
+            var user = (IGuildUser)Context.User;
+            await user.ModifyAsync(u => u.Nickname = null);
+            await ReplyAsync("Your nickname was reset.");
         }
 
         [Group("mod"), Summary("These are moderator-specific commands."), RequireRole(DiscordSettings.DiscordStaff)]

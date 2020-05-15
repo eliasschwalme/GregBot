@@ -144,17 +144,14 @@ namespace ForumCrawler
 #endif
         }
 
-        public static async Task UpdateDecays(DiscordSocketClient client, Func<ulong, ScoreData, Task> callback)
+        public static async Task<List<ScoreUser>> UpdateDecays(DiscordSocketClient client)
         {
             using (var context = new DatabaseContext())
             {
                 // this already calls update() on all useres
                 var users = await Database.GetAllScoreUsersAsync(context, client).ToListAsync();
-                foreach (var user in users)
-                {
-                    await callback(user.UserId, user.ScoreData);
-                }
                 await context.SaveChangesAsync();
+                return users;
             }
         }
     }
