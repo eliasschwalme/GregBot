@@ -115,6 +115,9 @@ namespace ForumCrawler
                 user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
             };
             ScoreUser.SwapUsers(user1, user2);
+
+            // EF does not let us change the primary key of an object 
+            // We create a new context to make it think everything but the ID was swapped
             using (var context = new DatabaseContext())
             {
                 context.ScoreUsers.Attach(user1);
