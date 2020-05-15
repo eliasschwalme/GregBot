@@ -10,7 +10,7 @@ namespace ForumCrawler
     public class RoleCache
     {
         private readonly AsyncLock _mutex = new AsyncLock();
-        private readonly Dictionary<string, IRole> cache = new Dictionary<string, IRole>();
+        private readonly Dictionary<string, IRole> _cache = new Dictionary<string, IRole>();
 
         public RoleCache(DiscordSocketClient client, SocketGuild guild)
         {
@@ -24,11 +24,11 @@ namespace ForumCrawler
         {
             if (arg.Guild == Guild)
             {
-                var toDelete = cache.Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key)
+                var toDelete = _cache.Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key)
                     .ToList();
                 foreach (var key in toDelete)
                 {
-                    cache.Remove(key);
+                    _cache.Remove(key);
                 }
             }
 
@@ -45,11 +45,11 @@ namespace ForumCrawler
             {
                 using (await _mutex.LockAsync())
                 {
-                    cache.TryGetValue(name, out res);
+                    _cache.TryGetValue(name, out res);
 
                     if (res == null)
                     {
-                        res = cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted, false);
+                        res = _cache[name] = await Guild.CreateRoleAsync(name, permissions, color, isHoisted, false);
                     }
                 }
             }
