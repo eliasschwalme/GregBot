@@ -109,9 +109,13 @@ namespace ForumCrawler
             var hs = await Database.UNSAFE_GetOrCreateScoreUserAndLeaderboardPositionAsync(Context.Client, user.Id);
             var score = hs.Item1;
             var boostStr = score.BonusScore > 0 ? $" (+{score.BonusScore:F1})" : "";
+            var dailyStr = score.DailyCooldown.HasValue 
+                ? score.DailyStreakCount == 0 ? "" 
+                : $" (Streak: {score.DailyStreakCount})" 
+                : " (Daily available)";
             await ReplyAsync($"[#{hs.Item2}] **{user.GetName()}**'s stats:", embed: new EmbedBuilder().WithDescription(
                 Emote.Parse(WootString) + $" **Score:** {score.Score:F3}{boostStr}\n" +
-                $":gem: **Gems:** {score.Gems}{(score.DailyCooldown.HasValue ? "" : " (Daily available)")}\n" +
+                $":gem: **Gems:** {score.Gems}{dailyStr}\n" +
                 $":rocket: **Inertia:** {score.Inertia * 100:F0}%").Build());
         }
 
@@ -228,7 +232,7 @@ namespace ForumCrawler
         public async Task Alt(bool enabled)
         {
             await Score.SetHasDisabledThresholdWarning(Context.Client, Context.User.Id, !enabled);
-            await ReplyAsync($"Set threshold warnings to {enabled}");
+            await ReplyAsync($"Set threshold warnings to {enabled}. Threshold warnings warn you when your inertia drops below 10%.");
         }
 
         [Command("alt set")]
