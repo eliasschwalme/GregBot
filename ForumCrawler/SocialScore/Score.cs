@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 
 namespace ForumCrawler
@@ -12,7 +13,7 @@ namespace ForumCrawler
         public static event Action<ulong, ScoreData> OnUpdate;
 
 
-        private static async Task<T> WithTargettedScoreCommand<T>(string command, DiscordSocketClient client,
+        private static async Task<T> WithTargetedScoreCommand<T>(DiscordSocketClient client,
             ulong targetUserId, ulong invokerUserId, Func<ScoreUser, ScoreUser, T> callback)
         {
             using (var context = new DatabaseContext())
@@ -25,20 +26,20 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreData, int)> DailyAsync(DiscordSocketClient client, ulong targetUserId,
+        public static async Task<(ScoreData ScoreData, int Increase, int Bonus)> DailyAsync(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId)
         {
-            return await WithTargettedScoreCommand("g!daily", client, targetUserId, invokerUserId, (target, invoker) =>
+            return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, invoker) =>
             {
-                var increase = invoker.Daily(target);
-                return (target.ScoreData, increase);
+                var (increase, bonus) = invoker.Daily(target);
+                return (target.ScoreData, increase, bonus);
             });
         }
 
         public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId)
         {
-            return await WithTargettedScoreCommand("g!up", client, targetUserId, invokerUserId, (target, upvoter) =>
+            return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, upvoter) =>
             {
                 var change = upvoter.Upvote(target);
                 OnUpdate?.Invoke(target.UserId, target.ScoreData);
@@ -49,7 +50,7 @@ namespace ForumCrawler
         public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId)
         {
-            return await WithTargettedScoreCommand("g!down", client, targetUserId, invokerUserId, (target, downvoter) =>
+            return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, downvoter) =>
             {
                 var change = downvoter.Downvote(target);
                 OnUpdate?.Invoke(target.UserId, target.ScoreData);
@@ -60,7 +61,7 @@ namespace ForumCrawler
         internal static async Task<(ScoreData, ScoreData)> SendGems(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId, int amount)
         {
-            return await WithTargettedScoreCommand("g!send gem", client, targetUserId, invokerUserId,
+            return await WithTargetedScoreCommand(client, targetUserId, invokerUserId,
                 (target, sender) =>
                 {
                     sender.SendGems(target, amount);
@@ -123,7 +124,6 @@ namespace ForumCrawler
                 user2 = await Database.GetOrCreateScoreUserAsync(context, client, user2Id);
             }
 
-            ;
             ScoreUser.SwapUsers(user1, user2);
 
             // EF does not let us change the primary key of an object 
@@ -134,7 +134,7 @@ namespace ForumCrawler
                 context.ScoreUsers.Attach(user2);
                 context.Entry(user1).State = EntityState.Modified;
                 context.Entry(user2).State = EntityState.Modified;
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
         }
 
@@ -158,14 +158,21 @@ namespace ForumCrawler
         {
             using (var context = new DatabaseContext())
             {
-                // this already calls update() on all useres
+                // this already calls update() on all users
                 var users = await Database.GetAllScoreUsersAsync(context, client)
-                    .Select(u => (u.UserId, u.ScoreData))
                     .ToListAsync();
                 await context.SaveChangesAsync();
 
                 foreach (var user in users)
                 {
+                    if (user.DidJustFallUnderThreshold && !user.HasDisabledThresholdWarning)
+                    {
+                        await client.GetUser(user.UserId).SendMessageAsync(":warning: Your inertia just fell below 10%. " +
+                             "Inertia is gained by being active on the server. " +
+                             "If your inertia falls to 0%, you will start losing score!\n" +
+                             "You can disable this warning by calling `g!thresholdwarning false`");
+                    }
+
                     OnUpdate?.Invoke(user.UserId, user.ScoreData);
                 }
             }
@@ -177,6 +184,16 @@ namespace ForumCrawler
             {
                 var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
                 user.AltOfUserId = value;
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public static async Task SetHasDisabledThresholdWarning(DiscordSocketClient client, ulong userId, bool disabled)
+        {
+            using (var context = new DatabaseContext())
+            {
+                var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
+                user.HasDisabledThresholdWarning = disabled;
                 await context.SaveChangesAsync();
             }
         }

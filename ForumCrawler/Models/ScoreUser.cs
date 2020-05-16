@@ -13,14 +13,16 @@ namespace ForumCrawler
     public class ScoreUser
     {
 
-        private static readonly Random random = new Random();
+        private static readonly Random Random = new Random();
 
-        private const double ScorePoint_Multiplier = 0.0015;
-        private const double InertiaPoint_Multiplier = 0.01;
-        private const double Score_Epsilon = 0.1;
-        private const double Inertia_Epsilon = 0.1;
-        private const double Max_Score = 5;
-        private const double Max_Inertia = 1;
+        public const double InertiaWarningThreshold = 0.095;
+
+        private const double ScorePointMultiplier = 0.0015;
+        private const double InertiaPointMultiplier = 0.01;
+        private const double ScoreEpsilon = 0.1;
+        private const double InertiaEpsilon = 0.1;
+        private const double MaxScore = 5;
+        private const double MaxInertia = 1;
 
         private const double ActivityResolutionInHours = 60.0 / 3600; // 60 seconds
 
@@ -29,11 +31,11 @@ namespace ForumCrawler
         private const double InertiaPointsPerActivity = InertiaPointsPerActivityHour * ActivityResolutionInHours;
 
         private const int Level5Decay = 32; // Math.Pow(2, 5)
-        private const double InertiaPerActivityHour = InertiaPointsPerActivityHour * InertiaPoint_Multiplier * (Max_Inertia + Inertia_Epsilon / 2); // Average the effect of the epsilon to account for the slowing slope
+        private const double InertiaPerActivityHour = InertiaPointsPerActivityHour * InertiaPointMultiplier * (MaxInertia + InertiaEpsilon / 2); // Average the effect of the epsilon to account for the slowing slope
         private const double InertiaDecayRatePerHour = 1.5 * InertiaPerActivityHour / 24 / Level5Decay; // 1.5h time investment / day required for a lvl 5 person to not decay
 
         private const double ScoreBaseDecayRate = 0.001;
-        private const double ScoreInactvitiyDecayRate = 0.0001;
+        private const double ScoreInactivityDecayRate = 0.0001;
 
         [EditorBrowsable(EditorBrowsableState.Never),
             DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -76,15 +78,15 @@ namespace ForumCrawler
         [NotMapped]
         private double ScorePoints
         {
-            get => ToPoints(Score, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // ln((1 - x / 5.1) / -0.0015
-            set => Score = ToValue(value, Max_Score, Score_Epsilon, ScorePoint_Multiplier); // 5.1 * (1 - e^(-0.0015x))
+            get => ToPoints(Score, MaxScore, ScoreEpsilon, ScorePointMultiplier); // ln((1 - x / 5.1) / -0.0015
+            set => Score = ToValue(value, MaxScore, ScoreEpsilon, ScorePointMultiplier); // 5.1 * (1 - e^(-0.0015x))
         }
 
         [NotMapped]
         private double InertiaPoints
         {
-            get => ToPoints(Inertia, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // ln(1 - x / 1.1) / -0.01
-            set => Inertia = ToValue(value, Max_Inertia, Inertia_Epsilon, InertiaPoint_Multiplier); // 1.1 * (1 - e ^(-0.01x)))
+            get => ToPoints(Inertia, MaxInertia, InertiaEpsilon, InertiaPointMultiplier); // ln(1 - x / 1.1) / -0.01
+            set => Inertia = ToValue(value, MaxInertia, InertiaEpsilon, InertiaPointMultiplier); // 1.1 * (1 - e ^(-0.01x)))
         }
 
         private static double ToPoints(double value, double max, double epsilon, double multiplier) => Math.Log(1 - value / (max + epsilon)) / -multiplier;
@@ -120,10 +122,14 @@ namespace ForumCrawler
                     Gems = Gems,
                     BoostLevel = GetBoostLevel(),
                     BonusScore = BonusScore,
-                    AltOf = AltOfUserId
+                    AltOfUserId = AltOfUserId,
+                    DailyStreakCount = DailyStreakCount
                 };
             }
         }
+
+        [NotMapped]
+        public bool DidJustFallUnderThreshold { get; private set; }
 
         [NotMapped]
         public bool IsPremium { get; private set; }
@@ -189,13 +195,18 @@ namespace ForumCrawler
             var inertiaDecayRate = InertiaDecayRatePerHour * Math.Pow(2, this.Score);
             var inertiaDecay = inertiaDecayRate * ticks;
             var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
+
+            var oldInertia = this.Inertia;
             this.Inertia -= inertiaDecay;
             if (this.Inertia < 0) this.Inertia = 0;
-
+            if (this.Inertia < InertiaWarningThreshold && oldInertia > InertiaWarningThreshold)
+            {
+                this.DidJustFallUnderThreshold = true;
+            }
 
             if (Score > 2)
             { 
-                this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactvitiyDecayRate 
+                this.Score -= SumInRange(lastActivityTicks - remainderTicks, lastActivityTicks) * ScoreInactivityDecayRate 
                     + ScoreBaseDecayRate * remainderTicks;
                 if (this.Score < 2) this.Score = 2;
             }
@@ -235,13 +246,11 @@ namespace ForumCrawler
 
         public double Upvote(ScoreUser target)
         {
-            if (target.Score - this.Score > 1) throw new Exception("The target's score is over the maximum allowed amount (1.0).");
-
             var efficiency = GetEfficiency(target);
             if (this.Gems < 1) throw new Exception($"An upvote costs 1 gem, which you currently do not have.");
             this.Gems -= 1;
 
-            var lowScoreFactor = target.Score < 2 ? 3 : 1;
+            var lowScoreFactor = target.Score < 2 ? 3 : target.Score < 3 ? 2 : 1;
             target.ScorePoints += 5 * efficiency * lowScoreFactor;
             target.Boosts[this.UserId] = DateTime.UtcNow;
 
@@ -259,6 +268,7 @@ namespace ForumCrawler
             return efficiency;
         }
 
+        [NotMapped]
         public TimeSpan? DailyCooldown
         {
             get
@@ -270,6 +280,18 @@ namespace ForumCrawler
                 return cooldown;
             }
         }
+
+        [NotMapped]
+        public bool CanStreak
+        {
+            get
+            {
+                var daysSinceLastDaily = DateTime.UtcNow - (this.LastDaily ?? default);
+                var cooldown = TimeSpan.FromDays(2) - daysSinceLastDaily;
+                return cooldown.TotalSeconds >= 0;
+            }
+        }
+
         public long? AltOfId { get; set; }
 
         [NotMapped]
@@ -279,21 +301,46 @@ namespace ForumCrawler
             set => AltOfId = (long?)value;
         }
 
-        public int Daily(ScoreUser target)
+        public int DailyCount { get; set; }
+        public int DailyStreakCount { get; set; }
+        public bool HasDisabledThresholdWarning { get; set; }
+
+        public (int Amount, int Bonus) Daily(ScoreUser target)
         {
             if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
                 throw new Exception("Sorry, alts cannot send or receive gems.");
 
             if (this.DailyCooldown.HasValue) 
                 throw new Exception($"You have already used your daily today. Come back in {this.DailyCooldown.Value.ToHumanReadableString()}.");
+
+            if (this.Inertia < InertiaWarningThreshold && this.Score < 2.9995 && DailyCount >= 3)
+                throw new Exception($"You've used your 3 trial g!daily commands. " +
+                                    $"Daily gems are available to active members only. " +
+                                    $"You must collect at least 10% inertia or a base score of 3 or higher to run this command.");
             
             var isGiftBonus = this.UserId == target.UserId ? 0 : 1;
             var amount = 3 + this.ScoreData.Class + isGiftBonus;
 
-            this.LastDaily = DateTime.UtcNow.Date;
-            target.Gems += amount;
+            var bonus = 0;
+            if (CanStreak)
+            {
+                this.DailyStreakCount++;
 
-            return amount;
+                if (DailyStreakCount % 7 == 0)
+                {
+                    bonus = 3;
+                }
+            }
+            else
+            {
+                this.DailyStreakCount = 0;
+            }
+
+            this.DailyCount++;
+            this.LastDaily = DateTime.UtcNow.Date;
+            target.Gems += amount + bonus;
+
+            return (amount, bonus);
         }
 
         internal void SendGems(ScoreUser target, int amount)
@@ -316,21 +363,18 @@ namespace ForumCrawler
         private double GetEfficiency(ScoreUser target)
         {
             if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
-                throw new Exception("Sorry, alts cannot send or receive gems.");
+                throw new Exception("Sorry, alts cannot send or receive votes.");
             if (target.UserId == UserId) throw new Exception($"Sorry, voting yourself is not allowed!");
-            if (this.Inertia < 0.095 || target.Inertia < 0.095) throw new Exception("Users with inertia lower than 10% cannot not send or receive votes.");
 
             var lastBoost = target.GetLastVoteTimestamp(this.UserId);
             var sinceLastVote = DateTime.UtcNow - lastBoost;
             var cooldown = TimeSpan.FromDays(0.5) - sinceLastVote;
             if (cooldown.TotalSeconds > 0) throw new Exception($"Please wait {cooldown.ToHumanReadableString()} before voting this person again.");
 
-            var randomEff = Math.Max(0.75, random.NextDouble() * 2);
-            var discountFactor = Math.Min(2, sinceLastVote.TotalDays) / 2;
-            var scoreDifference = this.Score - target.Score;
-            var scoreDiffModifier = 1 + Math.Max(-0.75, scoreDifference / 2);
+            var randomEff = Math.Max(0.75, Random.NextDouble() * 2);
+            var discountFactor = 0.5 + 0.5 * (Math.Min(2, sinceLastVote.TotalDays) / 2);
 
-            var efficiency = scoreDiffModifier * discountFactor * randomEff;
+            var efficiency = discountFactor * randomEff;
             return efficiency;
         }
     }

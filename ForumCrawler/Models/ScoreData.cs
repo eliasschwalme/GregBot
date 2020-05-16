@@ -9,7 +9,8 @@ namespace ForumCrawler
         public double Gems { get; set; }
         public double BoostLevel { get; set; }
         public double BonusScore { get; set; }
-        public ulong? AltOf { get; set; }
+        public ulong? AltOfUserId { get; set; }
+        public int DailyStreakCount { get; set; }
         public double ScoreAfterBoost => Score + BonusScore;
         public int Class => (int)Math.Truncate(ScoreLevel);
 

@@ -135,11 +135,13 @@ namespace ForumCrawler
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily(IGuildUser targetUser)
         {
-            var (scoreData, amount) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
+            var (scoreData, amount, bonus) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
 
+            var bonusStr = bonus == 0 ? "" : $" (+3 streak bonus)";
+            var streakStr = scoreData.DailyStreakCount == 0 ? "" : $" Streak days: {scoreData.DailyStreakCount}";
             await ReplyAsync(
-                $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount} daily gems. " +
-                $"They now have {scoreData.Gems} in total."
+                $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount}{bonusStr} daily gems. " +
+                $"They now have {scoreData.Gems} in total.{streakStr}"
             );
         }
 
@@ -220,6 +222,15 @@ namespace ForumCrawler
                 await Score.GetScoreDataAsync(Context.Client, user.Id), true);
         }
 
+        [Command("thresholdwarning")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(0)]
+        public async Task Alt(bool enabled)
+        {
+            await Score.SetHasDisabledThresholdWarning(Context.Client, Context.User.Id, !enabled);
+            await ReplyAsync($"Set threshold warnings to {enabled}");
+        }
+
         [Command("alt set")]
         [RequireRole(DiscordSettings.DiscordStaff)]
         [Priority(0)]
@@ -235,7 +246,7 @@ namespace ForumCrawler
         public async Task Alt(IUser user)
         {
             var scoreData = await Score.GetScoreDataAsync(Context.Client, user.Id);
-            await ReplyAsync($"{user.Mention} is an alt of {(scoreData.AltOf.HasValue ? MentionUtils.MentionUser(scoreData.AltOf.Value) : "nobody")}.");
+            await ReplyAsync($"{user.Mention} is an alt of {(scoreData.AltOfUserId.HasValue ? MentionUtils.MentionUser(scoreData.AltOfUserId.Value) : "nobody")}.");
         }
 
         [Command("alt unset")]
