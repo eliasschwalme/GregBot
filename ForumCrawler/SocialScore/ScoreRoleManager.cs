@@ -60,13 +60,12 @@ namespace ForumCrawler
 
         public static async Task<IRole> GetClassRole(RoleCache guild, ScoreData scoreData)
         {
-            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.ClassString} members", GetClassPermissions(),
-                isHoisted: true);
+            return await guild.CreateOrUpdateRoleAsync($"Class {scoreData.ClassString} members", GetClassPermissions(guild.Guild), isHoisted: true);
         }
 
-        public static GuildPermissions GetClassPermissions()
+        public static GuildPermissions GetClassPermissions(IGuild guild)
         {
-            return new GuildPermissions(viewChannel: true);
+            return guild.Id == DiscordSettings.GuildId ? new GuildPermissions(viewChannel: true) : new GuildPermissions();
         }
 
         public static async Task OrderRolesAsync(SocketGuild guild)
