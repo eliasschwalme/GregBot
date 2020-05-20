@@ -24,7 +24,9 @@ namespace ForumCrawler
         {
             if (arg.Guild == Guild)
             {
-                var toDelete = _cache.Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key)
+                var toDelete = _cache
+                    .Where(kv => Guild.Roles.Any(r => r.Id == kv.Value.Id)).Select(kv => kv.Key)
+                    .Where(r => r.Contains("Class")) // do not delete class roles
                     .ToList();
                 foreach (var key in toDelete)
                 {
