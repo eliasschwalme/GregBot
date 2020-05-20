@@ -101,11 +101,6 @@ namespace ForumCrawler
                 return;
             }
 
-            if (user.Guild.Id != DiscordSettings.GuildId)
-            {
-                return;
-            }
-
             if (user.Guild.CurrentUser.Hierarchy <= user.Hierarchy)
             {
                 return;
