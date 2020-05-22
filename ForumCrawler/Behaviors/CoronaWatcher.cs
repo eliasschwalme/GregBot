@@ -307,15 +307,15 @@ namespace ForumCrawler
             {
                 var entry = new CoronaData.CoronaEntry();
                 var cells = country.SelectNodes("td");
-                entry.Name = cells[0].InnerText.Trim();
-                entry.Type = cells[0].SelectSingleNode("span") == null
+                entry.Name = cells[1].InnerText.Trim();
+                entry.Type = cells[1].SelectSingleNode("span") == null
                     ? CoronaData.CoronaEntryType.Country
                     : CoronaData.CoronaEntryType.Other;
-                entry.Cases = (int)ParseDouble(cells[1]);
-                entry.CaseIncrease = (int)ParseDouble(cells[2]);
-                entry.Deaths = (int)ParseDouble(cells[3]);
-                entry.Recovered = (int)ParseDouble(cells[5]);
-                entry.Serious = (int)ParseDouble(cells[7]);
+                entry.Cases = (int)ParseDouble(cells[2]);
+                entry.CaseIncrease = (int)ParseDouble(cells[3]);
+                entry.Deaths = (int)ParseDouble(cells[4]);
+                entry.Recovered = (int)ParseDouble(cells[6]);
+                entry.Serious = (int)ParseDouble(cells[8]);
 
                 result.Entries.Add(entry.Name, entry);
             }
