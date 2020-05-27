@@ -135,18 +135,20 @@ namespace ForumCrawler
             await Daily((IGuildUser)Context.User);
         }
 
+        private string GetDailyStr(IUser targetUser, ScoreData scoreData, int amount, int bonus)
+        {
+            var bonusStr = bonus == 0 ? "" : $" (+3 streak bonus)";
+            var streakStr = scoreData.DailyStreakCount == 0 ? "" : $" Streak days: {scoreData.DailyStreakCount}";
+            return $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount}{bonusStr} daily gems. " +
+                $"They now have {scoreData.Gems} in total.{streakStr}";
+        }
+
         [Command("daily")]
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily(IGuildUser targetUser)
         {
             var (scoreData, amount, bonus) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
-
-            var bonusStr = bonus == 0 ? "" : $" (+3 streak bonus)";
-            var streakStr = scoreData.DailyStreakCount == 0 ? "" : $" Streak days: {scoreData.DailyStreakCount}";
-            await ReplyAsync(
-                $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount}{bonusStr} daily gems. " +
-                $"They now have {scoreData.Gems} in total.{streakStr}"
-            );
+            await ReplyAsync(GetDailyStr(targetUser, scoreData, amount, bonus));
         }
 
         [Command("up")]
@@ -154,7 +156,13 @@ namespace ForumCrawler
         public async Task UpUser(IGuildUser targetUser)
         {
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
-            var (scoreData, efficiency) = await Score.UpvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
+            var (scoreData, efficiency, daily) = await Score.UpvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
+
+            if (daily.HasValue)
+            {
+                await ReplyAsync(GetDailyStr(targetUser, daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
+                                 " (g!daily was automatically called. To disable this feature, invoke `g!autodaily false`)");
+            }
 
             await ReplyAsync(
                 $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a boost. Their score increased by {scoreData.Score - oldScoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
@@ -171,7 +179,13 @@ namespace ForumCrawler
         public async Task DownUser(IGuildUser targetUser)
         {
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
-            var (scoreData, efficiency) = await Score.DownvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
+            var (scoreData, efficiency, daily) = await Score.DownvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
+
+            if (daily.HasValue)
+            {
+                await ReplyAsync(GetDailyStr(targetUser, daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
+                                 " (g!daily was automatically called. To disable this feature, invoke `g!autodaily false`)");
+            }
 
             await ReplyAsync(
                 $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} a downvote. Their score decreased by {oldScoreData.Score - scoreData.Score:F3} (Efficiency: {efficiency * 100:F0}%).");
@@ -229,10 +243,19 @@ namespace ForumCrawler
         [Command("thresholdwarning")]
         [RequireRole(DiscordSettings.DiscordStaff)]
         [Priority(0)]
-        public async Task Alt(bool enabled)
+        public async Task ThresholdWarning(bool enabled)
         {
             await Score.SetHasDisabledThresholdWarning(Context.Client, Context.User.Id, !enabled);
             await ReplyAsync($"Set threshold warnings to {enabled}. Threshold warnings warn you when your inertia drops below 10%.");
+        }
+
+        [Command("autodaily")]
+        [RequireRole(DiscordSettings.DiscordStaff)]
+        [Priority(0)]
+        public async Task AutoDaily(bool enabled)
+        {
+            await Score.SetHasDisabledAutoDaily(Context.Client, Context.User.Id, !enabled);
+            await ReplyAsync($"Set auto daily to {enabled}. Auto daily automatically calls g!daily when you try to call a gem command and do not possess the necessary gems.");
         }
 
         [Command("alt set")]

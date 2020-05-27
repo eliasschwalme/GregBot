@@ -19,15 +19,15 @@ namespace ForumCrawler
 
         private const double ScorePointMultiplier = 0.0015;
         private const double InertiaPointMultiplier = 0.01;
-        private const double ScoreEpsilon = 0.1;
-        private const double InertiaEpsilon = 0.1;
+        private const double ScoreEpsilon = 0.5;
+        private const double InertiaEpsilon = 0.5;
         private const double MaxScore = 5;
         private const double MaxInertia = 1;
 
         private const double ActivityResolutionInHours = 60.0 / 3600; // 60 seconds
 
-        private const double InertiaPointsCapacity = 239.78952728; // ln(1 - Max_Inertia / 1.1) / -0.01
-        private const double InertiaPointsPerActivityHour = InertiaPointsCapacity / 24; // 24 hours of nonstop talking with no decay fills up inertia to 100%
+        private const double InertiaPointsCapacity = 109.861228867; // ln(1 - Max_Inertia / (Max_Inertia + InertiaEpsilon)) / -0.01
+        private const double InertiaPointsPerActivityHour = InertiaPointsCapacity / 12; // 12 hours of nonstop talking with no decay fills up inertia to 100%
         private const double InertiaPointsPerActivity = InertiaPointsPerActivityHour * ActivityResolutionInHours;
 
         private const int Level5Decay = 32; // Math.Pow(2, 5)
@@ -238,7 +238,14 @@ namespace ForumCrawler
         {
             if (this.TickActivity())
             {
-                this.InertiaPoints += InertiaPointsPerActivity;
+                var inertiaIncrease = InertiaPointsPerActivity *  Math.Pow(2, 5 - this.Score);
+                var oldInertiaPoints = this.InertiaPoints;
+                this.InertiaPoints += inertiaIncrease;
+                var remainder = (InertiaPoints - oldInertiaPoints) / inertiaIncrease;
+                if (remainder > 0)
+                {
+                    this.ScorePoints += 1;
+                }
                 return true;
             }
             return false;
@@ -251,7 +258,7 @@ namespace ForumCrawler
             this.Gems -= 1;
 
             var lowScoreFactor = target.Score < 2 ? 3 : target.Score < 3 ? 2 : 1;
-            target.ScorePoints += 5 * efficiency * lowScoreFactor;
+            target.ScorePoints += 15 * efficiency * lowScoreFactor;
             target.Boosts[this.UserId] = DateTime.UtcNow;
 
             return efficiency;
@@ -262,7 +269,7 @@ namespace ForumCrawler
             var efficiency = GetEfficiency(target);
             if (this.Gems < 1) throw new Exception($"A downvote costs 1 gem, which you currently do not have.");
             this.Gems -= 1;
-            target.ScorePoints -= 5 * efficiency;
+            target.ScorePoints -= 15 * efficiency;
             target.DownBoosts[this.UserId] = DateTime.UtcNow;
 
             return efficiency;
@@ -304,6 +311,7 @@ namespace ForumCrawler
         public int DailyCount { get; set; }
         public int DailyStreakCount { get; set; }
         public bool HasDisabledThresholdWarning { get; set; }
+        public bool HasDisabledAutoDaily { get; set; }
 
         public (int Amount, int Bonus) Daily(ScoreUser target)
         {

@@ -387,6 +387,10 @@
     <Compile Include="Migrations\202005160009042_AddStreaks.Designer.cs">
       <DependentUpon>202005160009042_AddStreaks.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202005271836271_AutoDaily.cs" />
+    <Compile Include="Migrations\202005271836271_AutoDaily.Designer.cs">
+      <DependentUpon>202005271836271_AutoDaily.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RevisedStarboardPost.cs" />
     <Compile Include="Models\ScoreData.cs" />
@@ -562,6 +566,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202005160009042_AddStreaks.resx">
       <DependentUpon>202005160009042_AddStreaks.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202005271836271_AutoDaily.resx">
+      <DependentUpon>202005271836271_AutoDaily.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>

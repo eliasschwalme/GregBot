@@ -36,25 +36,47 @@ namespace ForumCrawler
             });
         }
 
-        public static async Task<(ScoreData, double)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId,
+        public static async Task<(ScoreData, double, (ScoreData ScoreData, int Amount, int Bonus)?)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId)
         {
             return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, upvoter) =>
             {
+                (ScoreData ScoreData, int Amount, int Bonus)? daily = null;
+                if (upvoter.Gems < 0 && !upvoter.HasDisabledAutoDaily)
+                {
+                    try
+                    {
+                        var (increase, bonus) = upvoter.Daily(upvoter);
+                        daily = (target.ScoreData, increase, bonus);
+                    }
+                    catch { }
+                }
+
                 var change = upvoter.Upvote(target);
                 OnUpdate?.Invoke(target.UserId, target.ScoreData);
-                return (target.ScoreData, change);
+                return (target.ScoreData, change, daily);
             });
         }
 
-        public static async Task<(ScoreData, double)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId,
+        public static async Task<(ScoreData, double, (ScoreData ScoreData, int Amount, int Bonus)?)> DownvoteAsync(DiscordSocketClient client, ulong targetUserId,
             ulong invokerUserId)
         {
             return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, downvoter) =>
             {
+                (ScoreData ScoreData, int Amount, int Bonus)? daily = null;
+                if (downvoter.Gems < 0 && !downvoter.HasDisabledAutoDaily)
+                {
+                    try
+                    {
+                        var (increase, bonus) = downvoter.Daily(downvoter);
+                        daily = (target.ScoreData, increase, bonus);
+                    }
+                    catch { }
+                }
+
                 var change = downvoter.Downvote(target);
                 OnUpdate?.Invoke(target.UserId, target.ScoreData);
-                return (target.ScoreData, change);
+                return (target.ScoreData, change, daily);
             });
         }
 
@@ -194,6 +216,16 @@ namespace ForumCrawler
             {
                 var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
                 user.HasDisabledThresholdWarning = disabled;
+                await context.SaveChangesAsync();
+            }
+        }
+
+        public static async Task SetHasDisabledAutoDaily(DiscordSocketClient client, ulong userId, bool disabled)
+        {
+            using (var context = new DatabaseContext())
+            {
+                var user = await Database.GetOrCreateScoreUserAsync(context, client, userId);
+                user.HasDisabledAutoDaily = disabled;
                 await context.SaveChangesAsync();
             }
         }
