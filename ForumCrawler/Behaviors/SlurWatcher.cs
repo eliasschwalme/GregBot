@@ -18,7 +18,7 @@ namespace ForumCrawler.Behaviors
         {
             foreach (var slur in Slurs)
             {
-                if (message.Content.Contains(slur))
+                if (message.Content.ToLower().Contains(slur))
                 {
                     await message.DeleteAsync();
                 }
