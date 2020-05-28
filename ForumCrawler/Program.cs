@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ForumCrawler.Behaviors;
+using System;
 using System.Threading.Tasks;
 
 namespace ForumCrawler
@@ -20,6 +21,7 @@ namespace ForumCrawler
             EditWatcher.Bind(client);
             QuickReportWatcher.Bind(client);
             StarboardWatcher.Bind(client);
+            SlurWatcher.Bind(client);
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
