@@ -312,6 +312,7 @@
     <Compile Include="Models\ICoronaEntry.cs" />
     <Compile Include="Behaviors\MuteWatcher.cs" />
     <Compile Include="Behaviors\QuickReportWatcher.cs" />
+    <Compile Include="Behaviors\SlurWatcher.cs" />
     <Compile Include="Behaviors\StarboardWatcher.cs" />
     <Compile Include="Helpers\StarboardWatcherConfigurator.cs" />
     <Compile Include="Behaviors\VoiceChat.cs" />
