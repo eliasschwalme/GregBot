@@ -2023,6 +2023,7 @@ namespace ForumCrawler
 
         private static async Task Client_MessageReceived(SocketMessage msg)
         {
+            if (msg.Author.IsBot) return;
             if (msg.Channel.Name == "quickchat")
             {
                 var repeats = GetChatRepeats(msg.Author.Id, msg.Content);
