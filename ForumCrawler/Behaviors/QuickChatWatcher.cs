@@ -2000,7 +2000,14 @@ namespace ForumCrawler
             if (msg.Channel.Name == "quickchat")
             {
                 if (ValidQuickChats.Contains(msg.Content)) return;
-                if (MentionUtils.TryParseUser(msg.Content, out _)) return;
+                if (MentionUtils.TryParseUser(msg.Content, out var userId))
+                {
+                    if (await msg.Channel.GetUserAsync(userId, CacheMode.CacheOnly) != null) return;
+                }
+                if (msg.Content.StartsWith("<:chat:329704537050841091> ||") && msg.Content.EndsWith("||") && !msg.Content.EndsWith("\\||")) {
+                    _ = Task.Delay(30000).ContinueWith((a) => msg.DeleteAsync());
+                    return;
+                }
                 await msg.DeleteAsync();
             }
         }
