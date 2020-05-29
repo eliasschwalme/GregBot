@@ -87,8 +87,10 @@ namespace ForumCrawler
             }
 
             if (guildUser.Guild.Id == DiscordSettings.GuildId &&
-                message.Channel.Id != DiscordSettings.BotCommandsChannel) // bot-spam
+                message.Channel.Id != DiscordSettings.BotCommandsChannel && // bot-spam
+                message.Channel.Id != 715720376918737028) // quickchat
             {
+                
                 await Score.CreditActivityScoreAsync(client, guildUser.Id);
             }
         }
