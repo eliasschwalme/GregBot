@@ -2025,24 +2025,31 @@ namespace ForumCrawler
         {
             if (msg.Channel.Name == "quickchat")
             {
-                if (ValidQuickChats.Contains(msg.Content)) return;
-                if (MentionUtils.TryParseUser(msg.Content, out var userId))
-                {
-                    if (await msg.Channel.GetUserAsync(userId, CacheMode.CacheOnly) != null) return;
-                }
-                if (msg.Content.StartsWith("<:chat:329704537050841091> ||") && msg.Content.EndsWith("||") && !msg.Content.EndsWith("\\||")) {
-                    _ = Task.Delay(30000).ContinueWith((a) => msg.DeleteAsync());
-                    return;
-                }
                 var repeats = GetChatRepeats(msg.Author.Id, msg.Content);
-                if (repeats <= 4) return;
                 if (repeats == 4)
                 {
                     await msg.Channel.SendMessageAsync("Easy now, you don't want the other players mistaking you for a spammer!");
                 }
-
-                await msg.DeleteAsync();
+                if (repeats >= 4 || !IsValidContent(msg))
+                {
+                    await msg.DeleteAsync();
+                }
             }
+        }
+
+        private static bool IsValidContent(SocketMessage msg)
+        {
+            if (ValidQuickChats.Contains(msg.Content)) return true;
+            if (MentionUtils.TryParseUser(msg.Content, out var userId))
+            {
+                if (msg.Channel.GetUserAsync(userId, CacheMode.CacheOnly).Result != null) return true;
+            }
+            if (msg.Content.StartsWith("<:chat:329704537050841091> ||") && msg.Content.EndsWith("||") && !msg.Content.EndsWith("\\||"))
+            {
+                _ = Task.Delay(30000).ContinueWith((a) => msg.DeleteAsync());
+                return true;
+            }
+            return false;
         }
     }
 }
