@@ -1981,6 +1981,32 @@ namespace ForumCrawler
             "LMAO!",
         };
 
+        private static readonly Dictionary<ulong, ChatChannel> Channels = new Dictionary<ulong, ChatChannel>();
+
+        private static int GetChatRepeats(ulong id, string chat)
+        {
+            if (!Channels.TryGetValue(id, out var channel))
+            {
+                Channels[id] = channel = new ChatChannel();
+            }
+
+            if (chat != channel.LastSent)
+            {
+                channel.RepeatCount = 0;
+                channel.LastSent = chat;
+            }
+
+            return ++channel.RepeatCount;
+        }
+
+        private class ChatChannel
+        {
+            public string LastSent;
+            public int RepeatCount;
+            public int DelayCount;
+        }
+
+
         public static void Bind(DiscordSocketClient client)
         {
             client.MessageReceived += Client_MessageReceived;
@@ -2008,6 +2034,13 @@ namespace ForumCrawler
                     _ = Task.Delay(30000).ContinueWith((a) => msg.DeleteAsync());
                     return;
                 }
+                var repeats = GetChatRepeats(msg.Author.Id, msg.Content);
+                if (repeats <= 4) return;
+                if (repeats == 4)
+                {
+                    await msg.Channel.SendMessageAsync("Easy now, you don't want the other players mistaking you for a spammer!");
+                }
+
                 await msg.DeleteAsync();
             }
         }
