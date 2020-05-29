@@ -313,10 +313,10 @@ namespace ForumCrawler
         public bool HasDisabledThresholdWarning { get; set; }
         public bool HasDisabledAutoDaily { get; set; }
 
-        public (int Amount, int Bonus) Daily(ScoreUser target)
+        public (int Amount, int Bonus) Daily()
         {
-            if (this.AltOfUserId.HasValue || target.AltOfUserId.HasValue)
-                throw new Exception("Sorry, alts cannot send or receive gems.");
+            if (this.AltOfUserId.HasValue)
+                throw new Exception("Sorry, alts cannot receive gems.");
 
             if (this.DailyCooldown.HasValue) 
                 throw new Exception($"You have already used your daily today. Come back in {this.DailyCooldown.Value.ToHumanReadableString()}.");
@@ -326,8 +326,7 @@ namespace ForumCrawler
                                     $"Daily gems are available to active members only. " +
                                     $"You must collect at least 10% inertia or a base score of 3 or higher to run this command.");
             
-            var isGiftBonus = this.UserId == target.UserId ? 0 : 1;
-            var amount = 3 + this.ScoreData.Class + isGiftBonus;
+            var amount = 3 + this.ScoreData.Class;
 
             var bonus = 0;
             if (CanStreak)
@@ -346,7 +345,7 @@ namespace ForumCrawler
 
             this.DailyCount++;
             this.LastDaily = DateTime.UtcNow.Date;
-            target.Gems += amount + bonus;
+            this.Gems += amount + bonus;
 
             return (amount, bonus);
         }

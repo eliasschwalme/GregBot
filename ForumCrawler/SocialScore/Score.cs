@@ -26,14 +26,15 @@ namespace ForumCrawler
             }
         }
 
-        public static async Task<(ScoreData ScoreData, int Increase, int Bonus)> DailyAsync(DiscordSocketClient client, ulong targetUserId,
-            ulong invokerUserId)
+        public static async Task<(ScoreData ScoreData, int Increase, int Bonus)> DailyAsync(DiscordSocketClient client, ulong invokerUserId)
         {
-            return await WithTargetedScoreCommand(client, targetUserId, invokerUserId, (target, invoker) =>
+            using (var context = new DatabaseContext())
             {
-                var (increase, bonus) = invoker.Daily(target);
-                return (target.ScoreData, increase, bonus);
-            });
+                var user = await Database.GetOrCreateScoreUserAsync(context, client, invokerUserId);
+                var (increase, bonus) = user.Daily();
+                await context.SaveChangesAsync();
+                return (user.ScoreData, increase, bonus);
+            }
         }
 
         public static async Task<(ScoreData, double, (ScoreData ScoreData, int Amount, int Bonus)?)> UpvoteAsync(DiscordSocketClient client, ulong targetUserId,
@@ -46,7 +47,7 @@ namespace ForumCrawler
                 {
                     try
                     {
-                        var (increase, bonus) = upvoter.Daily(upvoter);
+                        var (increase, bonus) = upvoter.Daily();
                         daily = (target.ScoreData, increase, bonus);
                     }
                     catch { }
@@ -68,7 +69,7 @@ namespace ForumCrawler
                 {
                     try
                     {
-                        var (increase, bonus) = downvoter.Daily(downvoter);
+                        var (increase, bonus) = downvoter.Daily();
                         daily = (target.ScoreData, increase, bonus);
                     }
                     catch { }

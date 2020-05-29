@@ -132,23 +132,16 @@ namespace ForumCrawler
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
         public async Task Daily()
         {
-            await Daily((IGuildUser)Context.User);
+            var (scoreData, amount, bonus) = await Score.DailyAsync(Context.Client, Context.User.Id);
+            await ReplyAsync(GetDailyStr(scoreData, amount, bonus));
         }
 
-        private string GetDailyStr(IUser targetUser, ScoreData scoreData, int amount, int bonus)
+        private string GetDailyStr(ScoreData scoreData, int amount, int bonus)
         {
             var bonusStr = bonus == 0 ? "" : $" (+3 streak bonus)";
             var streakStr = scoreData.DailyStreakCount == 0 ? "" : $" Streak days: {scoreData.DailyStreakCount}";
-            return $"{MentionUtils.MentionUser(Context.User.Id)} gave {MentionUtils.MentionUser(targetUser.Id)} their {amount}{bonusStr} daily gems. " +
+            return $"{MentionUtils.MentionUser(Context.User.Id)} collected their {amount}{bonusStr} daily gems. " +
                 $"They now have {scoreData.Gems} in total.{streakStr}";
-        }
-
-        [Command("daily")]
-        [RequireChannel(DiscordSettings.BotCommandsChannel)]
-        public async Task Daily(IGuildUser targetUser)
-        {
-            var (scoreData, amount, bonus) = await Score.DailyAsync(Context.Client, targetUser.Id, Context.User.Id);
-            await ReplyAsync(GetDailyStr(targetUser, scoreData, amount, bonus));
         }
 
         [Command("up")]
@@ -160,7 +153,7 @@ namespace ForumCrawler
 
             if (daily.HasValue)
             {
-                await ReplyAsync(GetDailyStr(targetUser, daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
+                await ReplyAsync(GetDailyStr(daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
                                  " (g!daily was automatically called. To disable this feature, invoke `g!autodaily false`)");
             }
 
@@ -183,7 +176,7 @@ namespace ForumCrawler
 
             if (daily.HasValue)
             {
-                await ReplyAsync(GetDailyStr(targetUser, daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
+                await ReplyAsync(GetDailyStr(daily.Value.ScoreData, daily.Value.Amount, daily.Value.Bonus) +
                                  " (g!daily was automatically called. To disable this feature, invoke `g!autodaily false`)");
             }
 
