@@ -2027,11 +2027,11 @@ namespace ForumCrawler
             if (msg.Channel.Name == "quickchat")
             {
                 var repeats = GetChatRepeats(msg.Author.Id, msg.Content);
-                if (repeats == 4)
+                if (repeats == 3)
                 {
                     await msg.Channel.SendMessageAsync("Easy now, you don't want the other players mistaking you for a spammer!");
                 }
-                if (repeats >= 4 || !IsValidContent(msg))
+                if (repeats >= 3 || !IsValidContent(msg))
                 {
                     await msg.DeleteAsync();
                 }
