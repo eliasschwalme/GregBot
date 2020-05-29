@@ -301,18 +301,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Behaviors\ChannelQualifier.cs" />
-    <Compile Include="Behaviors\CoronaData.cs" />
-    <Compile Include="Behaviors\CoronaLiveData.cs" />
+    <Compile Include="Models\ChannelQualifier.cs" />
+    <Compile Include="Behaviors\QuickChatWatcher.cs" />
+    <Compile Include="Models\CoronaData.cs" />
+    <Compile Include="Models\CoronaLiveData.cs" />
     <Compile Include="Behaviors\CoronaWatcher.cs" />
-    <Compile Include="Behaviors\EmoteQualifier.cs" />
+    <Compile Include="Models\EmoteQualifier.cs" />
     <Compile Include="Behaviors\GovernanceVoteWatcher.cs" />
     <Compile Include="Behaviors\EditWatcher.cs" />
-    <Compile Include="Behaviors\ICoronaEntry.cs" />
+    <Compile Include="Models\ICoronaEntry.cs" />
     <Compile Include="Behaviors\MuteWatcher.cs" />
     <Compile Include="Behaviors\QuickReportWatcher.cs" />
     <Compile Include="Behaviors\StarboardWatcher.cs" />
-    <Compile Include="Behaviors\StarboardWatcherConfigurator.cs" />
+    <Compile Include="Helpers\StarboardWatcherConfigurator.cs" />
     <Compile Include="Behaviors\VoiceChat.cs" />
     <Compile Include="Commands\Helpers\RequireChannelAttribute.cs" />
     <Compile Include="Commands\Helpers\RequireEitherRoleAttribute.cs" />
