@@ -26,6 +26,15 @@ namespace ForumCrawler
         public static void Bind(DiscordSocketClient client)
         {
             client.MessageReceived += Client_MessageReceived;
+            client.MessageUpdated += Client_MessageUpdated;
+        }
+
+        private static async Task Client_MessageUpdated(Discord.Cacheable<Discord.IMessage, ulong> arg1, SocketMessage msg, ISocketMessageChannel arg3)
+        {
+            if (msg.Channel.Name == "quickchat")
+            {
+                await msg.DeleteAsync();
+            }
         }
 
         private static async Task Client_MessageReceived(SocketMessage msg)
