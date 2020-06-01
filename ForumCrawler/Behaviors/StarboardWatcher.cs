@@ -79,7 +79,17 @@ namespace ForumCrawler
             {
                 var isAdminEmote = _adminQualifier(reaction.Emote);
 
-                if (isAdminEmote)
+                // admin check:
+                // bug found by: tora <@373864804349378561> <https://discordapp.com/channels/329335303963803649/329335303963803649/717104011622219877>
+                var isAdmin = false;
+
+                if (reaction.User.IsSpecified
+                    && reaction.User.Value is IGuildUser guildUser)
+                {
+                    isAdmin = guildUser.IsStaff();
+				}
+
+                if (isAdminEmote && isAdmin)
                 {
                     return OnStaffVisibility(message, added);
                 }
