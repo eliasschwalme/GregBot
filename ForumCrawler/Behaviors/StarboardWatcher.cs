@@ -259,9 +259,13 @@ namespace ForumCrawler
                         // we want to update/create the post
                         if (post.StarboardMessageId == 0)
                         {
-                            var starboardMessage =
-                                await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
-                            post.StarboardMessageId = (long)starboardMessage.Id;
+                            // only want to re-create posts if they pass the threshold
+                            if (reactions >= _configuredWoots)
+                            {
+                                var starboardMessage =
+                                    await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
+                                post.StarboardMessageId = (long)starboardMessage.Id;
+                            }
                         }
                         else
                         {
@@ -288,22 +292,26 @@ namespace ForumCrawler
                     // post doesn't exist
                     if (reactions >= _configuredWoots)
                     {
-                        var starboardMessage =
+                        // only want to re-create posts if they pass the threshold
+                        if (reactions >= _configuredWoots)
+                        {
+                            var starboardMessage =
                             await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
 
-                        if (post == default)
-                        {
-                            ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
+                            if (post == default)
                             {
-                                MessageId = (long)message.Id,
-                                StaffToggledVisibility = false,
-                                StarboardChannelId = (long)_starboard.Id,
-                                StarboardMessageId = (long)starboardMessage.Id
-                            });
-                        }
-                        else
-                        {
-                            post.StarboardMessageId = (long)starboardMessage.Id;
+                                ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
+                                {
+                                    MessageId = (long)message.Id,
+                                    StaffToggledVisibility = false,
+                                    StarboardChannelId = (long)_starboard.Id,
+                                    StarboardMessageId = (long)starboardMessage.Id
+                                });
+                            }
+                            else
+                            {
+                                post.StarboardMessageId = (long)starboardMessage.Id;
+                            }
                         }
                     }
                 }
