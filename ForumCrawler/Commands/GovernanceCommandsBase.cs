@@ -91,7 +91,7 @@ namespace ForumCrawler
                     .Select(userData => new {formatted = formatting(userData.user, userData.score), userData.score})
                     .ToList();
                 builder.AddField(
-                    $"{kv.Key} **({reacters.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**",
+                    $"{kv.Key} **(Votes: {reacters.Count}, Sum of Scores: {reacters.Sum(a => a.score.BaseScoreLevel).ToString("F1", CultureInfo.InvariantCulture)})**",
                     reacters.Count == 0 ? "Nobody" : string.Join(", ", reacters.Select(a => a.formatted)));
             }
 
