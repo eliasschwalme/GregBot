@@ -164,14 +164,15 @@ namespace ForumCrawler
 
                 if (post == default)
                 {
-                    // a post doesn't exist to censor - let's make one
-                    ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
-                    {
-                        MessageId = (long)message.Id,
-                        StaffToggledVisibility = added,
-                        StarboardChannelId = (long)_starboard.Id,
-                        StarboardMessageId = 0
-                    });
+                    // a post doesn't exist to censor - let's ignore this emote then
+
+                    // ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
+                    // {
+                    //     MessageId = (long)message.Id,
+                    //     StaffToggledVisibility = added,
+                    //     StarboardChannelId = (long)_starboard.Id,
+                    //     StarboardMessageId = 0
+                    // });
                 }
                 else
                 {
@@ -284,6 +285,7 @@ namespace ForumCrawler
                 }
                 else
                 {
+                    // post doesn't exist
                     if (reactions >= _configuredWoots)
                     {
                         var starboardMessage =
