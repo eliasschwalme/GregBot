@@ -16,6 +16,12 @@ namespace ForumCrawler.Behaviors
 
         private static async Task MessageReceived(SocketMessage message)
         {
+            // https://github.com/discord-net/Discord.Net/issues/621#issuecomment-296762573
+            var channel = message.Channel as SocketGuildChannel;
+            var guild = channel.Guild;
+
+            if (guild.Id != DiscordSettings.GuildId) return;
+
             foreach (var slur in Slurs)
             {
                 if (message.Content?.ToLower()?.Contains(slur) == true)
