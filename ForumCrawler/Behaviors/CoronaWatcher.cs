@@ -37,12 +37,10 @@ namespace ForumCrawler
                 {
                     var liveData = await GetLiveData(API_URL);
 
-                    var datas = new[] {liveData.Today}.Concat(await Task.WhenAll(
-                        GetArchiveData(liveData.LastReset),
-                        GetArchiveData(liveData.LastReset.AddDays(-1)))).ToArray();
+                    var datas = new[] { liveData.Today, liveData.Yesterday, await GetArchiveData(liveData.LastReset) };
 
                     var now = liveData.Now;
-                    var today = liveData.Today;
+                    var today = datas[0];
                     var yesterday = datas[1];
                     var twoDaysAgo = datas[2];
 
@@ -267,7 +265,7 @@ namespace ForumCrawler
         {
             var web = new HtmlWeb();
             var coronaStats = await web.LoadFromWebAsync(String.Format(ARCHIVE_API_URL, time.ToString("yyyyMMdd")));
-            return GetFromTable(coronaStats, "yesterday");
+            return GetFromTable(coronaStats, "yesterday2");
         }
 
         public static async Task<CoronaLiveData> GetLiveData(string url)
@@ -292,7 +290,8 @@ namespace ForumCrawler
                 LastUpdate = lastUpdate,
                 LastReset = lastReset,
                 Now = GetFromTable(coronaStats, "today"),
-                Today = GetFromTable(coronaStats, "yesterday") // this is NOT a typo
+                Today = GetFromTable(coronaStats, "yesterday"), // this is NOT a typo
+                Yesterday = GetFromTable(coronaStats, "yesterday2")
             };
         }
 
@@ -315,7 +314,7 @@ namespace ForumCrawler
                 entry.CaseIncrease = (int)ParseDouble(cells[3]);
                 entry.Deaths = (int)ParseDouble(cells[4]);
                 entry.Recovered = (int)ParseDouble(cells[6]);
-                entry.Serious = (int)ParseDouble(cells[8]);
+                entry.Serious = (int)ParseDouble(cells[9]);
 
                 result.Entries.Add(entry.Name, entry);
             }
