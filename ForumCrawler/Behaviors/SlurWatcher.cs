@@ -22,6 +22,7 @@ namespace ForumCrawler.Behaviors
         {
             // https://github.com/discord-net/Discord.Net/issues/621#issuecomment-296762573
             var channel = message.Channel as SocketGuildChannel;
+            if (channel == null) return;
             var guild = channel.Guild;
 
             if (guild.Id != DiscordSettings.GuildId) return;
