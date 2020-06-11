@@ -30,9 +30,9 @@ namespace ForumCrawler
         private const double InertiaPointsPerActivityHour = InertiaPointsCapacity / 12; // 12 hours of nonstop talking with no decay fills up inertia to 100%
         private const double InertiaPointsPerActivity = InertiaPointsPerActivityHour * ActivityResolutionInHours;
 
-        private const int Level5Decay = 32; // Math.Pow(2, 5)
+        private const double Level5Decay = 7.59375; // Math.Pow(1.5, 5)
         private const double InertiaPerActivityHour = InertiaPointsPerActivityHour * InertiaPointMultiplier * (MaxInertia + InertiaEpsilon / 2); // Average the effect of the epsilon to account for the slowing slope
-        private const double InertiaDecayRatePerHour = 1.5 * InertiaPerActivityHour / 24 / Level5Decay; // 1.5h time investment / day required for a lvl 5 person to not decay
+        private const double InertiaDecayRatePerHour = 3 * InertiaPerActivityHour / 24 / Level5Decay; // 1.5h time investment / day required for a lvl 5 person to not decay
 
         private const double ScoreBaseDecayRate = 0.001;
         private const double ScoreInactivityDecayRate = 0.0001;
@@ -192,7 +192,7 @@ namespace ForumCrawler
             var ticks = (DateTime.UtcNow - lastDecay).TotalHours;
             var lastActivityTicks = (DateTime.UtcNow - lastActivity).TotalHours;
 
-            var inertiaDecayRate = InertiaDecayRatePerHour * Math.Pow(2, this.Score);
+            var inertiaDecayRate = InertiaDecayRatePerHour * Math.Pow(1.5, this.Score);
             var inertiaDecay = inertiaDecayRate * ticks;
             var remainderTicks = Math.Max(0, inertiaDecay - this.Inertia) / inertiaDecayRate;
 
@@ -238,7 +238,7 @@ namespace ForumCrawler
         {
             if (this.TickActivity())
             {
-                var inertiaIncrease = InertiaPointsPerActivity *  Math.Pow(2, 5 - this.Score);
+                var inertiaIncrease = InertiaPointsPerActivity *  Math.Pow(1.5, 5 - this.Score);
                 var oldInertiaPoints = this.InertiaPoints;
                 this.InertiaPoints += inertiaIncrease;
                 var remainder = (InertiaPoints - oldInertiaPoints) / inertiaIncrease;
@@ -326,7 +326,7 @@ namespace ForumCrawler
                                     $"Daily gems are available to active members only. " +
                                     $"You must collect at least 10% inertia or a base score of 3 or higher to run this command.");
             
-            var amount = 3 + this.ScoreData.Class;
+            var amount = 3;
 
             var bonus = 0;
             if (CanStreak)
