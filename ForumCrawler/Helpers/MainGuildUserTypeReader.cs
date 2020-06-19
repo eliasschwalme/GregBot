@@ -19,6 +19,8 @@ namespace ForumCrawler
         public Func<ulong, IGuild, ValueTask<T>> UserIdToT { get; set; }
     }
 
+    // IGupUser literally wouldn't work if it inhereted IUser, so i made it not inherit IUser
+    // so i had to change this T : IUser to just T to accomodate using an IGupUser
     internal class MainGuildUserTypeReader<T> : TypeReader where T : class
     {
 		private readonly GupAliasBehaviorOverrides<T> _behaviorOverrides;
