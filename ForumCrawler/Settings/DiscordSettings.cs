@@ -107,6 +107,7 @@ namespace ForumCrawler
             // Discover all of the commands in this assembly and load them.
             commands.AddTypeReader(typeof(IUser), new MainGuildUserTypeReader<IUser>());
             commands.AddTypeReader(typeof(IGuildUser), new MainGuildUserTypeReader<IGuildUser>());
+            commands.AddTypeReader<IGupUser>(new MainGuildUserTypeReader<IGupUser>(GupUser.BehaviorOverrides), true);
             await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
             return commands;
         }
