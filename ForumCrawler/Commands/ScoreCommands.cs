@@ -234,7 +234,7 @@ namespace ForumCrawler
         }
 
         [Command("thresholdwarning")]
-        [RequireRole(DiscordSettings.DiscordStaff)]
+        // [RequireRole(DiscordSettings.DiscordStaff)]
         [Priority(0)]
         public async Task ThresholdWarning(bool enabled)
         {
