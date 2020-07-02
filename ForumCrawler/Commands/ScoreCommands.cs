@@ -146,8 +146,15 @@ namespace ForumCrawler
 
         [Command("up")]
         [RequireChannel(DiscordSettings.BotCommandsChannel)]
-        public async Task UpUser(IGuildUser targetUser)
+        public async Task UpUser(IGupUser gupUser)
         {
+            var user = gupUser.ActualUser;
+
+            if (!(user is IGuildUser targetUser))
+            {
+                throw new ArgumentException("user isn't IGupUser");
+			}
+
             var oldScoreData = await Score.GetScoreDataAsync(Context.Client, targetUser.Id);
             var (scoreData, efficiency, daily) = await Score.UpvoteAsync(Context.Client, targetUser.Id, Context.User.Id);
 
@@ -166,6 +173,16 @@ namespace ForumCrawler
                     $"{MentionUtils.MentionUser(targetUser.Id)} reached boost level {scoreData.BoostLevel}! +{scoreData.BonusScore:F1} temporary bonus score.");
             }
         }
+
+        #if DEBUG
+        [Command("pu")]
+        public async Task PuUser(IGupUser targetGupUser)
+        {
+            var user = targetGupUser.ActualUser;
+
+            await ReplyAsync("Called PuUser with: " + user.Username + ", " + user.Mention + ", " + user.Id);
+		}
+        #endif
 
         [Command("down")]
         [RequireChannel(DiscordSettings.BotCommandsChannel)]

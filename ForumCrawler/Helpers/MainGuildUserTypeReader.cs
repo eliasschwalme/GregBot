@@ -9,8 +9,31 @@ using Discord.Commands;
 
 namespace ForumCrawler
 {
-    internal class MainGuildUserTypeReader<T> : TypeReader where T : class, IUser
+    public class GupAliasBehaviorOverrides<T>
     {
+        // this may be null
+        public Dictionary<string, ulong> GupAliases { get; set; }
+
+        public Func<IUser, T> UserToT { get; set; }
+
+        public Func<ulong, IGuild, ValueTask<T>> UserIdToT { get; set; }
+    }
+
+    // IGupUser literally wouldn't work if it inhereted IUser, so i made it not inherit IUser
+    // so i had to change this T : IUser to just T to accomodate using an IGupUser
+    internal class MainGuildUserTypeReader<T> : TypeReader where T : class
+    {
+		private readonly GupAliasBehaviorOverrides<T> _behaviorOverrides;
+
+		public MainGuildUserTypeReader(GupAliasBehaviorOverrides<T> behaviorOverrides = null)
+		{
+            _behaviorOverrides = behaviorOverrides ?? new GupAliasBehaviorOverrides<T>
+            {
+                UserToT = (user) => user as T,
+                UserIdToT = async (userId, guild) => await guild.GetUserAsync(userId, CacheMode.CacheOnly).ConfigureAwait(false) as T
+            };
+		}
+
         public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input,
             IServiceProvider services)
         {
@@ -20,18 +43,23 @@ namespace ForumCrawler
             var channelUsers = context.Channel.GetUsersAsync(CacheMode.CacheOnly).Flatten(); // it's better
             var mainGuildUsers = await mainGuild.GetUsersAsync(CacheMode.CacheOnly).ConfigureAwait(false);
 
+            // By gup alias (1.1)
+            if (_behaviorOverrides.GupAliases != null
+                && _behaviorOverrides.GupAliases.TryGetValue(input, out var userId))
+            {
+                AddResult(results, await _behaviorOverrides.UserIdToT(userId, mainGuild).ConfigureAwait(false), 1.10f);
+			}
+
             //By Mention (1.0)
             if (MentionUtils.TryParseUser(input, out var id))
             {
-                AddResult(results, await mainGuild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T,
-                    1.00f);
+                AddResult(results, await _behaviorOverrides.UserIdToT(id, mainGuild).ConfigureAwait(false), 1.00f);
             }
 
             //By Id (0.9)
             if (ulong.TryParse(input, NumberStyles.None, CultureInfo.InvariantCulture, out id))
             {
-                AddResult(results, await mainGuild.GetUserAsync(id, CacheMode.CacheOnly).ConfigureAwait(false) as T,
-                    0.90f);
+                AddResult(results, await _behaviorOverrides.UserIdToT(id, mainGuild).ConfigureAwait(false), 0.90f);
             }
 
             //By Username + Discriminator (0.7-0.85)
@@ -44,12 +72,14 @@ namespace ForumCrawler
                     var channelUser = await channelUsers.FirstOrDefaultAsync(x =>
                         x.DiscriminatorValue == discriminator &&
                         string.Equals(username, x.Username, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
-                    AddResult(results, channelUser as T, channelUser?.Username == username ? 0.85f : 0.75f);
+                    AddResult(results, _behaviorOverrides.UserToT(channelUser),
+                        channelUser?.Username == username ? 0.85f : 0.75f);
 
                     var guildUser = mainGuildUsers.FirstOrDefault(x => x.DiscriminatorValue == discriminator &&
                                                                        string.Equals(username, x.Username,
                                                                            StringComparison.OrdinalIgnoreCase));
-                    AddResult(results, guildUser as T, guildUser?.Username == username ? 0.80f : 0.70f);
+                    AddResult(results, _behaviorOverrides.UserToT(guildUser),
+                        guildUser?.Username == username ? 0.80f : 0.70f);
                 }
             }
 
@@ -58,13 +88,15 @@ namespace ForumCrawler
                 await channelUsers
                     .Where(x => string.Equals(input, x.Username, StringComparison.OrdinalIgnoreCase))
                     .ForEachAsync(channelUser =>
-                        AddResult(results, channelUser as T, channelUser.Username == input ? 0.65f : 0.55f))
+                        AddResult(results, _behaviorOverrides.UserToT(channelUser),
+                            channelUser.Username == input ? 0.65f : 0.55f))
                     .ConfigureAwait(false);
 
                 foreach (var guildUser in mainGuildUsers.Where(x =>
                     string.Equals(input, x.Username, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AddResult(results, guildUser as T, guildUser.Username == input ? 0.60f : 0.50f);
+                    AddResult(results, _behaviorOverrides.UserToT(guildUser),
+                        guildUser.Username == input ? 0.60f : 0.50f);
                 }
             }
 
@@ -72,14 +104,16 @@ namespace ForumCrawler
             {
                 await channelUsers
                     .Where(x => string.Equals(input, (x as IGuildUser)?.Nickname, StringComparison.OrdinalIgnoreCase))
-                    .ForEachAsync(channelUser => AddResult(results, channelUser as T,
+                    .ForEachAsync(channelUser => AddResult(results,
+                        _behaviorOverrides.UserToT(channelUser),
                         (channelUser as IGuildUser).Nickname == input ? 0.65f : 0.55f))
                     .ConfigureAwait(false);
 
                 foreach (var guildUser in mainGuildUsers.Where(x =>
                     string.Equals(input, x.Nickname, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AddResult(results, guildUser as T, guildUser.Nickname == input ? 0.60f : 0.50f);
+                    AddResult(results, _behaviorOverrides.UserToT(guildUser),
+                        guildUser.Nickname == input ? 0.60f : 0.50f);
                 }
             }
 
@@ -87,14 +121,16 @@ namespace ForumCrawler
             {
                 await channelUsers
                     .Where(x => x.Username.StartsWith(input, StringComparison.OrdinalIgnoreCase))
-                    .ForEachAsync(channelUser => AddResult(results, channelUser as T,
+                    .ForEachAsync(channelUser => AddResult(results,
+                        _behaviorOverrides.UserToT(channelUser),
                         channelUser.Username.StartsWith(input) ? 0.45f : 0.35f))
                     .ConfigureAwait(false);
 
                 foreach (var guildUser in mainGuildUsers.Where(x =>
                     x.Username.StartsWith(input, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AddResult(results, guildUser as T, guildUser.Username.StartsWith(input) ? 0.40f : 0.30f);
+                    AddResult(results, _behaviorOverrides.UserToT(guildUser),
+                        guildUser.Username.StartsWith(input) ? 0.40f : 0.30f);
                 }
             }
 
@@ -103,14 +139,16 @@ namespace ForumCrawler
                 await channelUsers
                     .Where(x => (x as IGuildUser)?.Nickname?.StartsWith(input, StringComparison.OrdinalIgnoreCase) ??
                                 false)
-                    .ForEachAsync(channelUser => AddResult(results, channelUser as T,
+                    .ForEachAsync(channelUser => AddResult(results,
+                        _behaviorOverrides.UserToT(channelUser),
                         (channelUser as IGuildUser).Nickname.StartsWith(input) ? 0.45f : 0.35f))
                     .ConfigureAwait(false);
 
                 foreach (var guildUser in mainGuildUsers.Where(x =>
                     x?.Nickname?.StartsWith(input, StringComparison.OrdinalIgnoreCase) ?? false))
                 {
-                    AddResult(results, guildUser as T, guildUser.Nickname.StartsWith(input) ? 0.40f : 0.30f);
+                    AddResult(results, _behaviorOverrides.UserToT(guildUser),
+                        guildUser.Nickname.StartsWith(input) ? 0.40f : 0.30f);
                 }
             }
 
@@ -126,9 +164,25 @@ namespace ForumCrawler
 
         private void AddResult(Dictionary<ulong, TypeReaderValue> results, T user, float score)
         {
-            if (user != null && (!results.TryGetValue(user.Id, out var curr) || curr.Score < score))
+            // aaaaaaaaaaa
+            IUser discordUser = null;
+
+            if (user is IGupUser gupUser)
             {
-                results[user.Id] = new TypeReaderValue(user, score);
+                discordUser = gupUser.ActualUser;
+			}
+
+            if (user is IUser userAsUser)
+            {
+                discordUser = userAsUser;
+			}
+
+            if (discordUser != null)
+            {
+                if (discordUser != null && (!results.TryGetValue(discordUser.Id, out var curr) || curr.Score < score))
+                {
+                    results[discordUser.Id] = new TypeReaderValue(user, score);
+                }
             }
         }
     }
