@@ -79,7 +79,7 @@ namespace ForumCrawler
 
             var isStarboardEmote = _emoteQualifier(reaction.Emote);
 
-            if (!isStarboardEmote)
+            if (!isStarboardEmote && (_emoteDisqualifier != null ? (!_emoteDisqualifier(reaction.Emote)) : true))
             {
                 var isAdminEmote = _adminQualifier(reaction.Emote);
 
