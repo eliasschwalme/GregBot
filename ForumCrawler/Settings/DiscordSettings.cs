@@ -41,6 +41,8 @@ namespace ForumCrawler
         public const ulong DSDiscordServerOwner = 705928497851531325;
         public const ulong DSStaffCommandsChannel = 705936434489589822;
         public const ulong DSReportsChannel = 705933908008763503;
+        public const ulong SuggestionBoard = 731977062931234887;
+        public const ulong Feedback = 549402587116470283;
 
         public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig>
         {

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Discord;
 using Discord.WebSocket;
 
@@ -52,5 +53,22 @@ namespace ForumCrawler
         {
             return channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);
         }
-    }
+
+		internal static StarboardWatcher SuggestionStarboard(DiscordSocketClient client)
+		{
+            var guild = client.GetGuild(DiscordSettings.GuildId);
+            var starboard = new StarboardWatcher
+            (
+                client,
+                guild,
+                guild.GetTextChannel(DiscordSettings.SuggestionBoard), // #suggestion-board
+                channel => channel.Id == DiscordSettings.Feedback, // #feedback
+                emote => emote.Name == "👍",
+                4,
+                emote => emote.Name == "👎"
+            );
+
+            return starboard;
+		}
+	}
 }

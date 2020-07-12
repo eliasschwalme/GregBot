@@ -18,15 +18,17 @@ namespace ForumCrawler
         private readonly EmoteQualifier _emoteQualifier;
         private readonly SocketGuild _guild;
         private readonly SocketTextChannel _starboard;
+		private readonly EmoteQualifier _emoteDisqualifier;
 
-        public StarboardWatcher
+		public StarboardWatcher
         (
             DiscordSocketClient client,
             SocketGuild guild,
             SocketTextChannel starboard,
             ChannelQualifier channelQualifier,
             EmoteQualifier emoteQualifier,
-            int configuredWoots
+            int configuredWoots,
+            EmoteQualifier emoteDisqualifier = null
         )
         {
             _client = client;
@@ -36,9 +38,10 @@ namespace ForumCrawler
             _emoteQualifier = emoteQualifier;
             _adminQualifier = IsAdminNoVisibilityEmote;
             _configuredWoots = configuredWoots;
+            _emoteDisqualifier = emoteDisqualifier;
             _client.ReactionAdded += (a, b, c) => OnReactionChanged(a, b, c, true);
             _client.ReactionRemoved += (a, b, c) => OnReactionChanged(a, b, c, false);
-        }
+		}
 
         private static bool IsAdminNoVisibilityEmote(IEmote emote)
         {
@@ -54,6 +57,7 @@ namespace ForumCrawler
             {
                 StarboardWatcherConfigurator.GeneralStarboard(client);
                 StarboardWatcherConfigurator.StaffVoteStarboard(client);
+                StarboardWatcherConfigurator.SuggestionStarboard(client);
                 return Task.CompletedTask;
             });
         }
@@ -290,28 +294,25 @@ namespace ForumCrawler
                 else
                 {
                     // post doesn't exist
+                    // only want to re-create posts if they pass the threshold
                     if (reactions >= _configuredWoots)
                     {
-                        // only want to re-create posts if they pass the threshold
-                        if (reactions >= _configuredWoots)
-                        {
-                            var starboardMessage =
-                            await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
+                        var starboardMessage =
+                        await _starboard.SendMessageAsync(embed: GetMessageEmbed(message, reactions));
 
-                            if (post == default)
+                        if (post == default)
+                        {
+                            ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
                             {
-                                ctx.RevisedStarboardPosts.Add(new RevisedStarboardPost
-                                {
-                                    MessageId = (long)message.Id,
-                                    StaffToggledVisibility = false,
-                                    StarboardChannelId = (long)_starboard.Id,
-                                    StarboardMessageId = (long)starboardMessage.Id
-                                });
-                            }
-                            else
-                            {
-                                post.StarboardMessageId = (long)starboardMessage.Id;
-                            }
+                                MessageId = (long)message.Id,
+                                StaffToggledVisibility = false,
+                                StarboardChannelId = (long)_starboard.Id,
+                                StarboardMessageId = (long)starboardMessage.Id
+                            });
+                        }
+                        else
+                        {
+                            post.StarboardMessageId = (long)starboardMessage.Id;
                         }
                     }
                 }
@@ -345,7 +346,35 @@ namespace ForumCrawler
                     .Concat(await message.GetReactionUsersAsync(reaction, 1000).FlattenAsync());
             }
 
-            return allUsers.Distinct(new UserIdEqualityComparer());
+            // order the users so that when we skip over users things are fine
+            var reactors = allUsers.Distinct(new UserIdEqualityComparer()).OrderBy(user => user.Id).ToArray();
+
+            // bodged omega hackjob solution to support emote disqualifiers
+            if (_emoteDisqualifier != null)
+            {
+                IEnumerable<IUser> allDisqualifiers = Array.Empty<IUser>();
+
+                foreach (var reaction in message.Reactions.Keys)
+                {
+                    if (!_emoteDisqualifier(reaction))
+                    {
+                        continue;
+                    }
+
+                    allDisqualifiers = allDisqualifiers
+                        .Concat(await message.GetReactionUsersAsync(reaction, 1000).FlattenAsync());
+                }
+
+                var disqualifiers = allDisqualifiers.Distinct(new UserIdEqualityComparer())
+                    .OrderBy(user => user).ToArray();
+
+                // probably a very bad and not great but oh well :D
+                return reactors.Skip(disqualifiers.Length);
+            }
+            else
+            {
+                return reactors;
+			}
         }
 
         private class UserIdEqualityComparer : IEqualityComparer<IUser>
