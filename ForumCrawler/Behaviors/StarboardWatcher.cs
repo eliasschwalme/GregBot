@@ -366,7 +366,7 @@ namespace ForumCrawler
                 }
 
                 var disqualifiers = allDisqualifiers.Distinct(new UserIdEqualityComparer())
-                    .OrderBy(user => user).ToArray();
+                    .OrderBy(user => user.Id).ToArray();
 
                 // probably a very bad and not great but oh well :D
                 return reactors.Skip(disqualifiers.Length);
