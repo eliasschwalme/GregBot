@@ -46,7 +46,7 @@ namespace ForumCrawler
 
         private static bool VoteQualifier(IEmote emote)
         {
-            return emote.Name == "👍" || emote.Name == "👎";
+            return emote.Name == "woot" || emote.Name == "doot";
         }
 
         private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
@@ -63,9 +63,9 @@ namespace ForumCrawler
                 guild,
                 guild.GetTextChannel(DiscordSettings.SuggestionBoard), // #suggestion-board
                 channel => channel.Id == DiscordSettings.Feedback, // #feedback
-                emote => emote.Name == "👍",
+                emote => emote.Name == "woot",
                 4,
-                emote => emote.Name == "👎"
+                emote => emote.Name == "doot"
             );
 
             return starboard;
