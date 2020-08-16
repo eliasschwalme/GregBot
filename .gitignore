@@ -281,4 +281,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # GregBot
-appSettings.config
+App.config
