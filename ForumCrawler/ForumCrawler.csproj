@@ -494,9 +494,6 @@
   <ItemGroup>
     <None Include=".editorconfig" />
     <None Include="App.config" />
-    <None Include="appSettings.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
