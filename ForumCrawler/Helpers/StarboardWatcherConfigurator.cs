@@ -32,7 +32,7 @@ namespace ForumCrawler
                 guild,
                 guild.GetTextChannel(DiscordSettings.DSVoteboardChannel), // #vote-board
                 channel => channel.Id == DiscordSettings.DSModerationChannel, // #staff
-                VoteQualifier,
+                StaffVoteQualifier,
                 1
             );
 
@@ -44,9 +44,9 @@ namespace ForumCrawler
             return emote.Name == "woot";
         }
 
-        private static bool VoteQualifier(IEmote emote)
+        private static bool StaffVoteQualifier(IEmote emote)
         {
-            return emote.Name == "woot" || emote.Name == "doot";
+            return emote.Name == "👍" || emote.Name == "👎";
         }
 
         private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
