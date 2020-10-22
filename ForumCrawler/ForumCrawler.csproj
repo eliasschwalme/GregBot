@@ -302,6 +302,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\SubscriptionCommand.cs" />
+    <Compile Include="Helpers\GovernanceSubscriptionFeed.cs" />
     <Compile Include="Helpers\IGupUser.cs" />
     <Compile Include="Models\ChannelQualifier.cs" />
     <Compile Include="Behaviors\QuickChatWatcher.cs" />
