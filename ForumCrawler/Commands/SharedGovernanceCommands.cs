@@ -7,6 +7,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using ForumCrawler.Helpers;
+
 namespace ForumCrawler
 {
     [Group("suggest")]
@@ -143,6 +145,7 @@ namespace ForumCrawler
                     await message.ModifyAsync(props => props.Embed = submissionNew);
                     await channel.ModifyAsync(props => props.Topic = submissionNew.Description);
                     await channel.SendMessageAsync(string.Empty, embed: editEmbed);
+                    await GovernanceSubscriptionFeed.OnEditAsync(Context.Client, channel.Id);
                 }
             }
         }

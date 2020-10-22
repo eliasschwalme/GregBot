@@ -4,6 +4,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using ForumCrawler.Helpers;
+
 namespace ForumCrawler
 {
     [Group("suggest")]
@@ -38,6 +40,8 @@ namespace ForumCrawler
                         $"Suggestion upgraded by {MentionUtils.MentionUser(Context.User.Id)}.");
                     return await ConfirmSuggestionFromUserAsync(channel, message.Author, message.Content);
                 });
+
+            await GovernanceSubscriptionFeed.OnUpgradeAsync(Context.Client, message.Channel.Id);
         }
 
         private static string ToHumanCounter(int number, string unit)
@@ -103,6 +107,8 @@ namespace ForumCrawler
                 .WithDescription($"[Click here to vote]({message.GetJumpUrl()})")
                 .Build());
             await finalizeMsg.PinAsync();
+
+            await GovernanceSubscriptionFeed.OnFinalizeAsync(Context.Client, message.Channel.Id);
         }
     }
 }

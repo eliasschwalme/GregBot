@@ -7,6 +7,8 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 
+using ForumCrawler.Helpers;
+
 namespace ForumCrawler
 {
     public abstract class GovernanceCommandsBase : InteractiveBase<SocketCommandContext>

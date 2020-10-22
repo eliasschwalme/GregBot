@@ -6,6 +6,9 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+
+using ForumCrawler.Commands;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ForumCrawler
@@ -43,6 +46,13 @@ namespace ForumCrawler
         public const ulong DSReportsChannel = 705933908008763503;
         public const ulong SuggestionBoard = 731977062931234887;
         public const ulong Feedback = 549402587116470283;
+        public const ulong GovernanceSubscriptionFeed = 765456947322552320;
+
+        public static Dictionary<SubscriptionType, ulong> MapSubscriptionToRole = new Dictionary<SubscriptionType, ulong>
+        {
+            [SubscriptionType.Events] = 749734307379150898,
+            [SubscriptionType.Governance] = 765456742812614656,
+        };
 
         public static Dictionary<ulong, GovernanceConfig> GovernanceConfigs = new Dictionary<ulong, GovernanceConfig>
         {
