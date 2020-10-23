@@ -153,6 +153,14 @@ namespace ForumCrawler
                 ~config.EveryonePermissionsAfterSubmission.AllowValue
             );
             await channel.AddPermissionOverwriteAsync(guild.EveryoneRole, targetPerms);
+
+            var letUberDoTimerStuff = new OverwritePermissions(
+                readMessageHistory: PermValue.Allow,
+                sendMessages: PermValue.Allow,
+                viewChannel: PermValue.Allow
+            );
+
+            await channel.AddPermissionOverwriteAsync(guild.GetUser(85614143951892480 /* uber bot */), letUberDoTimerStuff);
         }
 
         protected static string GetBillboardMessage(SuggestionType type)
