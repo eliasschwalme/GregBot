@@ -100,7 +100,7 @@ namespace ForumCrawler
             return builder;
         }
 
-        protected async Task CreateSuggestionChannel(SuggestionType type, string shortName, IUser owner,
+        protected async Task<Discord.Rest.RestTextChannel> CreateSuggestionChannel(SuggestionType type, string shortName, IUser owner,
             Func<IMessageChannel, Task<IUserMessage>> messageGenerator)
         {
             await Context.Message.DeleteAsync();
@@ -123,7 +123,7 @@ namespace ForumCrawler
             if (message == null)
             {
                 await channel.DeleteAsync();
-                return;
+                return null;
             }
 
             await channel.ModifyAsync(props =>
@@ -161,6 +161,7 @@ namespace ForumCrawler
             );
 
             await channel.AddPermissionOverwriteAsync(guild.GetUser(85614143951892480 /* uber bot */), letUberDoTimerStuff);
+            return channel;
         }
 
         protected static string GetBillboardMessage(SuggestionType type)

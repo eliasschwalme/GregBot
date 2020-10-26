@@ -33,7 +33,7 @@ namespace ForumCrawler
                 throw new Exception("Message with the given ID was not found in this channel.");
             }
 
-            await CreateSuggestionChannel(SuggestionType.Draft, shortName, message.Author,
+            var suggestionChannel = await CreateSuggestionChannel(SuggestionType.Draft, shortName, message.Author,
                 async channel =>
                 {
                     await channel.SendMessageAsync(
@@ -41,7 +41,10 @@ namespace ForumCrawler
                     return await ConfirmSuggestionFromUserAsync(channel, message.Author, message.Content);
                 });
 
-            await GovernanceSubscriptionFeed.OnUpgradeAsync(Context.Client, message.Channel.Id);
+            if (suggestionChannel != null)
+            {
+                await GovernanceSubscriptionFeed.OnUpgradeAsync(Context.Client, suggestionChannel.Id);
+            }
         }
 
         private static string ToHumanCounter(int number, string unit)
