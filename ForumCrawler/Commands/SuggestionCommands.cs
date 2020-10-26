@@ -17,8 +17,13 @@ namespace ForumCrawler
         [Priority(0)]
         public async Task Draft([Summary("The short name.")] string shortName)
         {
-            await CreateSuggestionChannel(SuggestionType.Draft, shortName, Context.User,
+            var suggestionChannel = await CreateSuggestionChannel(SuggestionType.Draft, shortName, Context.User,
                 channel => GetSuggestionFromUserAsync(channel, Context.User));
+
+            if (suggestionChannel != null)
+            {
+                await GovernanceSubscriptionFeed.OnSuggestAsync(Context.Client, suggestionChannel.Id);
+			}
         }
 
         [Command("upgrade")]
