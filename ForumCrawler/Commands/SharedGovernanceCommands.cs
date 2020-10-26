@@ -185,11 +185,14 @@ namespace ForumCrawler
                 var stream = GenerateStreamFromString(text);
                 var guild = Context.Guild;
                 var config = guild.GetGovernanceConfig();
+                // this is me being lazy. if the changelog is on the main server,
+                // then we'll ping governance subscriber
+                var beginning = config.ChangelogChannel == 549402714103087144 ? $"[<@&{DiscordSettings.MapSubscriptionToRole[Commands.SubscriptionType.Governance]}>] " : ""
                 var baseEmbed = await AddVotesAsync(guild,
                     message.Embeds.FirstOrDefault()?.ToEmbedBuilder() ?? new EmbedBuilder(), message);
                 await guild.GetTextChannel(config.ChangelogChannel).SendFileAsync(stream,
                     $"log_{channel.GetSuggestionChannelName()}.txt",
-                    $"\"{channel.GetSuggestionChannelName()}\" was {status} by {MentionUtils.MentionUser(Context.User.Id)}. {reason}",
+                    $"{beginning}\"{channel.GetSuggestionChannelName()}\" was {status} by {MentionUtils.MentionUser(Context.User.Id)}. {reason}",
                     embed: baseEmbed
                         .WithColor(color)
                         .Build());
