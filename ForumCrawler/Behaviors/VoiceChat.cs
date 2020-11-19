@@ -29,23 +29,29 @@ namespace ForumCrawler
             }
         }
 
-        private static Task UpdatePermissionsAsync(SocketUser user, SocketVoiceChannel channel, bool allow)
+        private static async Task UpdatePermissionsAsync(SocketUser user, SocketVoiceChannel channel, bool allow)
         {
             var textChannel =
                 channel.Guild.TextChannels.FirstOrDefault(t => t.Topic?.EndsWith("for:" + channel.Name) == true);
             if (textChannel == null)
             {
-                return Task.Delay(0);
+                return;
             }
 
             if (allow)
             {
                 var overwrite = textChannel.GetPermissionOverwrite(user) ?? new OverwritePermissions();
                 overwrite = overwrite.Modify(viewChannel: PermValue.Allow);
-                return textChannel.AddPermissionOverwriteAsync(user, overwrite);
+                await textChannel.AddPermissionOverwriteAsync(user, overwrite);
+
+                await channel.Guild.GetUser(user.Id).AddRoleAsync(channel.Guild.GetRole(DiscordSettings.VoiceRole));
+                return;
             }
 
-            return textChannel.RemovePermissionOverwriteAsync(user);
+            await textChannel.RemovePermissionOverwriteAsync(user);
+
+            await channel.Guild.GetUser(user.Id).RemoveRoleAsync(channel.Guild.GetRole(DiscordSettings.VoiceRole));
+            return;
         }
     }
 }

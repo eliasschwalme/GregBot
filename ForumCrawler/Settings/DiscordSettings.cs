@@ -47,6 +47,7 @@ namespace ForumCrawler
         public const ulong SuggestionBoard = 731977062931234887;
         public const ulong Feedback = 549402587116470283;
         public const ulong GovernanceSubscriptionFeed = 765456947322552320;
+        public const ulong VoiceRole = 779048916687519755;
 
         public static Dictionary<SubscriptionType, ulong> MapSubscriptionToRole = new Dictionary<SubscriptionType, ulong>
         {
