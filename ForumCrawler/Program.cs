@@ -23,6 +23,7 @@ namespace ForumCrawler
             StarboardWatcher.Bind(client);
             QuickChatWatcher.Bind(client);
             SlurWatcher.Bind(client);
+            DadbotWatcher.Bind(client);
 
             await Task.Delay(10000);
             var crawler = new Crawler(client);
