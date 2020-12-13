@@ -308,6 +308,7 @@
     <Compile Include="Behaviors\QuickChatWatcher.cs" />
     <Compile Include="Models\CoronaData.cs" />
     <Compile Include="Models\CoronaLiveData.cs" />
+    <Compile Include="Behaviors\DadbotWatcher.cs" />
     <Compile Include="Behaviors\CoronaWatcher.cs" />
     <Compile Include="Models\EmoteQualifier.cs" />
     <Compile Include="Behaviors\GovernanceVoteWatcher.cs" />
