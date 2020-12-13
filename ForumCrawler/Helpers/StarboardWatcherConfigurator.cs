@@ -15,7 +15,7 @@ namespace ForumCrawler
                 client,
                 guild,
                 guild.GetTextChannel(DiscordSettings.StarboardChannel),
-                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891)), // text channels
+                ChannelCategoryQualifier(guild.GetCategoryChannel(360825166437285891), guild.GetCategoryChannel(761964889547079690)), // text channels
                 WootQualifier,
                 10
             );
@@ -49,9 +49,9 @@ namespace ForumCrawler
             return emote.Name == "👍" || emote.Name == "👎";
         }
 
-        private static ChannelQualifier ChannelCategoryQualifier(SocketCategoryChannel category)
+        private static ChannelQualifier ChannelCategoryQualifier(params SocketCategoryChannel[] categories)
         {
-            return channel => category.Channels.Any(categoryChannel => categoryChannel.Id == channel.Id);
+            return channel => categories.SelectMany(category => category.Channels).Any(categoryChannel => categoryChannel.Id == channel.Id);
         }
 
 		internal static StarboardWatcher SuggestionStarboard(DiscordSocketClient client)
