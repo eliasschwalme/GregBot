@@ -61,6 +61,13 @@ namespace ForumCrawler
                 ["kay"] = 339869489724391435,
 
                 ["toma"] = 431529354355408897,
+
+                ["mike"] = 265467042294005760,
+
+                ["miner"] = 427941289053388810,
+
+                ["sarah"] = 691351852855328810,
+
             },
 
             UserToT = (user) => new GupUser(user),
