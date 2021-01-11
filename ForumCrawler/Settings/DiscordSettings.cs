@@ -139,29 +139,33 @@ namespace ForumCrawler
         {
             if (!(messageParam is SocketUserMessage message))
             {
-                return Task.Delay(0);
+                return Task.CompletedTask;
             }
 
             Task.Run(async () =>
             {
                 var argPos = 0;
-                if (!(message.HasStringPrefix(CommandPrefix, ref argPos) ||
+                if (!(message.HasStringPrefix(CommandPrefix, ref argPos, StringComparison.InvariantCultureIgnoreCase) ||
                       message.HasMentionPrefix(client.CurrentUser, ref argPos)))
                 {
                     return;
                 }
 
+                // skip whitespace after !
+                while (message.Content.Length > argPos + 1 && message.Content[argPos] == ' ')
                 {
-                    var context = new SocketCommandContext(client, message);
-                    var result = await commands.ExecuteAsync(context, argPos, services);
-                    if (!result.IsSuccess)
-                    {
-                        await context.Message.Channel.SendErrorAsync(result.ErrorReason);
-                    }
+                    argPos++;
+				}
+
+                var context = new SocketCommandContext(client, message);
+                var result = await commands.ExecuteAsync(context, argPos, services);
+                if (!result.IsSuccess)
+                {
+                    await context.Message.Channel.SendErrorAsync(result.ErrorReason);
                 }
             });
 
-            return Task.Delay(0);
+            return Task.CompletedTask;
         }
     }
 }
