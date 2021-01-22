@@ -52,6 +52,13 @@ namespace ForumCrawler
                 throw new Exception("You must be a class of 4 or higher to change your nick.");
             }
 
+            if (!DadbotWatcher.CanChangeNick(user.Id))
+            {
+                var target = Format.Sanitize(user.Username);
+                var duration = DadbotWatcher.GetTimeLeft(user.Id).ToHumanReadableString();
+                throw new Exception($"Sorry {target}, but you can't change your nickname for another {duration} (due to Dadbot).");
+			}
+
             await user.ModifyAsync(u => u.Nickname = nick);
             await ReplyAsync("Your nickname was updated.");
         }
