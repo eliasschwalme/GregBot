@@ -54,7 +54,7 @@ namespace ForumCrawler
 
             if (!DadbotWatcher.CanChangeNick(user.Id))
             {
-                var target = Format.Sanitize(user.Username);
+                var target = Format.Sanitize(user.Nickname ?? user.Username);
                 var duration = DadbotWatcher.GetTimeLeft(user.Id).ToHumanReadableString();
                 throw new Exception($"Sorry {target}, but you can't change your nickname for another {duration} (due to Dadbot).");
 			}
