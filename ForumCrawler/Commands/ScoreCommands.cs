@@ -260,7 +260,6 @@ namespace ForumCrawler
         }
 
         [Command("autodaily")]
-        [RequireRole(DiscordSettings.DiscordStaff)]
         [Priority(0)]
         public async Task AutoDaily(bool enabled)
         {
