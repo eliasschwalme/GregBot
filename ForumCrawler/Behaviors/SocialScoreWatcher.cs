@@ -117,11 +117,12 @@ namespace ForumCrawler
 
             var muted = await Database.UNSAFE_GetMute(user.Id) !=
                         null; // TODO: looking up mutes on everyone every hour is not a good idea
+            var inSchool = user.Roles.Any(r.Id == 775812620108169298l);
             var roles = new List<IRole>
             {
                 await ScoreRoleManager.GetScoreRoleForUserAsync(client, cache, user.Id, scoreData)
             };
-            if (!muted)
+            if (!muted && !inSchool)
             {
                 roles.Add(await ScoreRoleManager.GetClassRole(cache, scoreData));
             }
