@@ -71,6 +71,10 @@ namespace ForumCrawler
                 ["orton"] = 209777989280333834,
                 ["32"] = 209777989280333834,
 
+                ["john"] = 188359912869462016,
+                ["emalton"] = 188359912869462016,
+                ["notlame"] = 188359912869462016,
+
             },
 
             UserToT = (user) => new GupUser(user),
