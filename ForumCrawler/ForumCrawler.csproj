@@ -304,6 +304,10 @@
     <Compile Include="Commands\SubscriptionCommand.cs" />
     <Compile Include="Helpers\GovernanceSubscriptionFeed.cs" />
     <Compile Include="Helpers\IGupUser.cs" />
+    <Compile Include="Migrations\202102052102405_PermanentScore.cs" />
+    <Compile Include="Migrations\202102052102405_PermanentScore.Designer.cs">
+      <DependentUpon>202102052102405_PermanentScore.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ChannelQualifier.cs" />
     <Compile Include="Behaviors\QuickChatWatcher.cs" />
     <Compile Include="Models\CoronaData.cs" />
@@ -575,6 +579,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202005271836271_AutoDaily.resx">
       <DependentUpon>202005271836271_AutoDaily.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202102052102405_PermanentScore.resx">
+      <DependentUpon>202102052102405_PermanentScore.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\InitialCreate.resx">
       <DependentUpon>InitialCreate.cs</DependentUpon>
