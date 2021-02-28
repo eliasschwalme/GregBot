@@ -164,6 +164,12 @@ namespace ForumCrawler
         private string GetUnmentionedUser(ulong userId)
         {
             var user = Context.Client.GetGuild(DiscordSettings.GuildId).GetUser(userId);
+
+            if (user == null)
+            {
+                return "Deleted User";
+			}
+
             return user.Username.DiscordEscape() + "#" + user.Discriminator;
         }
 
