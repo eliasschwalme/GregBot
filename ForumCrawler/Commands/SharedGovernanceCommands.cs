@@ -202,9 +202,15 @@ namespace ForumCrawler
             await Database.UNSAFE_RemoveGovernanceVoteAsync(channel.Id);
         }
 
-        private static async Task ArchiveChannel(ISocketMessageChannel channel,
+        // DI would be nice wouldn't it
+        private static System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient();
+
+		private async Task ArchiveChannel(ISocketMessageChannel channel,
             Func<string, IUserMessage, Task> callback)
         {
+            var guild = Context.Client.GetGuild(DiscordSettings.GuildId);
+            var uploadAttachments = guild.GetTextChannel(DiscordSettings.ImageArchiveChannel);
+
             var history = new StringBuilder();
             var messages = (await channel.GetMessagesAsync(5000).FlattenAsync()).ToList();
             foreach (var message in Enumerable.Reverse(messages))
@@ -236,7 +242,19 @@ namespace ForumCrawler
 
                 foreach (var attachment in message.Attachments)
                 {
-                    history.Append(" (Attachment: ").Append(attachment.Url).Append(')');
+                    try
+                    {
+                        var get = await _httpClient.GetAsync(attachment.Url);
+                        var stream = await get.Content.ReadAsStreamAsync();
+                        var file = await uploadAttachments.SendFileAsync(stream, attachment.Filename, "for " + channel.Name);
+
+                        history.Append(" (Attachment: ").Append(file.Attachments.First().Url).Append(')');
+                    }
+                    catch (Exception ex)
+                    {
+                        history.Append(" (Attachment: ").Append(attachment.Url).Append(" | error uploading to image archive: ")
+                            .Append(ex.ToString()).Append(')');
+					}
                 }
 
                 if (message.EditedTimestamp.HasValue)

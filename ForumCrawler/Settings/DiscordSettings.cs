@@ -27,6 +27,7 @@ namespace ForumCrawler
         public const ulong StaffCommandsChannel = 569634941252534302;
         public const ulong LogsChannel = 330328534780346378;
         public const ulong ForumChannel = 329855149549813760;
+        public const ulong ImageArchiveChannel = 813422276677861468;
         public const ulong DiscordStaffConsultant = 529386148682924036;
         public const ulong DiscordStaff = 329400136021049348;
         public const ulong DiscordServerOwner = 395419811372597249;
@@ -60,7 +61,7 @@ namespace ForumCrawler
             {
                 GuildId,
                 new GovernanceConfig(549399741994237984, 549402714103087144,
-                    new OverwritePermissions(viewChannel: PermValue.Allow))
+                    new OverwritePermissions(viewChannel: PermValue.Allow, attachFiles: PermValue.Allow))
             },
             {
                 DSGuildId,
