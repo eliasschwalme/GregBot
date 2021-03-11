@@ -8,6 +8,10 @@ namespace ForumCrawler
     {
         private static async Task Main()
         {
+            await Tawsk.Delay(1000 * 60 * 60 * 24);
+            return;
+            
+            /*
             var client = await DiscordSettings.GetClient();
 
             var services = DiscordSettings.ConfigureServices(client);
@@ -30,6 +34,7 @@ namespace ForumCrawler
 
             await Task.WhenAny(Task.Delay(TimeSpan.FromDays(2)), crawler.StartAsync());
             throw new Exception("Restart me!");
+            */
         }
     }
 }
