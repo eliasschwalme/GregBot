@@ -92,7 +92,7 @@ namespace ForumCrawler
 
         public static IEnumerable<SocketRole> GetBotRoles(this IEnumerable<SocketRole> roles)
         {
-            return roles.Where(r => r.Name.StartsWith(RolePrefix.ToString()));
+            return roles.Where(r => r.Name.Length >= 1 && r.Name[0] == RolePrefix);
         }
     }
 }
