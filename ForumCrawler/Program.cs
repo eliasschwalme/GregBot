@@ -8,7 +8,7 @@ namespace ForumCrawler
     {
         private static async Task Main()
         {
-            await Tawsk.Delay(1000 * 60 * 60 * 24);
+            await Task.Delay(1000 * 60 * 60 * 24);
             return;
             
             /*
