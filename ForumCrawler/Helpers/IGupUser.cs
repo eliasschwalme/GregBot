@@ -84,6 +84,8 @@ namespace ForumCrawler
                 ["gosha"] = 252733339734245376,
                 ["goshanoob"] = 252733339734245376,
 
+                ["joey"] = 162388330342907904,
+                ["joeyc"] = 162388330342907904,
             },
 
             UserToT = (user) => new GupUser(user),
