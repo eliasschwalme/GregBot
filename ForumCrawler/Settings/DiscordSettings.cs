@@ -30,7 +30,7 @@ namespace ForumCrawler
         public const ulong ImageArchiveChannel = 813422276677861468;
         public const ulong DiscordStaffConsultant = 529386148682924036;
         public const ulong DiscordStaff = 329400136021049348;
-        public const ulong DiscordServerOwner = 819027352796397629;
+        public const ulong DiscordServerOwner = 824686494328815687;
         public const ulong MutedRole = 333618650634387458;
         public const ulong EighteenRole = 407999201830764544;
         public const ulong StarboardChannel = 589926820825006120;
