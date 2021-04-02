@@ -1,0 +1,12 @@
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Gregbot
+    steps:
+      - name: Trigger TriggerCD
+        uses: SirJosh3917/triggercd-action@v0.1
+        with:
+          url: ${{ secrets.URL }}
+          nonce: ${{ secrets.KEY }}
