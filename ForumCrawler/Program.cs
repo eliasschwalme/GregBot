@@ -17,12 +17,12 @@ namespace ForumCrawler
             // CoronaWatcher.Bind(client);
             MuteWatcher.Bind(client);
             VoiceChat.Bind(client);
-            GovernanceVoteWatcher.Bind(client);
-            EditWatcher.Bind(client);
+            // GovernanceVoteWatcher.Bind(client);
+            // EditWatcher.Bind(client);
             QuickReportWatcher.Bind(client);
-            StarboardWatcher.Bind(client);
-            QuickChatWatcher.Bind(client);
-            SlurWatcher.Bind(client);
+            // StarboardWatcher.Bind(client);
+            // QuickChatWatcher.Bind(client);
+            // SlurWatcher.Bind(client);
             DadbotWatcher.Bind(client);
 
             await Task.Delay(10000);
