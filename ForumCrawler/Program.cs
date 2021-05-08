@@ -19,7 +19,7 @@ namespace ForumCrawler
             VoiceChat.Bind(client);
             // GovernanceVoteWatcher.Bind(client);
             // EditWatcher.Bind(client);
-            QuickReportWatcher.Bind(client);
+            // QuickReportWatcher.Bind(client);
             // StarboardWatcher.Bind(client);
             // QuickChatWatcher.Bind(client);
             // SlurWatcher.Bind(client);
