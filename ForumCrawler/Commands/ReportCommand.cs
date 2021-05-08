@@ -13,6 +13,8 @@ namespace ForumCrawler
         [Priority(1)]
         public async Task ReportAsync(IUser user, [Remainder] string reportMessage = null)
         {
+            await ReplyAsync("The `g!report` command is deprecated! Please use `n!report <user> [reason]`.");
+            /*
             if (Context.Guild != null)
             {
                 await Context.Channel.DeleteMessageAsync(Context.Message);
@@ -26,6 +28,7 @@ namespace ForumCrawler
             var previous = Context.Guild != null ? GetPreviousMessage(user) : null;
             var reportId = previous?.Id ?? SnowflakeUtils.ToSnowflake(DateTimeOffset.UtcNow);
             await QuickReportWatcher.FileReport(reportId, Context.User, user, Context.Channel, previous, reportMessage);
+            */
         }
 
         [Command("report")]
@@ -33,9 +36,12 @@ namespace ForumCrawler
         [Priority(1)]
         public async Task ReportAsync(IUserMessage message, [Remainder] string reportMessage = null)
         {
+            await ReplyAsync("The `g!report` command is deprecated! Please use `n!report <user> [reason]`.");
+            /*
             await Context.Channel.DeleteMessageAsync(Context.Message);
             await QuickReportWatcher.FileReport(message.Id, Context.User, message.Author, message.Channel, message,
                 reportMessage);
+            */
         }
 
         [Command("report")]
@@ -44,12 +50,15 @@ namespace ForumCrawler
         [Priority(0)]
         public async Task ReportAsync(ulong reportId, [Remainder] string reportMessage = null)
         {
+            await ReplyAsync("The `g!report` command is deprecated! Please use `n!report <user> [reason]`.");
+            /*
             if (Context.Channel is IGuildChannel)
             {
                 await Context.Channel.DeleteMessageAsync(Context.Message);
             }
 
             await QuickReportWatcher.FileReport(reportId, Context.User, null, null, null, reportMessage);
+            */
         }
 
         private IUserMessage GetPreviousMessage(IUser user)
