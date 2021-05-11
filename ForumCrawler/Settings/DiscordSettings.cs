@@ -142,6 +142,11 @@ namespace ForumCrawler
             {
                 return Task.CompletedTask;
             }
+            
+            if (message.Author.IsBot)
+            {
+                return Task.CompletedTask;
+            }
 
             Task.Run(async () =>
             {
